@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
@@ -92,16 +93,21 @@ func (h *userExampleHandler) Create(c *gin.Context) {
 // @Router /api/v1/userExample/{id} [delete]
 // @Security BearerAuth
 func (h *userExampleHandler) DeleteByID(c *gin.Context) {
-	_, id, isAbort := getUserExampleIDFromPath(c)
-	if isAbort {
+	idStr := c.Param("id")
+	if idStr == "" {
 		response.Error(c, ecode.InvalidParams)
 		return
 	}
 
+	var ids []uint64
+	for _, v := range strings.Split(idStr, ",") {
+		ids = append(ids, utils.StrToUint64(v))
+	}
+
 	ctx := middleware.WrapCtx(c)
-	err := h.iDao.DeleteByID(ctx, id)
+	err := h.iDao.DeleteByIDs(ctx, ids)
 	if err != nil {
-		logger.Error("DeleteByID error", logger.Err(err), logger.Any("id", id), middleware.GCtxRequestIDField(c))
+		logger.Error("DeleteByID error", logger.Err(err), logger.Any("id", idStr), middleware.GCtxRequestIDField(c))
 		response.Output(c, ecode.InternalServerError.ToHTTPCode())
 		return
 	}
@@ -202,13 +208,13 @@ func (h *userExampleHandler) GetByID(c *gin.Context) {
 // @Tags userExample
 // @accept json
 // @Produce json
-// @Param data body types.Params true "query parameters"
+// @Param request query types.ListUserExamplesRequest true "query parameters"
 // @Success 200 {object} types.ListUserExamplesRespond{}
-// @Router /api/v1/userExample/list [post]
+// @Router /api/v1/userExample/list [get]
 // @Security BearerAuth
 func (h *userExampleHandler) List(c *gin.Context) {
-	form := &types.ListUserExamplesRequest{}
-	err := c.ShouldBindJSON(form)
+	request := &types.ListUserExamplesRequest{}
+	err := c.ShouldBindQuery(request)
 	if err != nil {
 		logger.Warn("ShouldBindJSON error: ", logger.Err(err), middleware.GCtxRequestIDField(c))
 		response.Error(c, ecode.InvalidParams)
@@ -216,9 +222,9 @@ func (h *userExampleHandler) List(c *gin.Context) {
 	}
 
 	ctx := middleware.WrapCtx(c)
-	userExamples, total, err := h.iDao.GetByColumns(ctx, &form.Params)
+	userExamples, total, err := h.iDao.GetByParams(ctx, request)
 	if err != nil {
-		logger.Error("GetByColumns error", logger.Err(err), logger.Any("form", form), middleware.GCtxRequestIDField(c))
+		logger.Error("GetByParams error", logger.Err(err), logger.Any("request", request), middleware.GCtxRequestIDField(c))
 		response.Output(c, ecode.InternalServerError.ToHTTPCode())
 		return
 	}
@@ -230,8 +236,8 @@ func (h *userExampleHandler) List(c *gin.Context) {
 	}
 
 	response.Success(c, gin.H{
-		"userExamples": data,
-		"total":        total,
+		"list":  data,
+		"total": total,
 	})
 }
 

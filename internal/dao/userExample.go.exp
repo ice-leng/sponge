@@ -26,6 +26,7 @@ type UserExampleDao interface {
 	UpdateByID(ctx context.Context, table *model.UserExample) error
 	GetByID(ctx context.Context, id uint64) (*model.UserExample, error)
 	GetByColumns(ctx context.Context, params *query.Params) ([]*model.UserExample, int64, error)
+    GetByParams(ctx context.Context, params *types.ListUserExamplesRequest) ([]*model.UserExample, int64, error)
 
 	DeleteByIDs(ctx context.Context, ids []uint64) error
 	GetByCondition(ctx context.Context, condition *query.Conditions) (*model.UserExample, error)
@@ -238,6 +239,29 @@ func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params)
 		return nil, 0, err
 	}
 
+	return records, total, err
+}
+
+func (d *userExampleDao) GetByParams(ctx context.Context, request *types.ListUserExamplesRequest) ([]*model.UserExample, int64, error) {
+	records := []*model.UserExample{}
+	var total int64 = 0
+
+	page := query.NewPage(request.Page-1, request.PageSize, request.Sort)
+	db := d.db.WithContext(ctx).Model(&model.UserExample{}).Order(page.Sort())
+	if request.StartTime != "" && request.EndTime != "" {
+		db = db.Where("created_at BETWEEN ? AND ?", request.StartTime, request.EndTime)
+	}
+
+	if err := db.Count(&total).Error; err != nil {
+		return records, total, err
+	}
+
+	if request.PageSize > 0 {
+		err := db.Limit(page.Limit()).Offset(page.Page() * page.Limit()).Find(&records).Error
+		return records, total, err
+	}
+
+	err := db.Find(&records).Error
 	return records, total, err
 }
 

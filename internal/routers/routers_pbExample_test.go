@@ -46,8 +46,8 @@ func Test_middlewareConfig(t *testing.T) {
 
 	c.setSinglePath("DELETE", "/api/v1/userExample/:id", middleware.Auth())
 	assert.Equal(t, 1, len(c.singlePathMiddlewares[getSinglePathKey("DELETE", "/api/v1/userExample/:id")]))
-	c.setSinglePath("POST", "/api/v1/userExample/list", middleware.RateLimit(), middleware.RequestID())
-	assert.Equal(t, 2, len(c.singlePathMiddlewares[getSinglePathKey("POST", "/api/v1/userExample/list")]))
+	c.setSinglePath("GET", "/api/v1/userExample/list", middleware.RateLimit(), middleware.RequestID())
+	assert.Equal(t, 2, len(c.singlePathMiddlewares[getSinglePathKey("GET", "/api/v1/userExample/list")]))
 }
 
 func Test_userExampleServiceRouter(t *testing.T) {

@@ -2,8 +2,6 @@ package types
 
 import (
 	"time"
-
-	"github.com/zhufuyi/sponge/pkg/ggorm/query"
 )
 
 var _ time.Time
@@ -83,7 +81,12 @@ type GetUserExampleByIDRespond struct {
 
 // ListUserExamplesRequest request params
 type ListUserExamplesRequest struct {
-	query.Params
+	Page     int    `json:"page,omitempty" form:"page" binding:""`         // 分页
+	PageSize int    `json:"pageSize,omitempty" form:"pageSize" binding:""` // 分页大小
+	Sort     string `json:"sort,omitempty" form:"sort" binding:""`         // 排序
+
+	StartTime string `json:"startTime,omitempty" form:"startTime" binding:""` // 开始时间
+	EndTime   string `json:"endTime,omitempty" form:"endTime" binding:""`     // 结束时间
 }
 
 // ListUserExamplesRespond only for api docs

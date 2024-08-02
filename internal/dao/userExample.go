@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/zhufuyi/sponge/internal/types"
 
 	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
@@ -22,9 +23,11 @@ var _ UserExampleDao = (*userExampleDao)(nil)
 type UserExampleDao interface {
 	Create(ctx context.Context, table *model.UserExample) error
 	DeleteByID(ctx context.Context, id uint64) error
+	DeleteByIDs(ctx context.Context, ids []uint64) error
 	UpdateByID(ctx context.Context, table *model.UserExample) error
 	GetByID(ctx context.Context, id uint64) (*model.UserExample, error)
 	GetByColumns(ctx context.Context, params *query.Params) ([]*model.UserExample, int64, error)
+	GetByParams(ctx context.Context, params *types.ListUserExamplesRequest) ([]*model.UserExample, int64, error)
 
 	CreateByTx(ctx context.Context, tx *gorm.DB, table *model.UserExample) (uint64, error)
 	DeleteByTx(ctx context.Context, tx *gorm.DB, id uint64) error
@@ -70,6 +73,21 @@ func (d *userExampleDao) DeleteByID(ctx context.Context, id uint64) error {
 
 	// delete cache
 	_ = d.deleteCache(ctx, id)
+
+	return nil
+}
+
+// DeleteByIDs delete records by batch id
+func (d *userExampleDao) DeleteByIDs(ctx context.Context, ids []uint64) error {
+	err := d.db.WithContext(ctx).Where("id IN (?)", ids).Delete(&model.UserExample{}).Error
+	if err != nil {
+		return err
+	}
+
+	// delete cache
+	for _, id := range ids {
+		_ = d.deleteCache(ctx, id)
+	}
 
 	return nil
 }
@@ -232,6 +250,29 @@ func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params)
 		return nil, 0, err
 	}
 
+	return records, total, err
+}
+
+func (d *userExampleDao) GetByParams(ctx context.Context, request *types.ListUserExamplesRequest) ([]*model.UserExample, int64, error) {
+	records := []*model.UserExample{}
+	var total int64 = 0
+
+	page := query.NewPage(request.Page-1, request.PageSize, request.Sort)
+	db := d.db.WithContext(ctx).Model(&model.UserExample{}).Order(page.Sort())
+	if request.StartTime != "" && request.EndTime != "" {
+		db = db.Where("created_at BETWEEN ? AND ?", request.StartTime, request.EndTime)
+	}
+
+	if err := db.Count(&total).Error; err != nil {
+		return records, total, err
+	}
+
+	if request.PageSize > 0 {
+		err := db.Limit(page.Limit()).Offset(page.Page() * page.Limit()).Find(&records).Error
+		return records, total, err
+	}
+
+	err := db.Find(&records).Error
 	return records, total, err
 }
 
