@@ -51,8 +51,8 @@ type UserExampleObjDetail struct {
 
 // delete the templates code end
 
-// CreateUserExampleRespond only for api docs
-type CreateUserExampleRespond struct {
+// CreateUserExampleReply only for api docs
+type CreateUserExampleReply struct {
 	Code int    `json:"code"` // return code
 	Msg  string `json:"msg"`  // return information description
 	Data struct {
@@ -60,18 +60,18 @@ type CreateUserExampleRespond struct {
 	} `json:"data"` // return data
 }
 
-// DeleteUserExampleByIDRespond only for api docs
-type DeleteUserExampleByIDRespond struct {
+// DeleteUserExampleByIDReply only for api docs
+type DeleteUserExampleByIDReply struct {
 	Result
 }
 
-// UpdateUserExampleByIDRespond only for api docs
-type UpdateUserExampleByIDRespond struct {
+// UpdateUserExampleByIDReply only for api docs
+type UpdateUserExampleByIDReply struct {
 	Result
 }
 
-// GetUserExampleByIDRespond only for api docs
-type GetUserExampleByIDRespond struct {
+// GetUserExampleByIDReply only for api docs
+type GetUserExampleByIDReply struct {
 	Code int    `json:"code"` // return code
 	Msg  string `json:"msg"`  // return information description
 	Data struct {
@@ -89,8 +89,8 @@ type ListUserExamplesRequest struct {
 	EndTime   string `json:"endTime,omitempty" form:"endTime" binding:""`     // 结束时间
 }
 
-// ListUserExamplesRespond only for api docs
-type ListUserExamplesRespond struct {
+// ListUserExamplesReply only for api docs
+type ListUserExamplesReply struct {
 	Code int    `json:"code"` // return code
 	Msg  string `json:"msg"`  // return information description
 	Data struct {

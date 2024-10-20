@@ -51,7 +51,7 @@ func NewUserExampleHandler() UserExampleHandler {
 // @accept json
 // @Produce json
 // @Param data body types.CreateUserExampleRequest true "userExample information"
-// @Success 200 {object} types.CreateUserExampleRespond{}
+// @Success 200 {object} types.CreateUserExampleReply{}
 // @Router /api/v1/userExample [post]
 // @Security BearerAuth
 func (h *userExampleHandler) Create(c *gin.Context) {
@@ -89,7 +89,7 @@ func (h *userExampleHandler) Create(c *gin.Context) {
 // @accept json
 // @Produce json
 // @Param id path string true "id"
-// @Success 200 {object} types.DeleteUserExampleByIDRespond{}
+// @Success 200 {object} types.DeleteUserExampleByIDReply{}
 // @Router /api/v1/userExample/{id} [delete]
 // @Security BearerAuth
 func (h *userExampleHandler) DeleteByID(c *gin.Context) {
@@ -123,7 +123,7 @@ func (h *userExampleHandler) DeleteByID(c *gin.Context) {
 // @Produce json
 // @Param id path string true "id"
 // @Param data body types.UpdateUserExampleByIDRequest true "userExample information"
-// @Success 200 {object} types.UpdateUserExampleByIDRespond{}
+// @Success 200 {object} types.UpdateUserExampleByIDReply{}
 // @Router /api/v1/userExample/{id} [put]
 // @Security BearerAuth
 func (h *userExampleHandler) UpdateByID(c *gin.Context) {
@@ -168,7 +168,7 @@ func (h *userExampleHandler) UpdateByID(c *gin.Context) {
 // @Param id path string true "id"
 // @Accept json
 // @Produce json
-// @Success 200 {object} types.GetUserExampleByIDRespond{}
+// @Success 200 {object} types.GetUserExampleByIDReply{}
 // @Router /api/v1/userExample/{id} [get]
 // @Security BearerAuth
 func (h *userExampleHandler) GetByID(c *gin.Context) {
@@ -209,7 +209,7 @@ func (h *userExampleHandler) GetByID(c *gin.Context) {
 // @accept json
 // @Produce json
 // @Param request query types.ListUserExamplesRequest true "query parameters"
-// @Success 200 {object} types.ListUserExamplesRespond{}
+// @Success 200 {object} types.ListUserExamplesReply{}
 // @Router /api/v1/userExample/list [get]
 // @Security BearerAuth
 func (h *userExampleHandler) List(c *gin.Context) {
