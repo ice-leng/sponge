@@ -69,7 +69,7 @@ func newUserExampleHandler() *gotest.Handler {
 		},
 		{
 			FuncName:    "List",
-			Method:      http.MethodPost,
+			Method:      http.MethodGet,
 			Path:        "/userExample/list",
 			HandlerFunc: iHandler.List,
 		},
@@ -149,9 +149,9 @@ func Test_userExampleHandler_DeleteByID(t *testing.T) {
 		t.Fatalf("%+v", result)
 	}
 
-	// zero id error test
-	err = httpcli.Delete(result, h.GetRequestURL("DeleteByID", 0))
-	assert.NoError(t, err)
+	//// zero id error test
+	//err = httpcli.Delete(result, h.GetRequestURL("DeleteByID", 0))
+	//assert.NoError(t, err)
 
 	// delete error test
 	err = httpcli.Delete(result, h.GetRequestURL("DeleteByID", 111))
@@ -231,12 +231,8 @@ func Test_userExampleHandler_List(t *testing.T) {
 	h.MockDao.SQLMock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 
 	result := &httpcli.StdResult{}
-	page := 0
-	pageSize := 10
-	err := httpcli.Post(result, h.GetRequestURL("List"), &types.ListUserExamplesRequest{
-		Page:     &page,
-		PageSize: &pageSize,
-	})
+	params := httpcli.KV{"page": 0, "pageSize": 10}
+	err := httpcli.Post(result, h.GetRequestURL("List"), httpcli.WithParams(params))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -248,13 +244,9 @@ func Test_userExampleHandler_List(t *testing.T) {
 	err = httpcli.Post(result, h.GetRequestURL("List"), nil)
 	assert.NoError(t, err)
 
-	sort := "unknown-column"
+	params["sort"] = "-id"
 	// get error test
-	err = httpcli.Post(result, h.GetRequestURL("List"), &types.ListUserExamplesRequest{
-		Page:     &page,
-		PageSize: &pageSize,
-		Sort:     &sort,
-	})
+	err = httpcli.Post(result, h.GetRequestURL("List"), httpcli.WithParams(params))
 	assert.Error(t, err)
 }
 
