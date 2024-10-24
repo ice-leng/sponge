@@ -3,6 +3,7 @@ package server
 import (
 	"archive/zip"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/zhufuyi/sponge/cmd/sponge/global"
 	"io"
@@ -146,17 +147,15 @@ func handleGenerateCode(c *gin.Context, outPath string, arg string) {
 			out = params.ModuleName + "-" + out
 		}
 	}
-	out = global.Path
+	outLine := global.Path
 	if params.SuitedMonoRepo {
 		out += "-mono-repo"
+		outLine += "-mono-repo"
 	}
 
-	//out = os.TempDir() + gofile.GetPathDelimiter() + "sponge-generate-code" + gofile.GetPathDelimiter() + out
-	args = append(args, fmt.Sprintf("--out=%s", out))
-	fmt.Println(strings.Join(args, " "))
-
+	argsLine := append(args, fmt.Sprintf("--out=%s", outLine))
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*2) // nolint
-	result := gobash.Run(ctx, "sponge", args...)
+	result := gobash.Run(ctx, "sponge", argsLine...)
 	for v := range result.StdOut {
 		_ = v
 	}
@@ -165,41 +164,52 @@ func handleGenerateCode(c *gin.Context, outPath string, arg string) {
 		return
 	}
 
-	//zipFile := out + ".zip"
-	//err := CompressPathToZip(out, zipFile)
-	//if err != nil {
-	//	responseErr(c, err, errcode.InternalServerError)
-	//	return
-	//}
-	//
-	//if !gofile.IsExists(zipFile) {
-	//	err = errors.New("no found file " + zipFile)
-	//	responseErr(c, err, errcode.InternalServerError)
-	//	return
-	//}
-	//
-	//c.Writer.Header().Set("content-disposition", gofile.GetFilename(zipFile))
-	//c.File(zipFile)
+	out = os.TempDir() + gofile.GetPathDelimiter() + "sponge-generate-code" + gofile.GetPathDelimiter() + out
+	args = append(args, fmt.Sprintf("--out=%s", out))
+
+	result = gobash.Run(ctx, "sponge", args...)
+	for v := range result.StdOut {
+		_ = v
+	}
+	if result.Err != nil {
+		responseErr(c, result.Err, errcode.InternalServerError)
+		return
+	}
+
+	zipFile := out + ".zip"
+	err := CompressPathToZip(out, zipFile)
+	if err != nil {
+		responseErr(c, err, errcode.InternalServerError)
+		return
+	}
+
+	if !gofile.IsExists(zipFile) {
+		err = errors.New("no found file " + zipFile)
+		responseErr(c, err, errcode.InternalServerError)
+		return
+	}
+
+	c.Writer.Header().Set("content-disposition", gofile.GetFilename(zipFile))
+	c.File(zipFile)
 
 	recordObj().set(c.ClientIP(), outPath, params)
 
 	go func() {
-		ctx, _ := context.WithTimeout(context.Background(), time.Minute*10)
+		ctx, _ = context.WithTimeout(context.Background(), time.Minute*10)
 
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-time.After(time.Second * 5):
-				//err := os.RemoveAll(out)
-				//if err != nil {
-				//	continue
-				//}
-				//err = os.RemoveAll(zipFile)
-				//if err != nil {
-				//	continue
-				//}
-
+				err := os.RemoveAll(out)
+				if err != nil {
+					continue
+				}
+				err = os.RemoveAll(zipFile)
+				if err != nil {
+					continue
+				}
 				if params.ProtobufFile != "" && strings.Contains(params.ProtobufFile, recordDirName) {
 					err := os.RemoveAll(gofile.GetFileDir(params.ProtobufFile))
 					if err != nil {

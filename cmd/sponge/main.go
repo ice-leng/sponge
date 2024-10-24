@@ -27,8 +27,8 @@ func main() {
 		fmt.Println("Error:" + err.Error())
 		os.Exit(1)
 	}
-	global.Path = dir
 	global.Root = filepath.Dir(filepath.Dir(dir))
+	global.Path = dir
 
 	rootCMD := commands.NewRootCMD()
 	if err = rootCMD.Execute(); err != nil {
