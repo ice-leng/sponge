@@ -53,7 +53,7 @@ func NewRouter_pbExample() *gin.Engine { //nolint
 		middleware.WithIgnoreRoutes("/metrics"), // ignore path
 	))
 
-	// init jwt middleware
+	// init jwt middleware, you can replace it with your own jwt middleware
 	jwt.Init(
 	//jwt.WithExpire(time.Hour*24),
 	//jwt.WithSigningKey("123456"),
@@ -100,8 +100,10 @@ func NewRouter_pbExample() *gin.Engine { //nolint
 	r.GET("/codes", handlerfunc.ListCodes)
 	r.GET("/config", gin.WrapF(errcode.ShowConfig([]byte(config.Show()))))
 
-	// access path /apis/swagger/index.html
-	swagger.CustomRouter(r, "apis", docs.ApiDocs)
+	if config.Get().App.Env != "prod" {
+		// access path /apis/swagger/index.html
+		swagger.CustomRouter(r, "apis", docs.ApiDocs)
+	}
 
 	c := newMiddlewareConfig()
 

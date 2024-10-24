@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -18,6 +19,7 @@ import (
 	"github.com/zhufuyi/sponge/pkg/gobash"
 	"github.com/zhufuyi/sponge/pkg/gofile"
 	"github.com/zhufuyi/sponge/pkg/replacer"
+	"github.com/zhufuyi/sponge/pkg/utils"
 )
 
 const (
@@ -458,8 +460,6 @@ func getDBConfigCode(dbDriver string) string {
 		dbConfigCode = mongodbConfigCode
 	case undeterminedDBDriver:
 		dbConfigCode = undeterminedDatabaseConfigCode
-	default:
-		panic("getDBConfigCode error, unsupported database driver: " + dbDriver)
 	}
 	return dbConfigCode
 }
@@ -860,4 +860,24 @@ func GetGoModFields(moduleName string) []replacer.Field {
 			New: getLocalSpongeTemplateVersion(),
 		},
 	}
+}
+
+func adaptPgDsn(dsn string) string {
+	if !strings.Contains(dsn, "postgres://") {
+		dsn = "postgres://" + dsn
+	}
+	dsn = utils.DeleteBrackets(dsn)
+
+	u, err := url.Parse(dsn)
+	if err != nil {
+		panic(err)
+	}
+
+	if u.RawQuery == "" {
+		u.RawQuery = "sslmode=disable"
+	} else if u.Query().Get("sslmode") == "" {
+		u.RawQuery = "sslmode=disable&" + u.RawQuery
+	}
+
+	return strings.ReplaceAll(u.String(), "postgres://", "")
 }

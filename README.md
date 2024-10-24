@@ -13,9 +13,9 @@
 
 </div>
 
-## 当前版本为魔改 restful 版本，具体用法请看 [官方文档](https://github.com/zhufuyi/sponge)
+## 当前版本为魔改 版本，具体用法请看 [官方文档](https://github.com/zhufuyi/sponge)
 
-// 注意 暂时实现 http web 版本，  pb 版本暂时不支持
+// 注意 暂时实现 http web 版本，  pb 版本没测试
 
 ### 源码安装 使用说明
 ```git
@@ -29,7 +29,10 @@
 ```html
     数据库dsn: root:@(127.0.0.1:3306)/hyperf;prefix=t_
 ```
-- 去掉下载代码功能，替换为，命令行 在那个目录，代码就在这个目录下生成
+
+- 由于本人是mac 下载替换文件，那是真的全替换... 
+- 下载代码功能兼容，支持成，命令行 在那个目录，代码就在这个目录下生成
+
 ```shell
     mkdir xxx
     cd xxx
