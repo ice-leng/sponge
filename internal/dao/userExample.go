@@ -254,29 +254,33 @@ func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params)
 }
 
 func (d *userExampleDao) GetByParams(ctx context.Context, request *types.ListUserExamplesRequest) ([]*model.UserExample, int64, error) {
-	records := []*model.UserExample{}
-	var total int64 = 0
-
 	page := query.NewPage(request.Page-1, request.PageSize, request.Sort)
-	db := d.db.WithContext(ctx).Model(&model.UserExample{}).Order(page.Sort())
-	if request.Sort != "" {
-		db = db.Order("ignore count")
-	}
 
+	db := d.db.WithContext(ctx).Model(&model.UserExample{}).Order(page.Sort())
 	if request.StartTime != "" && request.EndTime != "" {
 		db = db.Where("created_at BETWEEN ? AND ?", request.StartTime, request.EndTime)
 	}
 
-	if err := db.Count(&total).Error; err != nil {
-		return records, total, err
+	var total int64 = 0
+	if request.Sort != "ignore count" { // determine if count is required
+		err := db.Select([]string{"id"}).Count(&total).Error
+		if err != nil {
+			return nil, 0, err
+		}
+		if total == 0 {
+			return nil, total, nil
+		}
 	}
 
 	if request.PageSize > 0 {
-		err := db.Limit(page.Limit()).Offset(page.Page() * page.Limit()).Find(&records).Error
-		return records, total, err
+		db = db.Limit(page.Limit()).Offset(page.Page() * page.Limit())
 	}
 
+	records := []*model.UserExample{}
 	err := db.Find(&records).Error
+	if err != nil {
+		return nil, 0, err
+	}
 	return records, total, err
 }
 

@@ -231,7 +231,7 @@ func Test_userExampleHandler_List(t *testing.T) {
 	h.MockDao.SQLMock.ExpectQuery("SELECT .*").WillReturnRows(rows)
 
 	result := &httpcli.StdResult{}
-	params := httpcli.KV{"page": 0, "pageSize": 10}
+	params := httpcli.KV{"page": 1, "pageSize": 10, "sort": "ignore count"}
 	err := httpcli.Get(result, h.GetRequestURL("List"), httpcli.WithParams(params))
 	if err != nil {
 		t.Fatal(err)
@@ -241,10 +241,10 @@ func Test_userExampleHandler_List(t *testing.T) {
 	}
 
 	// nil params error test
-	err = httpcli.Get(result, h.GetRequestURL("List"), nil)
+	err = httpcli.Get(result, h.GetRequestURL("List"))
 	assert.NoError(t, err)
 
-	params["sort"] = "-id"
+	params["sort"] = "unknown-column"
 	// get error test
 	err = httpcli.Post(result, h.GetRequestURL("List"), httpcli.WithParams(params))
 	assert.Error(t, err)
