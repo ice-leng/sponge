@@ -259,6 +259,10 @@ func (d *userExampleDao) GetByParams(ctx context.Context, request *types.ListUse
 
 	page := query.NewPage(request.Page-1, request.PageSize, request.Sort)
 	db := d.db.WithContext(ctx).Model(&model.UserExample{}).Order(page.Sort())
+	if request.Sort != "" {
+		db = db.Order("ignore count")
+	}
+
 	if request.StartTime != "" && request.EndTime != "" {
 		db = db.Where("created_at BETWEEN ? AND ?", request.StartTime, request.EndTime)
 	}
