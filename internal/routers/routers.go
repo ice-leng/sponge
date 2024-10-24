@@ -11,7 +11,6 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	"github.com/zhufuyi/sponge/pkg/errcode"
 	"github.com/zhufuyi/sponge/pkg/gin/handlerfunc"
 	"github.com/zhufuyi/sponge/pkg/gin/middleware"
 	"github.com/zhufuyi/sponge/pkg/gin/middleware/metrics"
@@ -53,7 +52,7 @@ func NewRouter() *gin.Engine {
 		middleware.WithIgnoreRoutes("/metrics"), // ignore path
 	))
 
-	// init jwt middleware
+	// init jwt middleware, you can replace it with your own jwt middleware
 	jwt.Init(
 	//jwt.WithExpire(time.Hour*24),
 	//jwt.WithSigningKey("123456"),
@@ -94,9 +93,7 @@ func NewRouter() *gin.Engine {
 	r.GET("/health", handlerfunc.CheckHealth)
 	r.GET("/ping", handlerfunc.Ping)
 	r.GET("/codes", handlerfunc.ListCodes)
-	r.GET("/config", gin.WrapF(errcode.ShowConfig([]byte(config.Show()))))
 
-	// register swagger routes, generate code via swag init
 	if config.Get().App.Env != "prod" {
 		// register swagger routes, generate code via swag init
 		docs.SwaggerInfo.BasePath = ""
