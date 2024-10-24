@@ -149,7 +149,7 @@ func Test_userExampleHandler_DeleteByID(t *testing.T) {
 		t.Fatalf("%+v", result)
 	}
 
-	//// zero id error test
+	// zero id error test
 	//err = httpcli.Delete(result, h.GetRequestURL("DeleteByID", 0))
 	//assert.NoError(t, err)
 
@@ -232,7 +232,7 @@ func Test_userExampleHandler_List(t *testing.T) {
 
 	result := &httpcli.StdResult{}
 	params := httpcli.KV{"page": 0, "pageSize": 10}
-	err := httpcli.Post(result, h.GetRequestURL("List"), httpcli.WithParams(params))
+	err := httpcli.Get(result, h.GetRequestURL("List"), httpcli.WithParams(params))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,7 +241,7 @@ func Test_userExampleHandler_List(t *testing.T) {
 	}
 
 	// nil params error test
-	err = httpcli.Post(result, h.GetRequestURL("List"), nil)
+	err = httpcli.Get(result, h.GetRequestURL("List"), nil)
 	assert.NoError(t, err)
 
 	params["sort"] = "-id"
