@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -147,27 +148,32 @@ func handleGenerateCode(c *gin.Context, outPath string, arg string) {
 			out = params.ModuleName + "-" + out
 		}
 	}
-	outLine := global.Path
+
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*2) // nolint
+	// mac 文件生成
+	if runtime.GOOS == "darwin" {
+		outLine := global.Path
+		if params.SuitedMonoRepo {
+			outLine += "-mono-repo"
+		}
+		argsLine := append(args, fmt.Sprintf("--out=%s", outLine))
+		resultLine := gobash.Run(ctx, "sponge", argsLine...)
+		for v := range resultLine.StdOut {
+			_ = v
+		}
+		if resultLine.Err != nil {
+			responseErr(c, resultLine.Err, errcode.InternalServerError)
+			return
+		}
+	}
+
 	if params.SuitedMonoRepo {
 		out += "-mono-repo"
-		outLine += "-mono-repo"
 	}
-
-	argsLine := append(args, fmt.Sprintf("--out=%s", outLine))
-	ctx, _ := context.WithTimeout(context.Background(), time.Second*2) // nolint
-	result := gobash.Run(ctx, "sponge", argsLine...)
-	for v := range result.StdOut {
-		_ = v
-	}
-	if result.Err != nil {
-		responseErr(c, result.Err, errcode.InternalServerError)
-		return
-	}
-
 	out = os.TempDir() + gofile.GetPathDelimiter() + "sponge-generate-code" + gofile.GetPathDelimiter() + out
 	args = append(args, fmt.Sprintf("--out=%s", out))
 
-	result = gobash.Run(ctx, "sponge", args...)
+	result := gobash.Run(ctx, "sponge", args...)
 	for v := range result.StdOut {
 		_ = v
 	}
