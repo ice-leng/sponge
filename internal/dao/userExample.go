@@ -258,12 +258,12 @@ func (d *userExampleDao) GetByParams(ctx context.Context, request *types.ListUse
 
 	db := d.db.WithContext(ctx).Model(&model.UserExample{}).Order(page.Sort())
 	if request.StartTime != "" && request.EndTime != "" {
-		db = db.Where("created_at BETWEEN ? AND ?", request.StartTime, request.EndTime)
+		db = db.Where("created_at BETWEEN ? AND ?", request.StartTime, request.EndTime+" 23:59:59")
 	}
 
 	var total int64 = 0
 	if request.Sort != "ignore count" { // determine if count is required
-		err := db.Select([]string{"id"}).Count(&total).Error
+		err := db.Count(&total).Error
 		if err != nil {
 			return nil, 0, err
 		}
