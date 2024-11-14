@@ -193,7 +193,7 @@ func (h *userExampleHandler) GetByID(c *gin.Context) {
 	}
 	// Note: if copier.Copy cannot assign a value to a field, add it here
 
-	response.Success(c, gin.H{"userExample": data})
+	response.Success(c, data)
 }
 
 // List of records by query parameters
