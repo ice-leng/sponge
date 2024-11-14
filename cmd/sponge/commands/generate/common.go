@@ -137,6 +137,14 @@ var (
 
 	configmapFileMark = "# todo generate server configuration code here"
 
+	webApiFile         = "internal/web/api.sub"
+	webApiFormFileMark = "// todo generate the apiForm fields code to here"
+
+	webViewFile       = "internal/web/view.sub"
+	webViewColumnMark = "// todo generate the viewColumn fields code to here"
+	webViewFormMark   = "// todo generate the viewForm fields code to here"
+	webViewRuleMark   = "// todo generate the viewRule fields code to here"
+
 	readmeFile    = "sponge/README.md"
 	makeFile      = "sponge/Makefile"
 	gitIgnoreFile = "sponge/.gitignore"

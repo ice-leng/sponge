@@ -1,0 +1,103 @@
+import request from "@/utils/request";
+
+const USEREXAMPLE_BASE_URL = "/api/v1/userExample";
+
+const UserExampleAPI = {
+  /** 获取分页数据 */
+  getPage(queryParams?: UserExamplePageQuery) {
+    return request<any, PageResult<UserExamplePageVO[]>>({
+      url: `${USEREXAMPLE_BASE_URL}/list`,
+      method: "get",
+      params: queryParams,
+    });
+  },
+  /**
+   * 获取表单数据
+   *
+   * @param id UserExampleID
+   * @returns UserExample表单数据
+   */
+  getFormData(id: number) {
+    return request<any, UserExampleForm>({
+      url: `${USEREXAMPLE_BASE_URL}/${id}`,
+      method: "get",
+    });
+  },
+
+  /** 添加*/
+  add(data: UserExampleForm) {
+    return request({
+      url: `${USEREXAMPLE_BASE_URL}`,
+      method: "post",
+      data: data,
+    });
+  },
+
+  /**
+   * 更新
+   *
+   * @param id UserExampleID
+   * @param data UserExample表单数据
+   */
+  update(id: number, data: UserExampleForm) {
+    return request({
+      url: `${USEREXAMPLE_BASE_URL}/${id}`,
+      method: "put",
+      data: data,
+    });
+  },
+
+  /**
+   * 删除
+   *
+   * @param id ID
+   */
+  deleteById(id: number) {
+    return request({
+      url: `${USEREXAMPLE_BASE_URL}/${id}`,
+      method: "delete",
+    });
+  },
+};
+
+export default UserExampleAPI;
+
+/** $分页查询参数 */
+export interface UserExamplePageQuery extends PageQuery {
+  startTime?: string;
+  endTime?: string;
+}
+
+/** 表单对象 */
+export interface UserExampleForm {
+// todo generate the apiForm fields code to here
+// delete the templates code start
+  /** 主键 */
+  id?: number;
+  /** 配置名称 */
+  name?: string;
+  /** 配置键 */
+  key?: string;
+  /** 配置值 */
+  value?: string;
+  /** 描述、备注 */
+  description?: string;
+// delete the templates code end
+}
+
+/** 分页对象 */
+export interface UserExamplePageVO {
+// todo generate the apiForm fields code to here
+// delete the templates code start
+  /** 主键 */
+  id?: number;
+  /** 配置名称 */
+  name?: string;
+  /** 配置键 */
+  key?: string;
+  /** 配置值 */
+  value?: string;
+  /** 描述、备注 */
+  description?: string;
+// delete the templates code end
+}

@@ -27,6 +27,7 @@ type Replacer interface {
 	GetSourcePath() string
 	SaveFiles() error
 	ReadFile(filename string) ([]byte, error)
+	SetWebFiles(filenames ...string)
 }
 
 // replacerInfo replacer information
@@ -39,6 +40,7 @@ type replacerInfo struct {
 	ignoreDirs        []string // ignore processed subdirectories
 	replacementFields []Field  // characters to be replaced when converting from a template file to a new file
 	outPath           string   // the directory where the file is saved after replacement
+	webFiles          []string
 }
 
 // New create replacer with local directory
@@ -312,6 +314,15 @@ func isForbiddenFile(file string, path string) bool {
 	return strings.Contains(file, path)
 }
 
+func (r *replacerInfo) webInArray(filename string) bool {
+	for _, webFile := range r.webFiles {
+		if strings.Contains(filename, webFile) {
+			return true
+		}
+	}
+	return false
+}
+
 func (r *replacerInfo) getNewFilePath(file string) string {
 	//var newFilePath string
 	//if r.isActual {
@@ -319,7 +330,18 @@ func (r *replacerInfo) getNewFilePath(file string) string {
 	//} else {
 	//	newFilePath = r.outPath + strings.Replace(file, r.path, "", 1)
 	//}
-	newFilePath := r.outPath + strings.Replace(file, r.path, "", 1)
+
+	fileName := strings.Replace(file, r.path, "", 1)
+	newFilePath := ""
+	if r.webInArray(fileName) {
+		index := strings.Index(fileName, "/web")
+		if index != -1 {
+			fileName = fileName[index:]
+		}
+		newFilePath = r.outPath + fileName
+	} else {
+		newFilePath = r.outPath + "/server" + fileName
+	}
 
 	if gofile.IsWindows() {
 		newFilePath = strings.ReplaceAll(newFilePath, "/", "\\")
@@ -346,6 +368,10 @@ func (r *replacerInfo) convertPathsDelimiter(filePaths ...string) []string {
 		return filePathsTmp
 	}
 	return filePaths
+}
+
+func (r *replacerInfo) SetWebFiles(filenames ...string) {
+	r.webFiles = append(r.webFiles, filenames...)
 }
 
 func saveToNewFile(filePath string, data []byte) error {

@@ -3,9 +3,9 @@ package generate
 import (
 	"errors"
 	"fmt"
-	"github.com/zhufuyi/sponge/cmd/sponge/global"
 	"math/rand"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/fatih/color"
@@ -201,6 +201,11 @@ func (g *httpGenerator) generateCode() (string, error) {
 		"sponge/.gitignore", "sponge/.golangci.yml", "sponge/go.mod", "sponge/go.sum",
 		"sponge/Jenkinsfile", "sponge/Makefile-for-http", "sponge/README.md",
 	}
+
+	webFiles := []string{
+		webApiFile, webViewFile,
+	}
+
 	if g.suitedMonoRepo {
 		subFiles = removeElements(subFiles, "sponge/go.mod", "sponge/go.sum")
 	}
@@ -278,12 +283,13 @@ func (g *httpGenerator) generateCode() (string, error) {
 	}
 
 	subFiles = append(subFiles, getSubFiles(selectFiles, replaceFiles)...)
+	subFiles = append(subFiles, webFiles...)
 
 	// ignore some directories and files
 	ignoreDirs := []string{"cmd/sponge"}
 	ignoreFiles := []string{"scripts/image-rpc-test.sh", "scripts/patch.sh", "scripts/protoc.sh", "scripts/proto-doc.sh"}
 
-	if g.isInit() {
+	if runtime.GOOS == "darwin" && g.isInit() {
 		// todo rpc
 		ignoreDirs = append(ignoreDirs, []string{
 			"cmd",
@@ -314,6 +320,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 		}...)
 	}
 
+	r.SetWebFiles(webFiles...)
 	r.SetSubDirsAndFiles(subDirs, subFiles...)
 	r.SetIgnoreSubDirs(ignoreDirs...)
 	r.SetIgnoreSubFiles(ignoreFiles...)
@@ -323,7 +330,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 	if err := r.SaveFiles(); err != nil {
 		return "", err
 	}
-	_ = saveGenInfo(g.moduleName, g.serverName, g.suitedMonoRepo, r.GetOutputDir())
+	_ = saveGenInfo(g.moduleName, g.serverName, g.suitedMonoRepo, r.GetOutputDir()+"/server")
 
 	return r.GetOutputDir(), nil
 }
@@ -356,6 +363,9 @@ func (g *httpGenerator) addFields(r replacer.Replacer) []replacer.Field {
 	//fields = append(fields, deleteFieldsMark(r, deploymentConfigFile, wellStartMark, wellEndMark)...)
 	fields = append(fields, replaceFileContentMark(r, readmeFile,
 		setReadmeTitle(g.moduleName, g.serverName, codeNameHTTP, g.suitedMonoRepo))...)
+	// web
+	fields = append(fields, deleteAllFieldsMark(r, webApiFile, startMark, endMark)...)
+	fields = append(fields, deleteAllFieldsMark(r, webViewFile, startMark, endMark)...)
 	fields = append(fields, []replacer.Field{
 		{ // replace the configuration of the *.yml file
 			Old: appConfigFileMark,
@@ -520,9 +530,41 @@ func (g *httpGenerator) addFields(r replacer.Replacer) []replacer.Field {
 			New: "userExample.go",
 		},
 		{
+			Old: webApiFormFileMark,
+			New: g.codes[parser.CodeWebApiForm],
+		},
+		{
+			Old: webViewColumnMark,
+			New: g.codes[parser.CodeWebViewColumn],
+		},
+		{
+			Old: webViewFormMark,
+			New: g.codes[parser.CodeWebViewForm],
+		},
+		{
+			Old: webViewRuleMark,
+			New: g.codes[parser.CodeWebViewRule],
+		},
+		{
 			Old:             "UserExample",
 			New:             g.codes[parser.TableName],
 			IsCaseSensitive: true,
+		},
+		{
+			Old: "userExample",
+			New: xstrings.FirstRuneToLower(g.codes[parser.TableName]),
+		},
+		{
+			Old: "USEREXAMPLE",
+			New: strings.ToUpper(g.codes[parser.TableName]),
+		},
+		{
+			Old: "api.sub",
+			New: "src/api/" + xstrings.FirstRuneToLower(g.codes[parser.TableName]) + ".ts",
+		},
+		{
+			Old: "view.sub",
+			New: "src/views/" + xstrings.FirstRuneToLower(g.codes[parser.TableName]) + "/index.vue",
 		},
 	}...)
 
@@ -535,7 +577,7 @@ func (g *httpGenerator) addFields(r replacer.Replacer) []replacer.Field {
 }
 
 func (g *httpGenerator) isInit() bool {
-	path := global.Path + "/go.mod"
+	path := g.outPath + "/server/go.mod"
 	_, err := os.Stat(path)
 	if err == nil {
 		return true // File exists

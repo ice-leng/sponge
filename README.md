@@ -22,7 +22,7 @@
 ```git
     git clone https://github.com/ice-leng/sponge.git
     cd sponge/cmd/sponge
-    go run ./main.go init
+    go run ./main.go upgrade
 ```
 
 ### 主要魔改功能有
@@ -32,7 +32,7 @@
 ```
 
 - 由于本人是mac 下载替换文件，那是真的全替换... 
-- 下载代码功能兼容，支持成，命令行 在那个目录，代码就在这个目录下生成
+- 下载代码功能兼容，支持成mac，命令行 在那个目录，代码就在这个目录下生成
 
 ```shell
     mkdir xxx

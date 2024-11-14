@@ -1,0 +1,329 @@
+<!-- template -->
+<template>
+  <div class="app-container">
+    <div class="search-bar">
+      <el-form ref="queryFormRef" :model="queryParams" :inline="true">
+        <el-form-item label="创建时间">
+          <el-date-picker
+            v-model="dateTimeRange"
+            :editable="false"
+            class="!w-[240px]"
+            type="daterange"
+            range-separator="~"
+            start-placeholder="开始时间"
+            end-placeholder="截止时间"
+            value-format="YYYY-MM-DD"
+          />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleQuery">
+            <template #icon>
+              <Search />
+            </template>
+            搜索
+          </el-button>
+          <el-button @click="handleResetQuery">
+            <template #icon>
+              <Refresh />
+            </template>
+            重置
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+
+    <el-card shadow="never" class="table-wrapper">
+      <template #header>
+        <el-button
+          v-hasPerm="['userExample:add']"
+          type="success"
+          @click="handleOpenDialog()"
+        >
+          <template #icon>
+            <Plus />
+          </template>
+          新增
+        </el-button>
+      </template>
+
+      <el-table
+        ref="dataTableRef"
+        v-loading="loading"
+        :data="pageData"
+        highlight-current-row
+        @selection-change="handleSelectionChange"
+      >
+        <el-table-column type="index" label="序号" width="60" />
+        // todo generate the viewColumn fields code to here
+        // delete the templates code start
+        <el-table-column
+          key="name"
+          label="配置名称"
+          prop="name"
+          min-width="100"
+        />
+        <el-table-column key="key" label="配置键" prop="key" min-width="100" />
+        <el-table-column
+          key="value"
+          label="配置值"
+          prop="value"
+          min-width="100"
+        />
+        <el-table-column
+          key="description"
+          label="描述"
+          prop="description"
+          min-width="100"
+        />
+        // delete the templates code end
+        <el-table-column fixed="right" label="操作" width="220">
+          <template #default="scope">
+            <el-button
+              v-hasPerm="['userExample:edit']"
+              type="primary"
+              size="small"
+              link
+              @click="handleOpenDialog(scope.row.id)"
+            >
+              <template #icon>
+                <Edit />
+              </template>
+              编辑
+            </el-button>
+            <el-button
+              v-hasPerm="['userExample:delete']"
+              type="danger"
+              size="small"
+              link
+              @click="handleDelete(scope.row.id)"
+            >
+              <template #icon>
+                <Delete />
+              </template>
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <pagination
+        v-if="total > 0"
+        v-model:total="total"
+        v-model:page="queryParams.page"
+        v-model:limit="queryParams.pageSize"
+        @pagination="handleQuery"
+      />
+    </el-card>
+
+    <!-- 表单弹窗 -->
+    <el-dialog
+      v-model="dialog.visible"
+      :title="dialog.title"
+      width="500px"
+      @close="handleCloseDialog"
+    >
+      <el-form
+        ref="dataFormRef"
+        :model="formData"
+        :rules="rules"
+        label-suffix=":"
+        label-width="100px"
+      >
+      // todo generate the viewForm fields code to here
+      // delete the templates code start
+        <el-form-item label="配置名称" prop="name">
+          <el-input
+            v-model="formData.name"
+            placeholder="请输入配置名称"
+            :maxlength="50"
+          />
+        </el-form-item>
+        <el-form-item label="配置键" prop="key">
+          <el-input
+            v-model="formData.key"
+            placeholder="请输入配置键"
+            :maxlength="50"
+          />
+        </el-form-item>
+        <el-form-item label="配置值" prop="value">
+          <el-input
+            v-model="formData.value"
+            placeholder="请输入配置值"
+            :maxlength="100"
+          />
+        </el-form-item>
+        <el-form-item label="描述" prop="description">
+          <el-input
+            v-model="formData.description"
+            :rows="4"
+            :maxlength="100"
+            show-word-limit
+            type="textarea"
+            placeholder="请输入描述"
+          />
+        </el-form-item>
+      // delete the templates code end
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="handleSubmit">确定</el-button>
+          <el-button @click="handleCloseDialog">取消</el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup lang="ts">
+defineOptions({
+  name: "UserExample",
+  inheritAttrs: false,
+});
+
+import UserExampleAPI, {
+  UserExamplePageVO,
+  UserExampleForm,
+  UserExamplePageQuery,
+} from "@/api/userExample";
+
+const queryFormRef = ref(ElForm);
+const dataFormRef = ref(ElForm);
+
+const loading = ref(false);
+const ids = ref<number[]>([]);
+const total = ref(0);
+
+const dateTimeRange = ref("");
+watch(dateTimeRange, (newVal) => {
+  if (newVal) {
+    queryParams.startTime = newVal[0];
+    queryParams.endTime = newVal[1];
+  }
+});
+const queryParams = reactive<UserExamplePageQuery>({
+  page: 1,
+  pageSize: 10,
+});
+
+// 表格数据
+const pageData = ref<UserExamplePageVO[]>([]);
+
+// 弹窗
+const dialog = reactive({
+  title: "",
+  visible: false,
+});
+// 表单
+const formData = reactive<UserExampleForm>({
+  id: undefined,
+});
+
+const rules = reactive({
+// todo generate the viewRule fields code to here
+// delete the templates code start
+  name: [{ required: true, message: "请输入系统配置名称", trigger: "blur" }],
+  key: [{ required: true, message: "请输入系统配置编码", trigger: "blur" }],
+  value: [{ required: true, message: "请输入系统配置值", trigger: "blur" }],
+// delete the templates code end
+});
+
+/** 查询 */
+function handleQuery() {
+  loading.value = true;
+  UserExampleAPI.getPage(queryParams)
+    .then((data) => {
+      pageData.value = data.list;
+      total.value = data.total;
+    })
+    .finally(() => {
+      loading.value = false;
+    });
+}
+/** 重置查询 */
+function handleResetQuery() {
+  queryFormRef.value.resetFields();
+  dateTimeRange.value = "";
+  queryParams.page = 1;
+  queryParams.startTime = undefined;
+  queryParams.endTime = undefined;
+  handleQuery();
+}
+
+/** 行复选框选中记录选中ID集合 */
+function handleSelectionChange(selection: any) {
+  ids.value = selection.map((item: any) => item.id);
+}
+
+/** 打开弹窗 */
+function handleOpenDialog(id?: number) {
+  dialog.visible = true;
+  if (id) {
+    dialog.title = "修改";
+    UserExampleAPI.getFormData(id).then((data) => {
+      Object.assign(formData, data);
+    });
+  } else {
+    dialog.title = "新增";
+    formData.id = undefined;
+  }
+}
+
+/** 提交表单 */
+function handleSubmit() {
+  dataFormRef.value.validate((valid: any) => {
+    if (valid) {
+      loading.value = true;
+      const id = formData.id;
+      if (id) {
+        UserExampleAPI.update(id, formData)
+          .then(() => {
+            ElMessage.success("修改成功");
+            handleCloseDialog();
+            handleResetQuery();
+          })
+          .finally(() => (loading.value = false));
+      } else {
+        UserExampleAPI.add(formData)
+          .then(() => {
+            ElMessage.success("新增成功");
+            handleCloseDialog();
+            handleResetQuery();
+          })
+          .finally(() => (loading.value = false));
+      }
+    }
+  });
+}
+
+/** 关闭弹窗 */
+function handleCloseDialog() {
+  dialog.visible = false;
+  dataFormRef.value.resetFields();
+  dataFormRef.value.clearValidate();
+  formData.id != undefined;
+}
+
+/** 删除 */
+function handleDelete(id: number) {
+  ElMessageBox.confirm("确认删除该项配置?", "警告", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    type: "warning",
+  }).then(
+    () => {
+      loading.value = true;
+      UserExampleAPI.deleteById(id)
+        .then(() => {
+          ElMessage.success("删除成功");
+          handleResetQuery();
+        })
+        .finally(() => (loading.value = false));
+    },
+    () => {}
+  );
+}
+
+onMounted(() => {
+  handleQuery();
+});
+</script>

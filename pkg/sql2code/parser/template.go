@@ -833,6 +833,67 @@ message List{{.TableName}}Reply {
 				}
 				return cli.UpdateByID(ctx, req)`
 
+	webApiFromTmpl    *template.Template
+	webApiFromTmplRaw = `
+{{- range .Fields}}
+  /**
+   * {{if .Comment}}{{.Comment}}{{else}}{{.JSONName}}{{end}}
+   */
+  {{.JSONName}}?: {{.GoType}};
+{{- end}}`
+
+	webViewColumnTmpl    *template.Template
+	webViewColumnTmplRaw = `
+{{- range .Fields}}
+{{if eq .JSONName "status"}}
+        <el-table-column label="状态" align="center" prop="status" width="100">
+          <template #default="scope">
+            <el-tag :type="scope.row.status == 1 ? 'success' : 'info'">
+             {{"{{"}} scope.row.status == 1 ? "正常" : "禁用" {{"}}"}}
+            </el-tag>
+          </template>
+        </el-table-column>
+{{else}}
+        <el-table-column
+          key="{{.JSONName}}"
+          label="{{if .Comment}}{{.Comment}}{{else}}{{.JSONName}}{{end}}"
+          prop="{{.JSONName}}"
+          width="180"
+        />
+{{end}}
+{{- end}}`
+
+	webViewFormTmpl    *template.Template
+	webViewFormTmplRaw = `
+{{- range .Fields}}
+{{if eq .JSONName "status"}}
+        <el-form-item label="状态" prop="status">
+          <el-switch
+	        v-model="formData.status"
+	        inline-prompt
+	        active-text="正常"
+	        inactive-text="禁用"
+	        :active-value="1"
+	        :inactive-value="0"
+          />
+        </el-form-item>
+{{else}}
+        <el-form-item label="{{.Comment}}" prop="{{.JSONName}}">
+          <el-input
+            v-model="formData.{{.JSONName}}"
+            placeholder="请输入{{if .Comment}}{{.Comment}}{{else}}{{.JSONName}}{{end}}"
+            :maxlength="100"
+          />
+        </el-form-item>
+{{end}}
+{{- end}}`
+
+	webViewRuleTmpl    *template.Template
+	webViewRuleTmplRaw = `
+{{- range .Fields}}
+  {{.JSONName}}: [{ required: true, message: "请输入{{.Comment}}", trigger: "blur" }],
+{{- end}}`
+
 	tmplParseOnce sync.Once
 )
 
@@ -908,7 +969,22 @@ func initTemplate() {
 		if err != nil {
 			errSum = errors.Wrap(errSum, "serviceStructTmplRaw:"+err.Error())
 		}
-
+		webApiFromTmpl, err = template.New("webApiFrom").Parse(webApiFromTmplRaw)
+		if err != nil {
+			errSum = errors.Wrap(errSum, "webApiFromTmplRaw:"+err.Error())
+		}
+		webViewColumnTmpl, err = template.New("webViewColumn").Parse(webViewColumnTmplRaw)
+		if err != nil {
+			errSum = errors.Wrap(errSum, "webViewColumnTmplRaw:"+err.Error())
+		}
+		webViewFormTmpl, err = template.New("webViewForm").Parse(webViewFormTmplRaw)
+		if err != nil {
+			errSum = errors.Wrap(errSum, "webViewFormTmplRaw:"+err.Error())
+		}
+		webViewRuleTmpl, err = template.New("webViewRule").Parse(webViewRuleTmplRaw)
+		if err != nil {
+			errSum = errors.Wrap(errSum, "webViewRuleTmplRaw:"+err.Error())
+		}
 		if errSum != nil {
 			panic(errSum)
 		}

@@ -34,7 +34,14 @@ const (
 	CodeTypeProto = "proto"
 	// CodeTypeService grpc service code
 	CodeTypeService = "service"
-
+	// CodeWebApiForm web api form ts
+	CodeWebApiForm = "apiForm"
+	// CodeWebViewColumn web view column
+	CodeWebViewColumn = "viewColumn"
+	// CodeWebViewForm web view form
+	CodeWebViewForm = "viewForm"
+	// CodeWebViewRule web view rule
+	CodeWebViewRule = "viewRule"
 	// DBDriverMysql mysql driver
 	DBDriverMysql = "mysql"
 	// DBDriverPostgresql postgresql driver
@@ -82,6 +89,11 @@ func ParseSQL(sql string, options ...Option) (map[string]string, error) {
 	modelJSONCodes := make([]string, 0, len(stmts))
 	importPath := make(map[string]struct{})
 	tableNames := make([]string, 0, len(stmts))
+	webApiFormCodes := make([]string, 0, len(stmts))
+	webViewColumnCodes := make([]string, 0, len(stmts))
+	webViewFormCodes := make([]string, 0, len(stmts))
+	webViewRuleCodes := make([]string, 0, len(stmts))
+
 	for _, stmt := range stmts {
 		if ct, ok := stmt.(*ast.CreateTableStmt); ok {
 			code, err2 := makeCode(ct, opt)
@@ -94,6 +106,10 @@ func ParseSQL(sql string, options ...Option) (map[string]string, error) {
 			protoFileCodes = append(protoFileCodes, code.protoFile)
 			serviceStructCodes = append(serviceStructCodes, code.serviceStruct)
 			modelJSONCodes = append(modelJSONCodes, code.modelJSON)
+			webApiFormCodes = append(webApiFormCodes, code.webApiForm)
+			webViewColumnCodes = append(webViewColumnCodes, code.webViewColumn)
+			webViewFormCodes = append(webViewFormCodes, code.webViewForm)
+			webViewRuleCodes = append(webViewRuleCodes, code.webViewRule)
 
 			tableName := ct.Table.Name.String()
 			tablePrefix := opt.TablePrefix
@@ -125,13 +141,17 @@ func ParseSQL(sql string, options ...Option) (map[string]string, error) {
 	}
 
 	var codesMap = map[string]string{
-		CodeTypeModel:   modelCode,
-		CodeTypeJSON:    strings.Join(modelJSONCodes, "\n\n"),
-		CodeTypeDAO:     strings.Join(updateFieldsCodes, "\n\n"),
-		CodeTypeHandler: strings.Join(handlerStructCodes, "\n\n"),
-		CodeTypeProto:   strings.Join(protoFileCodes, "\n\n"),
-		CodeTypeService: strings.Join(serviceStructCodes, "\n\n"),
-		TableName:       strings.Join(tableNames, ", "),
+		CodeTypeModel:     modelCode,
+		CodeTypeJSON:      strings.Join(modelJSONCodes, "\n\n"),
+		CodeTypeDAO:       strings.Join(updateFieldsCodes, "\n\n"),
+		CodeTypeHandler:   strings.Join(handlerStructCodes, "\n\n"),
+		CodeTypeProto:     strings.Join(protoFileCodes, "\n\n"),
+		CodeTypeService:   strings.Join(serviceStructCodes, "\n\n"),
+		TableName:         strings.Join(tableNames, ", "),
+		CodeWebApiForm:    strings.Join(webApiFormCodes, ""),
+		CodeWebViewColumn: strings.Join(webViewColumnCodes, ""),
+		CodeWebViewForm:   strings.Join(webViewFormCodes, ""),
+		CodeWebViewRule:   strings.Join(webViewRuleCodes, ""),
 	}
 
 	return codesMap, nil
@@ -319,6 +339,10 @@ type codeText struct {
 	handlerStruct string
 	protoFile     string
 	serviceStruct string
+	webApiForm    string
+	webViewColumn string
+	webViewForm   string
+	webViewRule   string
 }
 
 // nolint
@@ -518,6 +542,26 @@ func makeCode(stmt *ast.CreateTableStmt, opt options) (*codeText, error) {
 		return nil, err
 	}
 
+	webApiFormCode, err := getWebApiFormFieldsCode(data)
+	if err != nil {
+		return nil, err
+	}
+
+	webViewColumnCode, err := getWebViewFieldsCode(data, webViewColumnTmpl)
+	if err != nil {
+		return nil, err
+	}
+
+	webViewFormCode, err := getWebViewFieldsCode(data, webViewFormTmpl)
+	if err != nil {
+		return nil, err
+	}
+
+	webViewRuleCode, err := getWebViewFieldsCode(data, webViewRuleTmpl)
+	if err != nil {
+		return nil, err
+	}
+
 	return &codeText{
 		importPaths:   importPaths,
 		modelStruct:   modelStructCode,
@@ -526,6 +570,10 @@ func makeCode(stmt *ast.CreateTableStmt, opt options) (*codeText, error) {
 		handlerStruct: handlerStructCode,
 		protoFile:     protoFileCode,
 		serviceStruct: serviceStructCode,
+		webApiForm:    webApiFormCode,
+		webViewColumn: webViewColumnCode,
+		webViewForm:   webViewFormCode,
+		webViewRule:   webViewRuleCode,
 	}, nil
 }
 
@@ -680,6 +728,49 @@ func getUpdateFieldsCode(data tmplData, isEmbed bool) (string, error) {
 
 	buf := new(bytes.Buffer)
 	err := updateFieldTmpl.Execute(buf, data)
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func goTypeToTs(fields []tmplField, reservedColumns ...string) []tmplField {
+	var newFields []tmplField
+	for _, field := range fields {
+		if isIgnoreFields(field.ColName, reservedColumns...) {
+			continue
+		}
+		switch field.GoType {
+		case "int", "uint", "float32", "float64", "int64", "uint64":
+			field.GoType = "number"
+		case "time.Time", "*time.Time":
+			field.GoType = "Date"
+		case goTypeInts, "[]int64", "[]int32":
+			field.GoType = "number[]"
+		case "[]byte", jsonTypeName:
+			field.GoType = "string"
+		}
+		newFields = append(newFields, field)
+	}
+	return newFields
+}
+
+func getWebApiFormFieldsCode(data tmplData) (string, error) {
+	data.Fields = goTypeToTs(data.Fields, columnID)
+
+	buf := new(bytes.Buffer)
+	err := webApiFromTmpl.Execute(buf, data)
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func getWebViewFieldsCode(data tmplData, tmpl *template.Template) (string, error) {
+	data.Fields = goTypeToTs(data.Fields)
+
+	buf := new(bytes.Buffer)
+	err := tmpl.Execute(buf, data)
 	if err != nil {
 		return "", err
 	}
