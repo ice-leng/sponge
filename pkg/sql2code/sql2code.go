@@ -223,7 +223,16 @@ func Generate(args *Args) (map[string]string, error) {
 
 	opt := setOptions(args)
 
-	return parser.ParseSQL(sql, opt...)
+	result, sqlErr := parser.ParseSQL(sql, opt...)
+
+	// mysql add menu permission
+	if args.DBDriver == parser.DBDriverMysql {
+		dsn := utils.AdaptiveMysqlDsn(args.DBDsn)
+		if menuErr := parser.AddMenu(dsn, result[parser.TableName], result[parser.TableComment]); menuErr != nil {
+			return nil, menuErr
+		}
+	}
+	return result, sqlErr
 }
 
 func (a *Args) FormatDsn() {

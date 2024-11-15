@@ -21,7 +21,8 @@ import (
 
 const (
 	// TableName table name
-	TableName = "__table_name__"
+	TableName    = "__table_name__"
+	TableComment = "__table_comment__"
 	// CodeTypeModel model code
 	CodeTypeModel = "model"
 	// CodeTypeJSON json code
@@ -93,6 +94,7 @@ func ParseSQL(sql string, options ...Option) (map[string]string, error) {
 	webViewColumnCodes := make([]string, 0, len(stmts))
 	webViewFormCodes := make([]string, 0, len(stmts))
 	webViewRuleCodes := make([]string, 0, len(stmts))
+	tableComments := make([]string, 0, len(stmts))
 
 	for _, stmt := range stmts {
 		if ct, ok := stmt.(*ast.CreateTableStmt); ok {
@@ -110,6 +112,7 @@ func ParseSQL(sql string, options ...Option) (map[string]string, error) {
 			webViewColumnCodes = append(webViewColumnCodes, code.webViewColumn)
 			webViewFormCodes = append(webViewFormCodes, code.webViewForm)
 			webViewRuleCodes = append(webViewRuleCodes, code.webViewRule)
+			tableComments = append(tableComments, code.tableComment)
 
 			tableName := ct.Table.Name.String()
 			tablePrefix := opt.TablePrefix
@@ -147,7 +150,8 @@ func ParseSQL(sql string, options ...Option) (map[string]string, error) {
 		CodeTypeHandler:   strings.Join(handlerStructCodes, "\n\n"),
 		CodeTypeProto:     strings.Join(protoFileCodes, "\n\n"),
 		CodeTypeService:   strings.Join(serviceStructCodes, "\n\n"),
-		TableName:         strings.Join(tableNames, ", "),
+		TableName:         strings.Join(tableNames, ""),
+		TableComment:      strings.Join(tableComments, ""),
 		CodeWebApiForm:    strings.Join(webApiFormCodes, ""),
 		CodeWebViewColumn: strings.Join(webViewColumnCodes, ""),
 		CodeWebViewForm:   strings.Join(webViewFormCodes, ""),
@@ -343,6 +347,7 @@ type codeText struct {
 	webViewColumn string
 	webViewForm   string
 	webViewRule   string
+	tableComment  string
 }
 
 // nolint
@@ -574,6 +579,7 @@ func makeCode(stmt *ast.CreateTableStmt, opt options) (*codeText, error) {
 		webViewColumn: webViewColumnCode,
 		webViewForm:   webViewFormCode,
 		webViewRule:   webViewRuleCode,
+		tableComment:  data.Comment,
 	}, nil
 }
 
