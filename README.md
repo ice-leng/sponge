@@ -9,24 +9,27 @@
 [![Go Report](https://goreportcard.com/badge/github.com/go-dev-frame/sponge)](https://goreportcard.com/report/github.com/go-dev-frame/sponge)
 [![codecov](https://codecov.io/gh/go-dev-frame/sponge/branch/main/graph/badge.svg)](https://codecov.io/gh/go-dev-frame/sponge)
 [![Go Reference](https://pkg.go.dev/badge/github.com/go-dev-frame/sponge.svg)](https://pkg.go.dev/github.com/go-dev-frame/sponge)
-[![Go](https://github.com/go-dev-frame/sponge/workflows/Go/badge.svg?branch=main)](https://github.com/go-dev-frame/sponge/actions)
+[![Go](https://github.com/go-dev-frame/sponge/workflows/Go/badge.svg)](https://github.com/go-dev-frame/sponge/actions)
 [![Awesome Go](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/avelino/awesome-go)
 [![License: MIT](https://img.shields.io/github/license/go-dev-frame/sponge)](https://img.shields.io/github/license/go-dev-frame/sponge)
 
 </div>
 
-**sponge** is a powerful `Go` development framework. Its core concept revolves around reverse-engineering modular code by parsing `JSON`, `SQL`, or `Protobuf` files. The generated code can be flexibly and seamlessly assembled into various types of complete backend services (similar to the characteristics of sponge cells, where disassembled sponge cells can automatically recombine into a new sponge). Sponge provides an all-in-one solution for project development, covering code generation, development, testing, API documentation, and deployment, significantly enhancing development efficiency, reducing complexity, and enabling high-quality projects with a "low-code approach".
+**Sponge** is a powerful `Go` development framework. Its core concept revolves around reverse-engineering modular code by parsing `JSON`, `SQL`, or `Protobuf` files. The generated code can be flexibly and seamlessly assembled into various types of complete backend services (`similar to the characteristics of sponge cells, where disassembled sponge cells can automatically recombine into a new sponge`).
+
+Sponge provides an all-in-one solution for project development, covering code generation, development, testing, API documentation, and deployment, significantly enhancing development efficiency, reducing complexity, and enabling high-quality projects with a "low-code approach".
 
 <br>
 
-### Use Cases
+### Applicable scenarios
 
 Sponge is suitable for quickly developing various high-performance backend services, including but not limited to:
 
 - `Web` services (gin);
 - `gRPC` services;
 - `HTTP+gRPC` hybrid services;
-- `gRPC Gateway API` services.
+- `gRPC Gateway API` services;
+- cloud-native microservices.
 
 Additionally, developers can use custom templates to generate various types of code to meet specific business needs.
 
@@ -52,6 +55,8 @@ Additionally, developers can use custom templates to generate various types of c
     - Configuration files;
     - Test code;
     - Build and deployment scripts, etc.
+
+4. **Generate code on the page, simple and easy to use**
 
 <br>
 
@@ -79,54 +84,16 @@ Additionally, developers can use custom templates to generate various types of c
 
 <br>
 
-### Sponge Generates the Code Framework
+### Main Features
 
-Sponge supports generating code using both built-in templates and custom templates, as shown in the diagrams below.
-
-1. The code generation framework based on Sponge's built-in templates is shown below. There are two approaches: SQL and Protobuf.
-
-<p align="center">
-<img width="1500px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/sponge-framework.png">
-</p>
-
-<br>
-
-2. The code generation framework based on custom templates is shown below. There are three approaches: JSON, SQL, and Protobuf.
-
-<p align="center">
-<img width="1200px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/template-framework.png">
-</p>
-
-<br>
-
-### Microservice framework
-
-Sponge supports creating six types of backend services, all based on microservice architecture. The diagram below illustrates a typical layered microservice structure, featuring high performance, scalability, and built-in service governance capabilities.
-
-<p align="center">
-<img width="1000px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/microservices-framework.png">
-</p>
-
-<br>
-
-Performance testing of http and grpc service code created by the microservices framework: 50 concurrent, 1 million total requests.
-
-![http-server](https://raw.githubusercontent.com/zhufuyi/microservices_framework_benchmark/main/test/assets/http-server.png)
-
-![grpc-server](https://raw.githubusercontent.com/zhufuyi/microservices_framework_benchmark/main/test/assets/grpc-server.png)
-
-Click to view the [**test code**](https://github.com/zhufuyi/microservices_framework_benchmark).
-
-<br>
-
-### Key Features
+Sponge has built-in rich features (for on-demand use):
 
 - Web framework [gin](https://github.com/gin-gonic/gin)
 - RPC framework [grpc](https://github.com/grpc/grpc-go)
 - Configuration parsing [viper](https://github.com/spf13/viper)
 - Logging component [zap](https://github.com/uber-go/zap)
-- Database ORM component [gorm](https://github.com/go-gorm/gorm), [mongo-go-driver](https://github.com/mongodb/mongo-go-driver)
-- Cache component [go-redis](https://github.com/go-redis/redis), [ristretto](https://github.com/dgraph-io/ristretto)
+- ORM framework [gorm](https://github.com/go-gorm/gorm), [mongo-go-driver](https://github.com/mongodb/mongo-go-driver)
+- Cache [go-redis](https://github.com/go-redis/redis), [ristretto](https://github.com/dgraph-io/ristretto)
 - Automated API documentation [swagger](https://github.com/swaggo/swag), [protoc-gen-openapiv2](https://github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2)
 - Authentication [jwt](https://github.com/golang-jwt/jwt)
 - Websocket [gorilla/websocket](https://github.com/gorilla/websocket)
@@ -150,61 +117,103 @@ Click to view the [**test code**](https://github.com/zhufuyi/microservices_frame
 
 <br>
 
+### Generates Code Framework
+
+Sponge supports generating code using both built-in templates and custom templates, as shown in the diagrams below.
+
+1. The code generation framework based on Sponge's built-in templates is shown below. There are two approaches: SQL and Protobuf.
+
+<p align="center">
+<img width="1500px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/sponge-framework.png">
+</p>
+
+<br>
+
+2. The code generation framework based on custom templates is shown below. There are three approaches: JSON, SQL, and Protobuf.
+
+<p align="center">
+<img width="1200px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/template-framework.png">
+</p>
+
+<br>
+
+### Microservice framework
+
+Five of the six types of back-end services created by sponge are microservice architectures. The diagram below illustrates a typical layered microservice structure, featuring high performance, scalability, and built-in service governance capabilities.
+
+<p align="center">
+<img width="1000px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/microservices-framework.png">
+</p>
+
+<br>
+
+Performance testing of http and grpc service code created by the microservices framework: 50 concurrent, 1 million total requests.
+
+![http-server](https://raw.githubusercontent.com/zhufuyi/microservices_framework_benchmark/main/test/assets/http-server.png)
+
+![grpc-server](https://raw.githubusercontent.com/zhufuyi/microservices_framework_benchmark/main/test/assets/grpc-server.png)
+
+Click to view the [**test code**](https://github.com/zhufuyi/microservices_framework_benchmark).
+
+<br>
+
 ### Project Code Directory Structure
 
 The project code directory structure created by sponge follows the [project-layout](https://github.com/golang-standards/project-layout).
 
-Here is the directory structure for the generated `monolithic application single repository (monolith)` or `microservice multi-repository (multi-repo)` code:
+Sponge supports creating three types of project code structures: `Monolithic application monorepo (monolith)`, `Microservices multi-repo (multi-repo)`, and `Microservices monorepo (mono-repo)`.
 
-```bash
-.
-├── api            # Protobuf files and generated * pb.go directory
-├── assets         # Store various static resources, such as images, markdown files, etc.
-├── cmd            # Program entry directory
-├── configs        # Directory for configuration files
-├── deployments    # Bare metal, docker, k8s deployment script directory.
-├── docs           # Directory for API interface Swagger documentation.
-├── internal       # Directory for business logic code.
-│    ├── cache        # Cache directory wrapped around business logic.
-│    ├── config       # Directory for Go structure configuration files.
-│    ├── dao          # Data access directory.
-│    ├── database     # database directory.
-│    ├── ecode        # Directory for system error codes and custom business error codes.
-│    ├── handler      # Directory for implementing HTTP business functionality (specific to web services).
-│    ├── model        # Database model directory.
-│    ├── routers      # HTTP routing directory.
-│    ├── rpcclient    # Directory for client-side code that connects to grpc services.
-│    ├── server       # Directory for creating services, including HTTP and grpc.
-│    ├── service      # Directory for implementing grpc business functionality (specific to grpc services).
-│    └── types        # Directory for defining request and response parameter structures for HTTP.
-├── pkg            # Directory for shared libraries.
-├── scripts        # Directory for scripts.
-├── test           # Directory for scripts required for testing services  and test SQL.
-├── third_party    # Directory for third-party protobuf files or external helper programs.
-├── Makefile       # Develop, test, deploy related command sets .
-├── go.mod         # Go module dependencies and version control file.
-└── go.sum         # Go module dependencies key and checksum file.
-```
+1. The code directory structure for creating a `Monolithic application monorepo (monolith)` or `Microservices multi-repo (multi-repo)` is as follows:
+
+   ```bash
+   .
+   ├── api            # Protobuf files and generated * pb.go directory
+   ├── assets         # Store various static resources, such as images, markdown files, etc.
+   ├── cmd            # Program entry directory
+   ├── configs        # Directory for configuration files
+   ├── deployments    # Bare metal, docker, k8s deployment script directory.
+   ├── docs           # Directory for API interface Swagger documentation.
+   ├── internal       # Directory for business logic code.
+   │    ├── cache        # Cache directory wrapped around business logic.
+   │    ├── config       # Directory for Go structure configuration files.
+   │    ├── dao          # Data access directory.
+   │    ├── database     # database directory.
+   │    ├── ecode        # Directory for system error codes and custom business error codes.
+   │    ├── handler      # Directory for implementing HTTP business functionality (specific to web services).
+   │    ├── model        # Database model directory.
+   │    ├── routers      # HTTP routing directory.
+   │    ├── rpcclient    # Directory for client-side code that connects to grpc services.
+   │    ├── server       # Directory for creating services, including HTTP and grpc.
+   │    ├── service      # Directory for implementing grpc business functionality (specific to grpc services).
+   │    └── types        # Directory for defining request and response parameter structures for HTTP.
+   ├── pkg            # Directory for shared libraries.
+   ├── scripts        # Directory for scripts.
+   ├── test           # Directory for scripts required for testing services  and test SQL.
+   ├── third_party    # Directory for third-party protobuf files or external helper programs.
+   ├── Makefile       # Develop, test, deploy related command sets .
+   ├── go.mod         # Go module dependencies and version control file.
+   └── go.sum         # Go module dependencies key and checksum file.
+   ```
 
 <br>
 
-Here is the directory structure for the generated `microservice monolithic repository (mono-repo)` code (also known as large repository directory structure):
+2. The code directory structure for creating a `Microservices monorepo (mono-repo)` (large repository code directory structure) is as follows:
 
-```bash
-.
-├── api
-│    ├── server1       # Protobuf files and generated *pb.go directory for service 1.
-│    ├── server2       # Protobuf files and generated *pb.go directory for service 2.
-│    ├── server3       # Protobuf files and generated *pb.go directory for service 3.
-│    └── ...
-├── server1        # Code directory for Service 1, it has a similar structure to the microservice multi repo directory.
-├── server2        # Code directory for Service 2, it has a similar structure to the microservice multi repo directory.
-├── server3        # Code directory for Service 3, it has a similar structure to the microservice multi repo directory.
-├── ...
-├── third_party    # Third-party protobuf files.
-├── go.mod         # Go module dependencies and version control file.
-└── go.sum         # Go module dependencies' checksums and hash keys.
-```
+   ```bash
+   .
+   ├── api
+   │    ├── server1       # Protobuf files and generated *pb.go directory for service 1.
+   │    ├── server2       # Protobuf files and generated *pb.go directory for service 2.
+   │    ├── server3       # Protobuf files and generated *pb.go directory for service 3.
+   │    └── ...
+   ├── server1        # Code directory for Service 1, it has a similar structure to the microservice multi repo directory.
+   ├── server2        # Code directory for Service 2, it has a similar structure to the microservice multi repo directory.
+   ├── server3        # Code directory for Service 3, it has a similar structure to the microservice multi repo directory.
+   ├── ...
+   ├── third_party    # Third-party protobuf files.
+   ├── go.mod         # Go module dependencies and version control file.
+   └── go.sum         # Go module dependencies' checksums and hash keys.
+   ```
 
 <br>
 

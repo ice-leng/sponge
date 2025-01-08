@@ -28,7 +28,7 @@ func main() {
     }
     defer redisCli.Close()
 
-    locker, err := NewRedisLock(redisCli, "test_lock")
+    locker, err := dlock.NewRedisLock(redisCli, "test_lock")
     if err != nil {
         panic(err)
     }

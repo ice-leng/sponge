@@ -2,17 +2,18 @@
 
 <br>
 
-**sponge** 是一个强大的 `Go` 开发框架，其核心理念是通过解析 `JSON`、`SQL` 或 `Protobuf` 文件逆向生成模块化的代码，这些代码可以灵活、无缝地组合成多种类型的完整后端服务(类似海绵细胞的特性，打散的海绵细胞能自动重新组合成新的海绵)。sponge 提供一站式项目开发解决方案，涵盖代码生成、开发、测试、API 文档生成和部署，大幅提升开发效率，降低开发难度，实现以"低代码"方式构建高质量项目。
+**sponge** 是一个强大的 `Go` 开发框架，其核心理念是通过解析 `JSON`、`SQL` 或 `Protobuf` 文件逆向生成模块化的代码，这些代码可以灵活、无缝地组合成多种类型的完整后端服务（`类似海绵细胞的特性，打散的海绵细胞能自动重新组合成新的海绵`）。sponge 提供一站式项目开发解决方案，涵盖代码生成、开发、测试、API 文档生成和部署，大幅提升开发效率，降低开发难度，实现以"低代码"方式构建高质量项目。
 
 <br>
 
 ### 适用场景
 
 sponge 适用于快速开发各种高性能后端服务，包括但不限于：
-- `Web` 服务；
+- `Web` 服务 (gin)；
 - `gRPC` 服务；
 - `HTTP+gRPC` 混合服务；
-- `gRPC Gateway API` 服务。
+- `gRPC Gateway API` 服务；
+- 云原生微服务；
 
 此外，开发者还可以通过自定义模板，生成满足业务需求的各类代码。
 
@@ -38,6 +39,8 @@ sponge 适用于快速开发各种高性能后端服务，包括但不限于：
     - 配置文件；
     - 测试代码；
     - 构建和部署脚本等。
+
+4. **在页面生成代码，简单易用**
 
 <br>
 
@@ -65,62 +68,22 @@ sponge 适用于快速开发各种高性能后端服务，包括但不限于：
 
 <br>
 
-### 生成代码的框架图
-
-sponge 支持基于自带模板和自定义模板两种方式生成你的项目所需的代码，下面是两种生成代码的框架图。
-
-1. sponge 基于自带模板生成代码框架如下图所示，共有 sql 和 protobuf 两种方式生成代码。
-
-<p align="center">
-<img width="1500px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/sponge-framework.png">
-</p>
-
-<br>
-
-2. sponge 基于自定义模板生成代码框架如下图所示，共有 json、sql、protobuf 三种方式生成代码。
-
-<p align="center">
-<img width="1200px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/template-framework.png">
-</p>
-
-<br>
-
-### 微服务框架
-
-sponge 支持创建 6 种类型的后端服务，均为微服务架构。下图展示了典型的微服务分层结构，具备高性能、高扩展性，并内置常用的服务治理功能。
-
-<p align="center">
-<img width="1000px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/microservices-framework.png">
-</p>
-
-<br>
-
-创建的http和grpc服务代码的性能测试： 50个并发，总共100万个请求。
-
-![http-server](https://raw.githubusercontent.com/zhufuyi/microservices_framework_benchmark/main/test/assets/http-server.png)
-
-![grpc-server](https://raw.githubusercontent.com/zhufuyi/microservices_framework_benchmark/main/test/assets/grpc-server.png)
-
-点击查看[**测试代码**](https://github.com/zhufuyi/microservices_framework_benchmark)。
-
-<br>
-
 ### 主要功能
 
-sponge包含丰富的组件(按需使用)：
+sponge 内置了丰富的功能(按需使用)：
 
 - Web 框架 [gin](https://github.com/gin-gonic/gin)
 - RPC 框架 [grpc](https://github.com/grpc/grpc-go)
 - 配置解析 [viper](https://github.com/spf13/viper)
 - 日志 [zap](https://github.com/uber-go/zap)
-- 数据库组件 [gorm](https://github.com/go-gorm/gorm), [mongo-go-driver](https://github.com/mongodb/mongo-go-driver)
-- 缓存组件 [go-redis](https://github.com/go-redis/redis), [ristretto](https://github.com/dgraph-io/ristretto)
+- ORM 框架 [gorm](https://github.com/go-gorm/gorm), [mongo-go-driver](https://github.com/mongodb/mongo-go-driver)
+- 缓存 [go-redis](https://github.com/go-redis/redis), [ristretto](https://github.com/dgraph-io/ristretto)
 - 自动化api文档 [swagger](https://github.com/swaggo/swag), [protoc-gen-openapiv2](https://github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2)
 - 鉴权 [jwt](https://github.com/golang-jwt/jwt)
 - 校验 [validator](https://github.com/go-playground/validator)
 - Websocket [gorilla/websocket](https://github.com/gorilla/websocket)
 - 定时任务 [cron](https://github.com/robfig/cron)
-- 消息队列组件 [rabbitmq](https://github.com/rabbitmq/amqp091-go), [kafka](https://github.com/IBM/sarama)
+- 消息队列 [rabbitmq](https://github.com/rabbitmq/amqp091-go), [kafka](https://github.com/IBM/sarama)
 - 分布式事务管理器 [dtm](https://github.com/dtm-labs/dtm)
 - 分布式锁 [dlock](https://github.com/go-dev-frame/sponge/tree/main/pkg/dlock)
 - 自适应限流 [ratelimit](https://github.com/go-dev-frame/sponge/tree/main/pkg/shield/ratelimit)
@@ -138,60 +101,102 @@ sponge包含丰富的组件(按需使用)：
 
 <br>
 
+### 生成代码的框架
+
+sponge 支持基于自带模板和自定义模板两种方式生成你的项目所需的代码，下面是两种生成代码的框架图。
+
+1. sponge 基于自带模板生成代码框架如下图所示，支持 sql 和 protobuf 两种方式。
+
+<p align="center">
+<img width="1500px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/sponge-framework.png">
+</p>
+
+<br>
+
+2. sponge 基于自定义模板生成代码框架如下图所示，支持 json、sql、protobuf 三种方式。
+
+<p align="center">
+<img width="1200px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/template-framework.png">
+</p>
+
+<br>
+
+### 微服务框架
+
+sponge 创建的 6 种类型的后端服务中有 5 种属于微服务架构。下图展示了典型的微服务分层结构，具备高性能、高扩展性，并内置常用的服务治理功能。
+
+<p align="center">
+<img width="1000px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/microservices-framework.png">
+</p>
+
+<br>
+
+创建的http和grpc服务代码的性能测试： 50个并发，总共100万个请求。
+
+![http-server](https://raw.githubusercontent.com/zhufuyi/microservices_framework_benchmark/main/test/assets/http-server.png)
+
+![grpc-server](https://raw.githubusercontent.com/zhufuyi/microservices_framework_benchmark/main/test/assets/grpc-server.png)
+
+点击查看[**测试代码**](https://github.com/zhufuyi/microservices_framework_benchmark)。
+
+<br>
+
 ### 目录结构
 
-生成的服务代码目录结构遵循 [project-layout](https://github.com/golang-standards/project-layout)。
+sponge 创建的服务代码目录结构遵循 [project-layout](https://github.com/golang-standards/project-layout)。
 
-这是生成的`单体应用单体仓库(monolith)`或`微服务多仓库(multi-repo)`代码目录结构：
+sponge 支持创建 `单体应用单体仓库(monolith)`、`微服务多仓库(multi-repo)`、`微服务单体仓库(mono-repo)`三种类型的项目代码结构。
+
+1. 创建`单体应用单体仓库(monolith)`或`微服务多仓库(multi-repo)`代码目录结构如下：
 
 ```bash
-.
-├── api            # protobuf文件和生成的*pb.go目录
-├── assets         # 其他与资源库一起使用的资产(图片、logo等)目录
-├── cmd            # 程序入口目录
-├── configs        # 配置文件的目录
-├── deployments    # 裸机、docker、k8s部署脚本目录
-├── docs           # 设计文档和界面文档目录
-├── internal       # 业务逻辑代码目录
-│    ├── cache        # 基于业务包装的缓存目录
-│    ├── config       # Go结构的配置文件目录
-│    ├── dao          # 数据访问目录
-│    ├── database     # 数据库目录
-│    ├── ecode        # 自定义业务错误代码目录
-│    ├── handler      # http的业务功能实现目录
-│    ├── model        # 数据库模型目录
-│    ├── routers      # http路由目录
-│    ├── rpcclient    # 连接grpc服务的客户端目录
-│    ├── server       # 服务入口，包括http、grpc等
-│    ├── service      # grpc的业务功能实现目录
-│    └── types        # http的请求和响应类型目录
-├── pkg            # 外部应用程序可以使用的库目录
-├── scripts        # 执行脚本目录
-├── test           # 额外的外部测试程序和测试数据
-├── third_party    # 依赖第三方protobuf文件或其他工具的目录
-├── Makefile       # 开发、测试、部署相关的命令集合
-├── go.mod         # go 模块依赖关系和版本控制文件
-└── go.sum         # go 模块依赖项的密钥和校验文件
+   .
+   ├── api            # protobuf文件和生成的*pb.go目录
+   ├── assets         # 其他与资源库一起使用的资产(图片、logo等)目录
+   ├── cmd            # 程序入口目录
+   ├── configs        # 配置文件的目录
+   ├── deployments    # 裸机、docker、k8s部署脚本目录
+   ├── docs           # 设计文档和界面文档目录
+   ├── internal       # 业务逻辑代码目录
+   │    ├── cache        # 基于业务包装的缓存目录
+   │    ├── config       # Go结构的配置文件目录
+   │    ├── dao          # 数据访问目录
+   │    ├── database     # 数据库目录
+   │    ├── ecode        # 自定义业务错误代码目录
+   │    ├── handler      # http的业务功能实现目录
+   │    ├── model        # 数据库模型目录
+   │    ├── routers      # http路由目录
+   │    ├── rpcclient    # 连接grpc服务的客户端目录
+   │    ├── server       # 服务入口，包括http、grpc等
+   │    ├── service      # grpc的业务功能实现目录
+   │    └── types        # http的请求和响应类型目录
+   ├── pkg            # 外部应用程序可以使用的库目录
+   ├── scripts        # 执行脚本目录
+   ├── test           # 额外的外部测试程序和测试数据
+   ├── third_party    # 依赖第三方protobuf文件或其他工具的目录
+   ├── Makefile       # 开发、测试、部署相关的命令集合
+   ├── go.mod         # go 模块依赖关系和版本控制文件
+   └── go.sum         # go 模块依赖项的密钥和校验文件
 ```
 
 <br>
 
-这是生成的`微服务单体仓库(mono-repo)`代码目录结构(也就是大仓库代码目录结构)：
+2. 创建`微服务单体仓库(mono-repo)`代码目录结构(大仓库代码目录结构)如下：
 
 ```bash
-.
-├── api
-│    ├── server1       # 服务1的protobuf文件和生成的*pb.go目录
-│    ├── server2       # 服务2的protobuf文件和生成的*pb.go目录
-│    ├── server3       # 服务3的protobuf文件和生成的*pb.go目录
-│    └── ...
-├── server1        # 服务1的代码目录，与微服务多仓库(multi-repo)目录结构基本一样
-├── server2        # 服务2的代码目录，与微服务多仓库(multi-repo)目录结构基本一样
-├── server3        # 服务3的代码目录，与微服务多仓库(multi-repo)目录结构基本一样
-├── ...
-├── third_party    # 依赖的第三方protobuf文件
-├── go.mod         # go 模块依赖关系和版本控制文件
-└── go.sum         # go 模块依赖项的密钥和校验和文件
+   .
+   ├── api
+   │    ├── server1       # 服务1的protobuf文件和生成的*pb.go目录
+   │    ├── server2       # 服务2的protobuf文件和生成的*pb.go目录
+   │    ├── server3       # 服务3的protobuf文件和生成的*pb.go目录
+   │    └── ...
+   ├── server1        # 服务1的代码目录，与微服务多仓库(multi-repo)目录结构基本一样
+   ├── server2        # 服务2的代码目录，与微服务多仓库(multi-repo)目录结构基本一样
+   ├── server3        # 服务3的代码目录，与微服务多仓库(multi-repo)目录结构基本一样
+   ├── ...
+   ├── third_party    # 依赖的第三方protobuf文件
+   ├── go.mod         # go 模块依赖关系和版本控制文件
+   └── go.sum         # go 模块依赖项的密钥和校验和文件
 ```
 
 <br>
