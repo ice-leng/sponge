@@ -13,6 +13,7 @@
 
     // case 1: specify options in dsn
     db, err := mgo.Init("mongodb://root:123456@192.168.3.37:27017/account?socketTimeoutMS=30000&maxPoolSize=100&minPoolSize=1&maxConnIdleTimeMS=300000")
+
     // case 2: specify options in code
     db, err := mgo.Init("mongodb://root:123456@192.168.3.37:27017/account",
         mgo.WithOption().SetMaxPoolSize(100),

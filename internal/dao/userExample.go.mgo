@@ -206,7 +206,7 @@ func (d *userExampleDao) GetByID(ctx context.Context, id string) (*model.UserExa
 // query parameters (not required):
 //
 //	name: column name, if value is of type objectId, the suffix :oid must be added, e.g. order_id:oid
-//	exp: expressions, which default is "=",  support =, !=, >, >=, <, <=, like, in
+//	exp: expressions, which default is "=",  support =, !=, >, >=, <, <=, like, in, notin
 //	value: column value, if exp=in, multiple values are separated by commas
 //	logic: logical type, default value is "and", support &, and, ||, or
 //

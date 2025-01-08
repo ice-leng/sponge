@@ -200,7 +200,7 @@ func (d *{{.TableNameCamelFCL}}Dao) GetBy{{.ColumnNameCamel}}(ctx context.Contex
 // query parameters (not required):
 //
 //	name: column name
-//	exp: expressions, which default is "=",  support =, !=, >, >=, <, <=, like, in
+//	exp: expressions, which default is "=",  support =, !=, >, >=, <, <=, like, in, notin, isnull, isnotnull
 //	value: column value, if exp=in, multiple values are separated by commas
 //	logic: logical type, default value is "and", support &, and, ||, or
 //
@@ -269,7 +269,7 @@ func (d *{{.TableNameCamelFCL}}Dao) DeleteBy{{.ColumnNamePluralCamel}}(ctx conte
 // query conditions:
 //
 //	name: column name
-//	exp: expressions, which default is "=",  support =, !=, >, >=, <, <=, like, in
+//	exp: expressions, which default is "=",  support =, !=, >, >=, <, <=, like, in, notin, isnull, isnotnull
 //	value: column value, if exp=in, multiple values are separated by commas
 //	logic: logical type, default value is "and", support &, and, ||, or
 //

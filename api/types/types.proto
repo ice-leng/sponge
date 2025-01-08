@@ -13,7 +13,7 @@ message Params {
 
 message Column {
   string  name = 1;  // column name
-  string  exp = 2;   // expressions, default value is "=", support =, !=, >, >=, <, <=, like, in
+  string  exp = 2;   // expressions, default value is "=", support =, !=, >, >=, <, <=, like, in, notin
   string value = 3; // column value
   string  logic = 4; // logical type, default value is "and", support &, and, ||, or
 }
