@@ -107,7 +107,7 @@ function patchTypesPbFile() {
 }
 
 function autoDetectInitDbFile() {
-  sponge patch gen-db-init --out=. > /dev/null
+  sponge patch gen-db-init --out=. > /dev/null 2>&1
 }
 
 function generateByAllProto(){

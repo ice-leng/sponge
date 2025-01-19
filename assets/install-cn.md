@@ -28,7 +28,7 @@
 
 为了安装方便，已经把sponge及其依赖的程序打包在一起，下载地址(选择一个下载即可)：
 
-- 百度云：[**sponge-install.zip**](https://pan.baidu.com/s/1UVbbBR7Df623GYGQMFsyew?pwd=jhqm)。
+- 百度云：[**sponge-install.zip**](https://pan.baidu.com/s/1adMIlUyQlH6vRK2UIN7MRg?pwd=3fja)。
 - 蓝奏云：[**sponge安装文件**](https://wwm.lanzoue.com/b049fldpi) 密码:5rq9，共下载4个文件，安装前先看`安装说明.txt`文件。
 
 下载文件后：
@@ -38,9 +38,6 @@
 (2) 在任意文件夹下右键(显示更多选项)，选择【Open Git Bash here】打开git bash终端：
 
 ```bash
-# 如果当前使用sponge的版本低于 v1.11.1，需要先更新sponge二进制文件
-go install github.com/go-dev-frame/sponge/cmd/sponge@latest
-
 # 初始化sponge
 sponge init
 ```
@@ -49,6 +46,7 @@ sponge init
 
 - 使用sponge开发项目时，请使用git bash终端，不要使用系统默认的cmd，否则会出现找不到命令的错误。
 - 不要在`GOBIN`目录(sponge可执行文件所在的目录)下打开终端来执行命令`sponge run`。
+- 如果当前使用sponge的版本低于`v1.11.1`，并且需要升级，请执行命令更新到最新版本的sponge： `go install github.com/go-dev-frame/sponge/cmd/sponge@latest && sponge init`。
 
 在windows除了上面安装sponge方式，还提供了原生安装，点击查看【安装 sponge】 --> 【windows环境】[安装文档](https://go-sponge.com/zh-cn/quick-start?id=%e5%ae%89%e8%a3%85-sponge)。
 

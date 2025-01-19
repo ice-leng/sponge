@@ -33,9 +33,6 @@ After downloading the file:
 2. Right-click any folder (Show more options) and select **Open Git Bash here** to open the git bash terminal:
 
 ```bash
-# If the current version of Sponge is lower than v1.11.1, the Sponge binary file needs to be updated first
-go install github.com/go-dev-frame/sponge/cmd/sponge@latest
-
 # Initialize sponge, automatically install sponge's dependency plugins
 sponge init
 ```
@@ -44,6 +41,7 @@ Note:
 
 - When using sponge development, please use git bash terminal, do not use the system default cmd, otherwise there will be an error that cannot find the command.
 - Do not open a terminal in the `GOBIN` directory (the directory where the sponge executable is located) to execute the command `sponge run`.
+- If you are using a version of Sponge earlier than `v1.11.1` and need to upgrade, execute the command to update to the latest version of Sponge: `go install github.com/go-dev-frame/sponge/cmd/sponge@latest && sponge init`.
 
 In addition to the above installation of sponge in windows, it also provides native installation, click to view **Installing Sponge** --> **Windows Environment** [installation documentation](https://go-sponge.com/quick-start?id=installing-sponge).
 
