@@ -484,6 +484,75 @@ func TestParams_ConvertToGormConditions(t *testing.T) {
 			wantErr: false,
 		},
 
+		// ------------------------------ group -------------------------------------------------
+		{
+			name: "4 columns group",
+			args: args{
+				columns: []Column{
+					{
+						Name:  "created_at",
+						Exp:   ">=",
+						Value: "2025-01-01",
+						Logic: "and",
+					},
+					{
+						Name:  "created_at",
+						Exp:   "<=",
+						Value: "2025-12-31",
+						Logic: "and",
+					},
+					{
+						Name:  "username",
+						Exp:   "like",
+						Value: "Li%",
+						Logic: "or:(",
+					},
+					{
+						Name:  "nickname",
+						Exp:   "like",
+						Value: "%Si",
+						Logic: "or:)",
+					},
+				},
+			},
+			want:    "created_at >= ? AND created_at <= ? AND  ( username LIKE ? OR nickname LIKE ? ) ",
+			want1:   []interface{}{"2025-01-01", "2025-12-31", "Li%", "%Si"},
+			wantErr: false,
+		},
+		{
+			name: "4 columns group",
+			args: args{
+				columns: []Column{
+					{
+						Name:  "username",
+						Exp:   "like",
+						Value: "Li%",
+						Logic: "or:(",
+					},
+					{
+						Name:  "nickname",
+						Exp:   "like",
+						Value: "%Si",
+						Logic: "and:)",
+					},
+					{
+						Name:  "created_at",
+						Exp:   ">=",
+						Value: "2025-01-01",
+						Logic: "and",
+					},
+					{
+						Name:  "created_at",
+						Exp:   "<=",
+						Value: "2025-12-31",
+					},
+				},
+			},
+			want:    " ( username LIKE ? OR nickname LIKE ? )  AND created_at >= ? AND created_at <= ?",
+			want1:   []interface{}{"Li%", "%Si", "2025-01-01", "2025-12-31"},
+			wantErr: false,
+		},
+
 		// ---------------------------- error ----------------------------------------------
 		{
 			name: "exp type err",
@@ -536,10 +605,10 @@ func TestParams_ConvertToGormConditions(t *testing.T) {
 				return
 			}
 			if got != tt.want {
-				t.Errorf("ConvertToGormConditions() got = %v, want = %v", got, tt.want)
+				t.Errorf("ConvertToGormConditions() got = [%v], want = [%v]", got, tt.want)
 			}
 			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("ConvertToGormConditions() got1 = %v, want = %v", got1, tt.want1)
+				t.Errorf("ConvertToGormConditions() got1 = [%v], want = [%v]", got1, tt.want1)
 			}
 
 			got = strings.Replace(got, "?", "%v", -1)
@@ -566,64 +635,4 @@ func TestConditions_ConvertToGorm(t *testing.T) {
 	}
 	assert.Equal(t, "name = ? AND gender = ?", str)
 	assert.Equal(t, len(values), 2)
-}
-
-func TestConditions_checkValid(t *testing.T) {
-	// empty error
-	c := Conditions{}
-	err := c.CheckValid()
-	assert.Error(t, err)
-
-	// value is empty error
-	c = Conditions{
-		Columns: []Column{
-			{
-				Name:  "foo",
-				Value: nil,
-			},
-		},
-	}
-	err = c.CheckValid()
-	assert.Error(t, err)
-
-	// exp error
-	c = Conditions{
-		Columns: []Column{
-			{
-				Name:  "foo",
-				Value: "bar",
-				Exp:   "unknown-exp",
-			},
-		},
-	}
-	err = c.CheckValid()
-	assert.Error(t, err)
-
-	// logic error
-	c = Conditions{
-		Columns: []Column{
-			{
-				Name:  "foo",
-				Value: "bar",
-				Logic: "unknown-logic",
-			},
-		},
-	}
-	err = c.CheckValid()
-	assert.Error(t, err)
-
-	// success
-	c = Conditions{
-		Columns: []Column{
-			{
-				Name:  "name",
-				Value: "ZhangSan",
-			},
-			{
-				Name:  "gender",
-				Value: "male",
-			},
-		}}
-	err = c.CheckValid()
-	assert.NoError(t, err)
 }

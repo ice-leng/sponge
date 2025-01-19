@@ -70,6 +70,11 @@ var logicMap = map[string]string{
 	"||":  " OR ",
 	"AND": " AND ",
 	"OR":  " OR ",
+
+	"and:(": " AND ",
+	"and:)": " AND ",
+	"or:(":  " OR ",
+	"or:)":  " OR ",
 }
 
 // Params query parameters
@@ -157,11 +162,13 @@ func (c *Column) convert() (string, error) {
 
 	if c.Logic == "" {
 		c.Logic = AND
-	}
-	if v, ok := logicMap[strings.ToLower(c.Logic)]; ok { //nolint
-		c.Logic = v
 	} else {
-		return symbol, fmt.Errorf("unknown logic type '%s'", c.Logic)
+		logic := strings.ToLower(c.Logic)
+		if _, ok := logicMap[logic]; ok { //nolint
+			c.Logic = logic
+		} else {
+			return symbol, fmt.Errorf("unsported logic type '%s'", c.Logic)
+		}
 	}
 
 	return symbol, nil
@@ -203,9 +210,21 @@ func (p *Params) ConvertToGormConditions() (string, []interface{}, error) {
 		}
 
 		if i == l-1 { // ignore the logical type of the last column
-			str += column.Name + column.Exp + symbol
+			switch column.Logic {
+			case "or:)", "and:)":
+				str += column.Name + column.Exp + symbol + " ) "
+			default:
+				str += column.Name + column.Exp + symbol
+			}
 		} else {
-			str += column.Name + column.Exp + symbol + column.Logic
+			switch column.Logic {
+			case "or:(", "and:(":
+				str += " ( " + column.Name + column.Exp + symbol + logicMap[column.Logic]
+			case "or:)", "and:)":
+				str += column.Name + column.Exp + symbol + " ) " + logicMap[column.Logic]
+			default:
+				str += column.Name + column.Exp + symbol + logicMap[column.Logic]
+			}
 		}
 		if column.Value != nil {
 			args = append(args, column.Value)
@@ -233,32 +252,6 @@ func (p *Params) ConvertToGormConditions() (string, []interface{}, error) {
 // Conditions query conditions
 type Conditions struct {
 	Columns []Column `json:"columns" form:"columns" binding:"min=1"` // columns info
-}
-
-// CheckValid check valid
-func (c *Conditions) CheckValid() error {
-	if len(c.Columns) == 0 {
-		return fmt.Errorf("field 'columns' cannot be empty")
-	}
-
-	for _, column := range c.Columns {
-		err := column.checkValid()
-		if err != nil {
-			return err
-		}
-		if column.Exp != "" {
-			if _, ok := expMap[column.Exp]; !ok {
-				return fmt.Errorf("unknown exp type '%s'", column.Exp)
-			}
-		}
-		if column.Logic != "" {
-			if _, ok := logicMap[column.Logic]; !ok {
-				return fmt.Errorf("unknown logic type '%s'", column.Logic)
-			}
-		}
-	}
-
-	return nil
 }
 
 // ConvertToGorm conversion to gorm-compliant parameters based on the Columns parameter
