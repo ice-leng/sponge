@@ -168,6 +168,7 @@ func getCommonHandlerStructCodes(data tmplData, jsonNamedType int) (string, erro
 		} else {
 			field.JSONName = customToCamel(field.ColName) // camel case (default)
 		}
+		field.GoType = getHandlerGoType(&field)
 		newFields = append(newFields, field)
 	}
 	data.Fields = newFields
@@ -387,4 +388,24 @@ func customEndOfLetterToLower(srcStr string, str string) string {
 	}
 
 	return str
+}
+
+func getHandlerGoType(field *tmplField) string {
+	var goType = field.GoType
+	if field.DBDriver == DBDriverMysql || field.DBDriver == DBDriverPostgresql || field.DBDriver == DBDriverTidb {
+		if field.rewriterField != nil {
+			switch field.rewriterField.goType {
+			case jsonTypeName:
+				goType = "string"
+			case boolTypeName:
+				goType = "*bool"
+			case decimalTypeName:
+				goType = "string"
+			}
+		}
+	}
+	if field.GoType == "time.Time" {
+		goType = "*time.Time"
+	}
+	return goType
 }

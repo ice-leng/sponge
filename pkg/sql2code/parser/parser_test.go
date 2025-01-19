@@ -10,6 +10,24 @@ import (
 	"github.com/zhufuyi/sqlparser/dependency/types"
 )
 
+func TestParseMysqlSQL(t *testing.T) {
+	sql := `CREATE TABLE orders (
+	   order_id bigint NOT NULL AUTO_INCREMENT COMMENT 'order id',
+	   user_id bigint NOT NULL COMMENT 'user id',
+	   total_amount decimal(10,2) NOT NULL COMMENT 'total amount',
+	   order_remark json NOT NULL COMMENT 'order remark',
+	   order_status ENUM('Pending Payment', 'Paid', 'Shipped', 'Completed', 'Cancelled') NOT NULL DEFAULT 'active' COMMENT 'order status',
+	   pay_type SET('Alipay', 'WeChat Pay', 'Bank Card') NOT NULL DEFAULT '' COMMENT 'pay type',
+	   is_deleted bit(1) NOT NULL DEFAULT b'0' COMMENT '0-no，1-yes',
+	   created_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'created time'
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='orders table';`
+
+	codes, err := ParseSQL(sql, WithJSONTag(1), WithDBDriver(DBDriverMysql))
+	assert.Nil(t, err)
+	assert.NotEmpty(t, codes)
+	//printCode(codes)
+}
+
 func TestParseSQL(t *testing.T) {
 	sqls := []string{`create table user (
     id          bigint unsigned auto_increment,
@@ -292,6 +310,7 @@ func Test_mysqlToGoType(t *testing.T) {
 		{Tp: mysql.TypeTimestamp},
 		{Tp: mysql.TypeDecimal},
 		{Tp: mysql.TypeJSON},
+		{Tp: mysql.TypeBit},
 	}
 	var names []string
 	for _, d := range fields {

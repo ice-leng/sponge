@@ -65,14 +65,12 @@ func (field *PGField) getMysqlType() string {
 		return "int"
 	case "bigint", "bigserial", "int8":
 		return "bigint"
-	case "real":
+	case "real", "float4":
 		return "float"
-	case "decimal", "numeric", "float4", "float8":
-		return "decimal"
-	case "double precision":
+	case "double precision", "float8":
 		return "double"
-	case "money":
-		return "varchar(30)"
+	case "decimal", "numeric", "money":
+		return "decimal(10, 2)"
 	case "character", "character varying", "varchar", "char", "bpchar":
 		if field.Lengthvar > 4 {
 			return fmt.Sprintf("varchar(%d)", field.Lengthvar-4)
@@ -92,9 +90,9 @@ func (field *PGField) getMysqlType() string {
 	case "json", "jsonb":
 		return "json"
 	case "boolean", "bool":
-		return "bool"
+		return "bit(1)"
 	case "bit":
-		return "tinyint(1)"
+		return "bit"
 	}
 
 	// unknown type convert to varchar
@@ -113,27 +111,6 @@ func (fields PGFields) getPrimaryField() *PGField {
 			return f
 		}
 	}
-	/*
-		// if no primary key, find the first xxx_id field
-		if f == nil {
-			for _, field := range fields {
-				if strings.HasSuffix(field.Name, "_id") {
-					f = field
-					f.IsPrimaryKey = true
-					return f
-				}
-			}
-		}
-
-		// if no xxx_id field, find the first field
-		if f == nil {
-			for _, field := range fields {
-				f = field
-				f.IsPrimaryKey = true
-				return f
-			}
-		}
-	*/
 	return f
 }
 

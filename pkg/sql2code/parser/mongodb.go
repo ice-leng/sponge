@@ -289,7 +289,7 @@ func convertMongoToMysqlType(goType string) string {
 	case goTypeTime:
 		return "timestamp" //nolint
 	case goTypeBool:
-		return "tinyint(1)"
+		return "bit(1)"
 	case goTypeOID, goTypeNil, goTypeBytes, goTypeInterface, goTypeSliceInterface, goTypeInts, goTypeStrings:
 		return "json"
 	}
@@ -314,7 +314,7 @@ func convertToProtoFieldType(name string, goType string) string {
 	case "[]int32":
 		return "repeated int32"
 	case "[]byte":
-		return "string"
+		return "bytes"
 	case goTypeStrings:
 		return "repeated string"
 	}

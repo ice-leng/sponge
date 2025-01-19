@@ -68,27 +68,6 @@ func (fields SqliteFields) getPrimaryField() *SqliteField {
 			return f
 		}
 	}
-	/*
-		// if no primary key, find the first xxx_id field
-		if f == nil {
-			for _, field := range fields {
-				if strings.HasSuffix(field.Name, "_id") {
-					f = field
-					f.Pk = 1
-					return f
-				}
-			}
-		}
-
-		// if no xxx_id field, find the first field
-		if f == nil {
-			for _, field := range fields {
-				f = field
-				f.Pk = 1
-				return f
-			}
-		}
-	*/
 	return f
 }
 
