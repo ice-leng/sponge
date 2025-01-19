@@ -1,6 +1,6 @@
 ## interceptor
 
-Commonly used grpc client-side and server-side interceptors.
+Common interceptors for client-side and server-side gRPC.
 
 <br>
 
@@ -12,7 +12,7 @@ import "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
 
 #### logging
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 // set unary server logging
@@ -38,7 +38,7 @@ func getServerOptions() []grpc.ServerOption {
 // you can also set stream server logging
 ```
 
-**grpc client-side**
+**client-side gRPC**
 
 ```go
 // set unary client logging
@@ -63,7 +63,7 @@ func getDialOptions() []grpc.DialOption {
 
 #### recovery
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 func getServerOptions() []grpc.ServerOption {
@@ -78,7 +78,7 @@ func getServerOptions() []grpc.ServerOption {
 }
 ```
 
-**grpc client-side**
+**client-side gRPC**
 
 ```go
 func getDialOptions() []grpc.DialOption {
@@ -97,7 +97,7 @@ func getDialOptions() []grpc.DialOption {
 
 #### retry
 
-**grpc client-side**
+**client-side gRPC**
 
 ```go
 func getDialOptions() []grpc.DialOption {
@@ -124,7 +124,7 @@ func getDialOptions() []grpc.DialOption {
 
 #### rate limiter
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 func getDialOptions() []grpc.DialOption {
@@ -152,7 +152,7 @@ func getDialOptions() []grpc.DialOption {
 
 #### Circuit Breaker
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 func getDialOptions() []grpc.DialOption {
@@ -178,7 +178,7 @@ func getDialOptions() []grpc.DialOption {
 
 #### timeout
 
-**grpc client-side**
+**client-side gRPC**
 
 ```go
 func getDialOptions() []grpc.DialOption {
@@ -201,7 +201,7 @@ func getDialOptions() []grpc.DialOption {
 
 #### tracing
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 // initialize tracing
@@ -271,7 +271,7 @@ example [metrics](../metrics/README.md).
 
 #### Request id
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 func getServerOptions() []grpc.ServerOption {
@@ -288,7 +288,7 @@ func getServerOptions() []grpc.ServerOption {
 
 <br>
 
-**grpc client-side**
+**client-side gRPC**
 
 ```go
 func getDialOptions() []grpc.DialOption {
@@ -310,7 +310,12 @@ func getDialOptions() []grpc.DialOption {
 
 #### jwt authentication
 
-**grpc client-side**
+JWT supports two verification methods:
+
+- The default verification method includes fixed fields `uid` and `name` in the claim, and supports additional custom verification functions.
+- The custom verification method allows users to define the claim themselves and also supports additional custom verification functions.
+
+**client-side gRPC**
 
 ```go
 package main
@@ -328,7 +333,7 @@ func main() {
 	conn, _ := grpccli.NewClient("127.0.0.1:8282")
 	cli := userV1.NewUserClient(conn)
 
-	token := "xxxxxx"
+	token := "xxxxxx" // no Bearer prefix
 	ctx = interceptor.SetJwtTokenToCtx(ctx, token)
 
 	req := &userV1.GetUserByIDRequest{Id: 100}
@@ -336,7 +341,7 @@ func main() {
 }
 ```
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 package main
@@ -350,18 +355,12 @@ import (
 	userV1 "user/api/user/v1"
 )
 
-func standardVerifyFn(claims *jwt.Claims, tokenTail32 string) error {
-	// you can check the claims and tokenTail32, and return an error if necessary
-	// see example in jwtAuth_test.go line 23
-
-	return nil
-}
-
-func customVerifyFn(claims *jwt.CustomClaims, tokenTail32 string) error {
-	// you can check the claims and tokenTail32, and return an error if necessary
-	// see example in jwtAuth_test.go line 34
-
-	return nil
+func main()  {
+	list, err := net.Listen("tcp", ":8282")
+	server := grpc.NewServer(getUnaryServerOptions()...)
+	userV1.RegisterUserServer(server, &user{})
+	server.Serve(list)
+	select{}
 }
 
 func getUnaryServerOptions() []grpc.ServerOption {
@@ -370,13 +369,22 @@ func getUnaryServerOptions() []grpc.ServerOption {
 	// other interceptors ...
 
 	options = append(options, grpc.UnaryInterceptor(
-	    // jwt authorization interceptor
 	    interceptor.UnaryServerJwtAuth(
-			// // choose a verification method as needed
-			//interceptor.WithStandardVerify(standardVerifyFn), // standard verify (default), standardVerifyFn is not mandatory, you can set nil if you don't need it
-			//interceptor.WithCustomVerify(customVerifyFn), // custom verify
+	        // Choose to use one of the following 4 authorization
+			
+	        // case 1: default authorization
+	        // interceptor.WithDefaultVerify(), // can be ignored
 
-	        // specify the grpc API to ignore token verification(full path)
+	        // case 2: default authorization with extra verification
+	        // interceptor.WithDefaultVerify(extraDefaultVerifyFn),
+
+	        // case 3: custom authorization
+	        // interceptor.WithCustomVerify(),
+
+	        // case 4: custom authorization with extra verification
+	        // interceptor.WithCustomVerify(extraCustomVerifyFn),
+
+	        // specify the gRPC API to ignore token verification(full path)
 	        interceptor.WithAuthIgnoreMethods(
 	            "/api.user.v1.User/Register",
 	            "/api.user.v1.User/Login",
@@ -396,9 +404,12 @@ type user struct {
 func (s *user) Login(ctx context.Context, req *userV1.LoginRequest) (*userV1.LoginReply, error) {
 	// check user and password success
 
-	uid := 100
-	name := "tom"
-	token, err := jwt.GenerateToken(uid, name)
+	// case 1: generate token with default fields
+	token, err := jwt.GenerateToken("123", "admin")
+	
+	// case 2: generate token with custom fields
+	fields := jwt.KV{"id": uint64(100), "name": "tom", "age": 10}
+	token, err := jwt.GenerateCustomToken(fields)
 
 	return &userV1.LoginReply{Token: token},nil
 }
@@ -413,12 +424,36 @@ func (s *user) GetByID(ctx context.Context, req *userV1.GetUserByIDRequest) (*us
 	return &userV1.GetUserByIDReply{},nil
 }
 
-func main()  {
-	list, err := net.Listen("tcp", ":8282")
-	server := grpc.NewServer(getUnaryServerOptions()...)
-	userV1.RegisterUserServer(server, &user{})
-	server.Serve(list)
-	select{}
+func extraDefaultVerifyFn(claims *jwt.Claims, tokenTail10 string) error {
+	// In addition to jwt certification, additional checks can be customized here.
+
+	// err := errors.New("verify failed")
+	// if claims.Name != "admin" {
+	//     return err
+	// }
+	// token := getToken(claims.UID) // from cache or database
+	// if tokenTail10 != token[len(token)-10:] { return err }
+
+	return nil
+}
+
+func extraCustomVerifyFn(claims *jwt.CustomClaims, tokenTail10 string) error {
+	// In addition to jwt certification, additional checks can be customized here.
+
+	// err := errors.New("verify failed")
+	// token, fields := getToken(id) // from cache or database
+	// if tokenTail10 != token[len(token)-10:] { return err }
+
+	// id, exist := claims.GetUint64("id")
+	// if !exist || id != fields["id"].(uint64) { return err }
+
+	// name, exist := claims.GetString("name")
+	// if !exist || name != fields["name"].(string) { return err }
+
+	// age, exist := claims.GetInt("age")
+	// if !exist || age != fields["age"].(int) { return err }
+
+	return nil
 }
 ```
 

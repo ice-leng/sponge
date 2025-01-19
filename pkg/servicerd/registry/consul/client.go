@@ -78,7 +78,10 @@ func (d *Client) Register(_ context.Context, svc *registry.ServiceInstance, enab
 			return err
 		}
 		addr = raw.Hostname()
-		port, _ = strconv.ParseUint(raw.Port(), 10, 16)
+		port, err = strconv.ParseUint(raw.Port(), 10, 16)
+		if err != nil {
+			return fmt.Errorf("invalid port in endpoint %s: %v", endpoint, err)
+		}
 		addresses[raw.Scheme] = api.ServiceAddress{Address: endpoint, Port: int(port)}
 	}
 	asr := &api.AgentServiceRegistration{

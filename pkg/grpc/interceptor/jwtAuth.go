@@ -72,23 +72,16 @@ func GetAuthCtxKey() string {
 	return authCtxClaimsName
 }
 
-// StandardVerifyFn verify function, tokenTail32 is the last 32 characters of the token.
-type StandardVerifyFn = func(claims *jwt.Claims, tokenTail32 string) error
+// ExtraDefaultVerifyFn extra default verify function, tokenTail10 is the last 10 characters of the token.
+type ExtraDefaultVerifyFn = func(claims *jwt.Claims, tokenTail10 string) error
 
-// CustomVerifyFn verify custom function, tokenTail32 is the last 32 characters of the token.
-type CustomVerifyFn = func(claims *jwt.CustomClaims, tokenTail32 string) error
+// ExtraCustomVerifyFn extra custom verify function, tokenTail10 is the last 10 characters of the token.
+type ExtraCustomVerifyFn = func(claims *jwt.CustomClaims, tokenTail10 string) error
 
-type verifyOptions struct {
-	verifyType       int // 1: use StandardVerifyFn, 2:use CustomVerifyFn
-	standardVerifyFn StandardVerifyFn
-	customVerifyFn   CustomVerifyFn
-}
-
-func defaultVerifyOptions() *verifyOptions {
-	return &verifyOptions{
-		verifyType: 1,
-	}
-}
+const (
+	defaultAuthType = 1 // use default auth
+	customAuthType  = 2 // use custom auth
+)
 
 // AuthOption setting the Authentication Field
 type AuthOption func(*authOptions)
@@ -99,7 +92,9 @@ type authOptions struct {
 	ctxClaimsName string
 	ignoreMethods map[string]struct{}
 
-	verifyOpts *verifyOptions
+	authType        int
+	defaultVerifyFn ExtraDefaultVerifyFn
+	customVerifyFn  ExtraCustomVerifyFn
 }
 
 func defaultAuthOptions() *authOptions {
@@ -108,7 +103,7 @@ func defaultAuthOptions() *authOptions {
 		ctxClaimsName: authCtxClaimsName,
 		ignoreMethods: make(map[string]struct{}), // ways to ignore forensics
 
-		verifyOpts: defaultVerifyOptions(),
+		authType: defaultAuthType,
 	}
 }
 
@@ -143,83 +138,80 @@ func WithAuthIgnoreMethods(fullMethodNames ...string) AuthOption {
 	}
 }
 
-// WithStandardVerify set the standard verify function for authentication
-func WithStandardVerify(verify StandardVerifyFn) AuthOption {
+// WithDefaultVerify set default verify type
+func WithDefaultVerify(fn ...ExtraDefaultVerifyFn) AuthOption {
 	return func(o *authOptions) {
-		if o.verifyOpts == nil {
-			o.verifyOpts = defaultVerifyOptions()
+		o.authType = defaultAuthType
+		if len(fn) > 0 {
+			o.defaultVerifyFn = fn[0]
 		}
-		o.verifyOpts.verifyType = 1
-		o.verifyOpts.standardVerifyFn = verify
 	}
 }
 
-// WithCustomVerify set the custom verify function for authentication
-func WithCustomVerify(verify CustomVerifyFn) AuthOption {
+// WithCustomVerify set custom verify type with extra verify function
+func WithCustomVerify(fn ...ExtraCustomVerifyFn) AuthOption {
 	return func(o *authOptions) {
-		if o.verifyOpts == nil {
-			o.verifyOpts = defaultVerifyOptions()
+		o.authType = customAuthType
+		if len(fn) > 0 {
+			o.customVerifyFn = fn[0]
 		}
-		o.verifyOpts.verifyType = 2
-		o.verifyOpts.customVerifyFn = verify
 	}
 }
 
 // -------------------------------------------------------------------------------------------
 
-// verify authorization from context, support standard and custom verify processing
-func jwtVerify(ctx context.Context, opt *verifyOptions) (context.Context, error) {
+// verify authorization from context, support default and custom verify processing
+func jwtVerify(ctx context.Context, opt *authOptions) (context.Context, error) {
 	if opt == nil {
-		opt = &verifyOptions{
-			verifyType: 1, // default use VerifyGeneralFn
-		}
+		opt = defaultAuthOptions()
 	}
 
 	token, err := grpc_auth.AuthFromMD(ctx, authScheme) // key is authScheme
 	if err != nil {
-		return ctx, status.Errorf(codes.Unauthenticated, "%v", err)
+		return ctx, status.Errorf(codes.Unauthenticated, "authFromMD error: %v", err)
 	}
 
 	if len(token) <= 100 {
 		return ctx, status.Errorf(codes.Unauthenticated, "authorization is illegal")
 	}
 
-	// custom claims
-	if opt.verifyType == 2 {
+	// custom claims verify
+	if opt.authType == customAuthType {
 		var claims *jwt.CustomClaims
 		claims, err = jwt.ParseCustomToken(token)
 		if err != nil {
-			return ctx, status.Errorf(codes.Unauthenticated, "%v", err)
+			return ctx, status.Errorf(codes.Unauthenticated, "use custom verify type, ParseCustomToken error: %v", err)
 		}
+		// extra custom verify function
 		if opt.customVerifyFn != nil {
-			tokenTail32 := token[len(token)-16:]
-			err = opt.customVerifyFn(claims, tokenTail32)
+			tokenTail10 := token[len(token)-10:]
+			err = opt.customVerifyFn(claims, tokenTail10)
 			if err != nil {
-				return ctx, status.Errorf(codes.Unauthenticated, "%v", err)
+				return ctx, status.Errorf(codes.Unauthenticated, "customVerifyFn error: %v", err)
 			}
 		}
-
 		newCtx := context.WithValue(ctx, authCtxClaimsName, claims) //nolint
 		return newCtx, nil
 	}
 
-	// standard claims
+	// default claims verify
 	claims, err := jwt.ParseToken(token)
 	if err != nil {
-		return ctx, status.Errorf(codes.Unauthenticated, "%v", err)
+		return ctx, status.Errorf(codes.Unauthenticated, "use default verify type, %v", err)
 	}
-	if opt.standardVerifyFn != nil {
-		tokenTail32 := token[len(token)-16:]
-		err = opt.standardVerifyFn(claims, tokenTail32)
+	if opt.defaultVerifyFn != nil {
+		tokenTail10 := token[len(token)-10:]
+		// extra default verify function
+		err = opt.defaultVerifyFn(claims, tokenTail10)
 		if err != nil {
-			return ctx, status.Errorf(codes.Unauthenticated, "%v", err)
+			return ctx, status.Errorf(codes.Unauthenticated, "verifyFn error: %v", err)
 		}
 	}
 	newCtx := context.WithValue(ctx, authCtxClaimsName, claims) //nolint
 	return newCtx, nil
 }
 
-// GetJwtClaims get the jwt standard claims from context, contains fixed fields uid and name
+// GetJwtClaims get the jwt default claims from context, contains fixed fields uid and name
 func GetJwtClaims(ctx context.Context) (*jwt.Claims, bool) {
 	v, ok := ctx.Value(authCtxClaimsName).(*jwt.Claims)
 	return v, ok
@@ -238,7 +230,6 @@ func UnaryServerJwtAuth(opts ...AuthOption) grpc.UnaryServerInterceptor {
 	authScheme = o.authScheme
 	authCtxClaimsName = o.ctxClaimsName
 	authIgnoreMethods = o.ignoreMethods
-	verifyOpt := o.verifyOpts
 
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		var newCtx context.Context
@@ -247,7 +238,7 @@ func UnaryServerJwtAuth(opts ...AuthOption) grpc.UnaryServerInterceptor {
 		if _, ok := authIgnoreMethods[info.FullMethod]; ok {
 			newCtx = ctx
 		} else {
-			newCtx, err = jwtVerify(ctx, verifyOpt)
+			newCtx, err = jwtVerify(ctx, o)
 			if err != nil {
 				return nil, err
 			}
@@ -264,7 +255,6 @@ func StreamServerJwtAuth(opts ...AuthOption) grpc.StreamServerInterceptor {
 	authScheme = o.authScheme
 	authCtxClaimsName = o.ctxClaimsName
 	authIgnoreMethods = o.ignoreMethods
-	verifyOpt := o.verifyOpts
 
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		var newCtx context.Context
@@ -273,7 +263,7 @@ func StreamServerJwtAuth(opts ...AuthOption) grpc.StreamServerInterceptor {
 		if _, ok := authIgnoreMethods[info.FullMethod]; ok {
 			newCtx = stream.Context()
 		} else {
-			newCtx, err = jwtVerify(stream.Context(), verifyOpt)
+			newCtx, err = jwtVerify(stream.Context(), o)
 			if err != nil {
 				return err
 			}
@@ -283,4 +273,20 @@ func StreamServerJwtAuth(opts ...AuthOption) grpc.StreamServerInterceptor {
 		wrapped.WrappedContext = newCtx
 		return handler(srv, wrapped)
 	}
+}
+
+// ----------------------------------------------------
+
+// StandardVerifyFn default verify function, tokenTail10 is the last 10 characters of the token.
+// Deprecated: use ExtraDefaultVerifyFn instead.
+type StandardVerifyFn = ExtraDefaultVerifyFn
+
+// CustomVerifyFn custom verify function, tokenTail10 is the last 10 characters of the token.
+// Deprecated: use ExtraCustomVerifyFn instead.
+type CustomVerifyFn = ExtraCustomVerifyFn
+
+// WithStandardVerify set default verify type with extra verify function
+// Deprecated: use WithExtraDefaultVerify instead.
+func WithStandardVerify(fn StandardVerifyFn) AuthOption {
+	return WithDefaultVerify(fn)
 }

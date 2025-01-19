@@ -84,9 +84,14 @@ Adaptive flow limitation based on hardware resources.
 
 ### jwt authorization middleware
 
-#### standard authorization
+JWT supports two verification methods:
+
+- The default verification method includes fixed fields `uid` and `name` in the claim, and supports additional custom verification functions.
+- The custom verification method allows users to define the claim themselves and also supports additional custom verification functions.
 
 ```go
+package main
+
 import "github.com/go-dev-frame/sponge/pkg/jwt"
 import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
 
@@ -94,71 +99,70 @@ func main() {
     r := gin.Default()
 
     r.POST("/user/login", Login)
-    r.GET("/user/:id", middleware.Auth(), h.GetByID) // do not get claims
-    // r.GET("/user/:id", middleware.Auth(middleware.WithVerify(adminVerify)), h.GetByID) // get claims and check
+
+    // Choose to use one of the following 4 authorization
+
+    // case 1: default authorization
+    r.GET("/user/:id", middleware.Auth(), h.GetByID)
+    r.GET("/user/:id", middleware.Auth(middleware.WithDefaultVerify()), h.GetByID) // equivalent to middleware.Auth()
+
+	// case 2: default authorization with extra verification
+	r.GET("/user/:id", middleware.Auth(middleware.WithDefaultVerify(extraDefaultVerifyFn)), h.GetByID)
+
+	// case 3: custom authorization
+	r.GET("/user/:id", middleware.Auth(middleware.WithCustomVerify()), h.GetByID)
+
+    // case 4: custom authorization with extra verification
+    r.GET("/user/:id", middleware.Auth(middleware.WithCustomVerify(extraCustomVerifyFn)), h.GetByID)
 
     r.Run(serverAddr)
 }
 
-func adminVerify(claims *jwt.Claims, tokenTail10 string, c *gin.Context) error {
-    if claims.Name != "admin" {
-        return errors.New("verify failed")
-    }
-
-    // token := getToken(claims.UID) // from cache or database
-    // if tokenTail10 != token[len(token)-10:] { return err }
-
-    return nil
-}
-
 func Login(c *gin.Context) {
-    // generate token
-    token, err := jwt.GenerateToken("123", "admin")
-    // save token
-}
-```
+	// ......
 
-<br>
+	// case 1: generate token with default fields
+	token, err := jwt.GenerateToken("123", "admin")
+	
+	// case 2: generate token with custom fields
+	fields := jwt.KV{"id": uint64(100), "name": "tom", "age": 10}
+	token, err := jwt.GenerateCustomToken(fields)
 
-#### custom authorization
-
-```go
-import "github.com/go-dev-frame/sponge/pkg/jwt"
-import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
-
-func main() {
-    r := gin.Default()
-
-    r.POST("/user/login", Login)
-    r.GET("/user/:id", middleware.AuthCustom(verify), h.GetByID) // get claims and check
-
-    r.Run(serverAddr)
+	// ......
 }
 
-// custom verify example
-func verify(claims *jwt.CustomClaims, tokenTail10 string, c *gin.Context) error {
-    err := errors.New("verify failed")
+func GetByID(c *gin.Context) {}
 
-    token, fields := getToken(id) // from cache or database
-    // if tokenTail10 != token[len(token)-10:] { return err }
+func extraDefaultVerifyFn(claims *jwt.Claims, tokenTail10 string, c *gin.Context) error {
+	// In addition to jwt certification, additional checks can be customized here.
 
-    id, exist := claims.GetUint64("id")
-    if !exist || id != fields["id"].(uint64) { return err }
+	// err := errors.New("verify failed")
+	// if claims.Name != "admin" {
+	//     return err
+	// }
+	// token := getToken(claims.UID) // from cache or database
+	// if tokenTail10 != token[len(token)-10:] { return err }
 
-    name, exist := claims.GetString("name")
-    if !exist || name != fields["name"].(string) { return err }
-
-    age, exist := claims.GetInt("age")
-    if !exist || age != fields["age"].(int) { return err }
-
-    return nil
+	return nil
 }
 
-func Login(c *gin.Context) {
-    // generate token
-    fields := jwt.KV{"id": uint64(123), "name": "tom", "age": 10}
-    token, err := jwt.GenerateCustomToken(fields)
-    // save token and fields
+func extraCustomVerifyFn(claims *jwt.CustomClaims, tokenTail10 string, c *gin.Context) error {
+	// In addition to jwt certification, additional checks can be customized here.
+
+	// err := errors.New("verify failed")
+	// token, fields := getToken(id) // from cache or database
+	// if tokenTail10 != token[len(token)-10:] { return err }
+
+	// id, exist := claims.GetUint64("id")
+	// if !exist || id != fields["id"].(uint64) { return err }
+
+	// name, exist := claims.GetString("name")
+	// if !exist || name != fields["name"].(string) { return err }
+
+	// age, exist := claims.GetInt("age")
+	// if !exist || age != fields["age"].(int) { return err }
+
+	return nil
 }
 ```
 
