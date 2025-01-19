@@ -43,7 +43,8 @@ func OpenUICommand() *cobra.Command {
 					return err
 				}
 			}
-			fmt.Printf("sponge command ui service is running, port = %d, verson = %s, visit %s in your browser.\n\n", port, getVersion(), spongeAddr)
+			fmt.Printf("The code generation service has started, version = %s, please visit %s in your browser.\n",
+				getVersion(), color.HiCyanString(spongeAddr))
 			go func() {
 				_ = open(spongeAddr)
 			}()
