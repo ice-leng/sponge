@@ -191,8 +191,7 @@ func (d tmplData) isCommonStyle(isEmbed bool) bool {
 
 // ConditionZero type of condition 0, used in dao template code
 func (t tmplField) ConditionZero() string {
-	switch t.DBDriver {
-	case DBDriverMysql, DBDriverPostgresql, DBDriverTidb:
+	if t.DBDriver == DBDriverMysql || t.DBDriver == DBDriverPostgresql || t.DBDriver == DBDriverTidb {
 		if t.rewriterField != nil {
 			switch t.rewriterField.goType {
 			case boolTypeName:
@@ -219,8 +218,7 @@ func (t tmplField) ConditionZero() string {
 		return ` != false`
 	}
 
-	switch t.DBDriver {
-	case DBDriverMongodb:
+	if t.DBDriver == DBDriverMongodb {
 		if t.GoType == goTypeOID {
 			return ` != primitive.NilObjectID`
 		}
@@ -241,8 +239,7 @@ func (t tmplField) ConditionZero() string {
 
 // GoZero type of 0, used in model to json template code
 func (t tmplField) GoZero() string {
-	switch t.DBDriver {
-	case DBDriverMysql, DBDriverPostgresql, DBDriverTidb:
+	if t.DBDriver == DBDriverMysql || t.DBDriver == DBDriverPostgresql || t.DBDriver == DBDriverTidb {
 		if t.rewriterField != nil {
 			switch t.rewriterField.goType {
 			case jsonTypeName, decimalTypeName:
@@ -267,8 +264,7 @@ func (t tmplField) GoZero() string {
 		return `= false`
 	}
 
-	switch t.DBDriver {
-	case DBDriverMongodb:
+	if t.DBDriver == DBDriverMongodb {
 		if t.GoType == goTypeOID {
 			return `= primitive.NilObjectID`
 		}
@@ -289,8 +285,7 @@ func (t tmplField) GoZero() string {
 
 // GoTypeZero type of 0, used in service template code, corresponding protobuf type
 func (t tmplField) GoTypeZero() string {
-	switch t.DBDriver {
-	case DBDriverMysql, DBDriverPostgresql, DBDriverTidb:
+	if t.DBDriver == DBDriverMysql || t.DBDriver == DBDriverPostgresql || t.DBDriver == DBDriverTidb {
 		if t.rewriterField != nil {
 			switch t.rewriterField.goType {
 			case jsonTypeName:
@@ -317,8 +312,7 @@ func (t tmplField) GoTypeZero() string {
 		return `false`
 	}
 
-	switch t.DBDriver {
-	case DBDriverMongodb:
+	if t.DBDriver == DBDriverMongodb {
 		if t.GoType == goTypeOID {
 			return `primitive.NilObjectID`
 		}
