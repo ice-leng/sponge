@@ -191,6 +191,20 @@ func (d tmplData) isCommonStyle(isEmbed bool) bool {
 
 // ConditionZero type of condition 0, used in dao template code
 func (t tmplField) ConditionZero() string {
+	switch t.DBDriver {
+	case DBDriverMysql, DBDriverPostgresql, DBDriverTidb:
+		if t.rewriterField != nil {
+			switch t.rewriterField.goType {
+			case boolTypeName:
+				return ` != nil` //nolint
+			case jsonTypeName:
+				return `.String() != ""`
+			case decimalTypeName:
+				return `.IsZero() == false`
+			}
+		}
+	}
+
 	switch t.GoType {
 	case "int8", "int16", "int32", "int64", "int", "uint8", "uint16", "uint32", "uint64", "uint", "float64", "float32", //nolint
 		"sql.NullInt32", "sql.NullInt64", "sql.NullFloat64": //nolint
@@ -206,17 +220,6 @@ func (t tmplField) ConditionZero() string {
 	}
 
 	switch t.DBDriver {
-	case DBDriverMysql, DBDriverPostgresql, DBDriverTidb:
-		if t.rewriterField != nil {
-			switch t.rewriterField.goType {
-			case boolTypeName:
-				return ` != nil` //nolint
-			case jsonTypeName:
-				return `.String() != ""`
-			case decimalTypeName:
-				return `.IsZero() == false`
-			}
-		}
 	case DBDriverMongodb:
 		if t.GoType == goTypeOID {
 			return ` != primitive.NilObjectID`
@@ -238,6 +241,18 @@ func (t tmplField) ConditionZero() string {
 
 // GoZero type of 0, used in model to json template code
 func (t tmplField) GoZero() string {
+	switch t.DBDriver {
+	case DBDriverMysql, DBDriverPostgresql, DBDriverTidb:
+		if t.rewriterField != nil {
+			switch t.rewriterField.goType {
+			case jsonTypeName, decimalTypeName:
+				return ` = "string"`
+			case boolTypeName:
+				return `= false`
+			}
+		}
+	}
+
 	switch t.GoType {
 	case "int8", "int16", "int32", "int64", "int", "uint8", "uint16", "uint32", "uint64", "uint", "float64", "float32",
 		"sql.NullInt32", "sql.NullInt64", "sql.NullFloat64":
@@ -253,15 +268,6 @@ func (t tmplField) GoZero() string {
 	}
 
 	switch t.DBDriver {
-	case DBDriverMysql, DBDriverPostgresql, DBDriverTidb:
-		if t.rewriterField != nil {
-			switch t.rewriterField.goType {
-			case jsonTypeName, decimalTypeName:
-				return ` = "string"`
-			case boolTypeName:
-				return `= false`
-			}
-		}
 	case DBDriverMongodb:
 		if t.GoType == goTypeOID {
 			return `= primitive.NilObjectID`
@@ -283,6 +289,20 @@ func (t tmplField) GoZero() string {
 
 // GoTypeZero type of 0, used in service template code, corresponding protobuf type
 func (t tmplField) GoTypeZero() string {
+	switch t.DBDriver {
+	case DBDriverMysql, DBDriverPostgresql, DBDriverTidb:
+		if t.rewriterField != nil {
+			switch t.rewriterField.goType {
+			case jsonTypeName:
+				return `""` //nolint
+			case decimalTypeName:
+				return `""`
+			case boolTypeName:
+				return `false`
+			}
+		}
+	}
+
 	switch t.GoType {
 	case "int8", "int16", "int32", "int64", "int", "uint8", "uint16", "uint32", "uint64", "uint", "float64", "float32",
 		"sql.NullInt32", "sql.NullInt64", "sql.NullFloat64":
@@ -298,17 +318,6 @@ func (t tmplField) GoTypeZero() string {
 	}
 
 	switch t.DBDriver {
-	case DBDriverMysql, DBDriverPostgresql, DBDriverTidb:
-		if t.rewriterField != nil {
-			switch t.rewriterField.goType {
-			case jsonTypeName:
-				return `""` //nolint
-			case decimalTypeName:
-				return `""`
-			case boolTypeName:
-				return `false`
-			}
-		}
 	case DBDriverMongodb:
 		if t.GoType == goTypeOID {
 			return `primitive.NilObjectID`

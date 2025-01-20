@@ -25,7 +25,7 @@ func TestParseMysqlSQL(t *testing.T) {
 	codes, err := ParseSQL(sql, WithJSONTag(1), WithDBDriver(DBDriverMysql))
 	assert.Nil(t, err)
 	assert.NotEmpty(t, codes)
-	//printCode(codes)
+	printCode(codes)
 }
 
 func TestParseSQL(t *testing.T) {
