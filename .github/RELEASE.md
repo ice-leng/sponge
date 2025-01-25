@@ -1,4 +1,4 @@
 
 ## Change log
 
-- Fixed zero-valued judgments for types decimal and json.
+- Support the use of `ChatGPT` or `DeepSeek` assistant to analyze and generate business logic code based on prompts
