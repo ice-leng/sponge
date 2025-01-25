@@ -260,3 +260,12 @@ func (c *Conditions) ConvertToGorm() (string, []interface{}, error) {
 	p := &Params{Columns: c.Columns}
 	return p.ConvertToGormConditions()
 }
+
+// CheckValid check valid
+func (c *Conditions) CheckValid() error {
+	if len(c.Columns) == 0 {
+		return fmt.Errorf("field 'columns' cannot be empty")
+	}
+
+	return nil
+}

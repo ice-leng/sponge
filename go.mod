@@ -34,6 +34,7 @@ require (
 	github.com/redis/go-redis/extra/redisotel/v9 v9.7.0
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/sashabaranov/go-openai v1.36.1
 	github.com/shirou/gopsutil/v3 v3.23.8
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.12.0
