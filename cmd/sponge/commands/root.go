@@ -40,6 +40,7 @@ Docs: %s`, color.HiCyanString("https://github.com/go-dev-frame/sponge"), color.H
 		PatchCommand(),
 		GenGraphCommand(),
 		TemplateCommand(),
+		AssistantCommand(),
 	)
 
 	return cmd
