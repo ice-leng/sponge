@@ -58,6 +58,8 @@ Additionally, developers can use custom templates to generate various types of c
 
 4. **Generate code on the page, simple and easy to use**
 
+5. **After generating the code, support the use of `ChatGPT` or `DeepSeek` assistant to analyze and generate business logic code based on prompts, further improving efficiency.**
+
 <br>
 
 ### Quick Start
