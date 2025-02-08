@@ -15,6 +15,7 @@ const (
 
 	ModelDeepSeekChat     = "deepseek-chat"
 	ModelDeepSeekReasoner = "deepseek-reasoner"
+	DefaultModel          = ModelDeepSeekChat
 
 	TemperatureCodeGeneration float32 = 0.0 // code generation, mathematical problem-solving
 	TemperatureDataAnalysis   float32 = 1.0 // data extraction, analysis
@@ -50,7 +51,7 @@ func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
 	}
 
 	if c.ModelName == chatgpt.DefaultModel {
-		c.ModelName = ModelDeepSeekChat
+		c.ModelName = DefaultModel
 	}
 
 	config := openai.DefaultConfig(apiKey)

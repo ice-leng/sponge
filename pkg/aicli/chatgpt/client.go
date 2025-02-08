@@ -20,7 +20,7 @@ const (
 	ModelO1Mini        = openai.O1Mini
 	ModelO1Preview     = openai.O1Preview
 
-	DefaultModel     = ModelGPT4o
+	DefaultModel     = ModelO1Mini
 	defaultMaxTokens = 4096
 
 	RoleTypeGopher = "You are a Go Language Coder Assistant, an AI specialized in writing, debugging, " +
