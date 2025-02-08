@@ -15,9 +15,9 @@
 
 </div>
 
-**Sponge** is a powerful `Go` development framework. Its core concept revolves around reverse-engineering modular code by parsing `JSON`, `SQL`, or `Protobuf` files. The generated code can be flexibly and seamlessly assembled into various types of complete backend services (`similar to the characteristics of sponge cells, where disassembled sponge cells can automatically recombine into a new sponge`).
+**Sponge** is a powerful `Go` development framework. Its core concept revolves around reverse-engineering modular code by parsing `SQL`, `Protobuf`, and `JSON` files. The generated code can be flexibly and seamlessly assembled into various types of complete backend services (`similar to the characteristics of sponge cells, where disassembled sponge cells can automatically recombine into a new sponge`).
 
-Sponge provides an all-in-one solution for project development, covering code generation, development, testing, API documentation, and deployment, significantly enhancing development efficiency, reducing complexity, and enabling high-quality projects with a "low-code approach".
+Sponge provides an all-in-one solution for project development with outstanding engineering capabilities, covering code generation, development, testing, API documentation, and deployment, significantly enhancing development efficiency, reducing complexity, and enabling high-quality projects with a "low-code approach".
 
 <br>
 
@@ -56,9 +56,13 @@ Additionally, developers can use custom templates to generate various types of c
     - Test code;
     - Build and deployment scripts, etc.
 
-4. **Generate code on the page, simple and easy to use**
+4. **Generate Code on the Page, Simple and Easy to Use**  
+   Sponge allows code generation directly on the page, making it simpler and more user-friendly than using the command line. You only need to fill in the relevant parameters on the page to generate code with one click.
 
-5. **Supports the AI assistant in generating reference code that aligns with business logic, enhancing development efficiency.** Click to view the [usage documentation](https://go-sponge.com/assistant).
+5. **Deep Integration with AI Assistant (DeepSeek or ChatGPT)**  
+   Sponge comes with a built-in AI assistant, combining the strengths of both to form a comprehensive and efficient development solution:
+   - **Sponge**: Handles infrastructure code generation (service framework, CRUD API interfaces, and custom API interfaces without business logic implementation).
+   - **DeepSeek or ChatGPT**: Focuses on business logic implementation (table structure DDL design, custom API interface definition, and business logic implementation code).
 
 <br>
 
