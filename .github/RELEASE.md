@@ -1,4 +1,4 @@
 
 ## Change log
 
-- Support the use of `ChatGPT` or `DeepSeek` assistant to analyze and generate business logic code based on prompts
+- Built-in AI assistant (`DeepSeek` or `ChatGPT`) supports generation of business logic code from specified go files. 
