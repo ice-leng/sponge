@@ -43,8 +43,8 @@ sponge 适用于快速开发各种高性能后端服务，包括但不限于：
 4. **在页面生成代码，简单易用**  
    sponge 提供在页面生成代码，比使用命令行更加简单易用，只需在页面上填写相关参数，即可一键生成代码。
 
-5. **深度集成 AI 助手(DeepSeek 或 ChatGPT)**  
-   sponge 内置了AI助手，两者优势互补，形成一套完整的高效开发解决方案：
+5. **AI 助手生成业务逻辑实现代码**  
+   sponge 内置了AI助手(DeepSeek 或 ChatGPT)，两者优势互补，形成一套完整的高效开发解决方案：
     - **Sponge**：负责基础设施代码生成(服务框架、CRUD API 接口、缺少业务逻辑实现的自定义 API 接口等)。
     - **DeepSeek 或 ChatGPT**：专注业务逻辑实现(表结构 DDL 设计、自定义 API 接口定义、业务逻辑实现代码)。
 
@@ -76,34 +76,37 @@ sponge 适用于快速开发各种高性能后端服务，包括但不限于：
 
 ### 主要功能
 
-sponge 内置了丰富的功能(按需使用)：
+sponge 内置了丰富的功能或组件(按需使用)：
 
-- Web 框架 [gin](https://github.com/gin-gonic/gin)
-- RPC 框架 [grpc](https://github.com/grpc/grpc-go)
-- 配置解析 [viper](https://github.com/spf13/viper)
-- 日志 [zap](https://github.com/uber-go/zap)
-- ORM 框架 [gorm](https://github.com/go-gorm/gorm), [mongo-go-driver](https://github.com/mongodb/mongo-go-driver)
-- 缓存 [go-redis](https://github.com/go-redis/redis), [ristretto](https://github.com/dgraph-io/ristretto)
-- 自动化api文档 [swagger](https://github.com/swaggo/swag), [protoc-gen-openapiv2](https://github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2)
-- 鉴权 [jwt](https://github.com/golang-jwt/jwt)
-- 校验 [validator](https://github.com/go-playground/validator)
-- Websocket [gorilla/websocket](https://github.com/gorilla/websocket)
-- 定时任务 [cron](https://github.com/robfig/cron)
-- 消息队列 [rabbitmq](https://github.com/rabbitmq/amqp091-go), [kafka](https://github.com/IBM/sarama)
-- 分布式事务管理器 [dtm](https://github.com/dtm-labs/dtm)
-- 分布式锁 [dlock](https://github.com/go-dev-frame/sponge/tree/main/pkg/dlock)
-- 自适应限流 [ratelimit](https://github.com/go-dev-frame/sponge/tree/main/pkg/shield/ratelimit)
-- 自适应熔断 [circuitbreaker](https://github.com/go-dev-frame/sponge/tree/main/pkg/shield/circuitbreaker)
-- 链路跟踪 [opentelemetry](https://github.com/open-telemetry/opentelemetry-go)
-- 监控 [prometheus](https://github.com/prometheus/client_golang/prometheus), [grafana](https://github.com/grafana/grafana)
-- 服务注册与发现 [etcd](https://github.com/etcd-io/etcd), [consul](https://github.com/hashicorp/consul), [nacos](https://github.com/alibaba/nacos)
-- 自适应采集 [profile](https://go.dev/blog/pprof)
-- 资源统计 [gopsutil](https://github.com/shirou/gopsutil)
-- 配置中心 [nacos](https://github.com/alibaba/nacos)
-- 代码质量检查 [golangci-lint](https://github.com/golangci/golangci-lint)
-- 持续集成部署 CICD [jenkins](https://github.com/jenkinsci/jenkins), [docker](https://www.docker.com/), [kubernetes](https://github.com/kubernetes/kubernetes)
-- 生成项目业务架构图 [spograph](https://github.com/go-dev-frame/spograph)
-- 自定义模板生成代码 [go template](https://pkg.go.dev/text/template@go1.23.3)
+| 功能或组件 | 使用示例 |
+| :---------- | :-------- |
+| Web 框架 [gin](https://github.com/gin-gonic/gin) | [gin 示例](https://github.com/go-dev-frame/sponge/blob/main/internal/routers/routers.go#L35)<br>[gin 中间件示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/gin/middleware/README.md) |
+| RPC 框架 [gRPC](https://github.com/grpc/grpc-go) | [gRPC 示例](https://github.com/go-dev-frame/sponge/blob/main/internal/server/grpc.go#L312)<br>[gRPC 拦截器示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/grpc/interceptor/README.md) |
+| 配置解析 [viper](https://github.com/spf13/viper) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/conf/README.md#example-of-use) |
+| 日志 [zap](https://github.com/uber-go/zap) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/logger/README.md#example-of-use) |
+| ORM 框架 [gorm](https://github.com/go-gorm/gorm), [mongo-go-driver](https://github.com/mongodb/mongo-go-driver) | [gorm 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/sgorm/README.md#examples-of-use)<br>[mongodb 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/mgo/README.md#example-of-use) |
+| 缓存 [go-redis](https://github.com/go-redis/redis), [ristretto](https://github.com/dgraph-io/ristretto) | [go-redis 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/goredis/README.md#example-of-use)<br>[ristretto 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/cache/memory.go#L25) |
+| 自动化api文档 [swagger](https://github.com/swaggo/swag), [protoc-gen-openapiv2](https://github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2) | - |
+| 鉴权 [jwt](https://github.com/golang-jwt/jwt) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/jwt/README.md#example-of-use) |
+| 校验 [validator](https://github.com/go-playground/validator), [protoc-gen-validate](https://github.com/bufbuild/protoc-gen-validate) | [validator 示例](https://github.com/go-dev-frame/sponge/blob/main/internal/types/userExample_types.go#L17)<br>[protoc-gen-validate 示例](https://github.com/go-dev-frame/sponge/blob/main/api/serverNameExample/v1/userExample.proto#L156) |
+| Websocket [gorilla/websocket](https://github.com/gorilla/websocket) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/ws/README.md#example-of-use) |
+| 定时任务 [cron](https://github.com/robfig/cron) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/gocron/README.md#example-of-use) |
+| 消息队列 [rabbitmq](https://github.com/rabbitmq/amqp091-go), [kafka](https://github.com/IBM/sarama) | [rabbitmq 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/rabbitmq/README.md#example-of-use)<br>[kafka 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/kafka/README.md#example-of-use) |
+| 分布式事务管理器 [dtm](https://github.com/dtm-labs/dtm) | [示例](https://github.com/go-dev-frame/sponge_examples/blob/main/_11_sponge-dtm-service-registration-discovery/internal/rpcclient/dtmservice.go#L31) |
+| 分布式锁 [dlock](https://github.com/go-dev-frame/sponge/tree/main/pkg/dlock) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/dlock/README.md#example-of-use) |
+| 自适应限流 [ratelimit](https://github.com/go-dev-frame/sponge/tree/main/pkg/shield/ratelimit) | [示例](https://github.com/go-dev-frame/sponge/tree/main/pkg/shield/ratelimit#example-of-use) |
+| 自适应熔断 [circuitbreaker](https://github.com/go-dev-frame/sponge/tree/main/pkg/shield/circuitbreaker) | [示例](https://github.com/go-dev-frame/sponge/tree/main/pkg/shield/circuitbreaker#example-of-use) |
+| 链路跟踪 [opentelemetry](https://github.com/open-telemetry/opentelemetry-go) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/tracer/README.md#example-of-use)<br>[跨服务链路跟踪示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/tracer/example-cn.md) |
+| 监控 [prometheus](https://github.com/prometheus/client_golang/prometheus), [grafana](https://github.com/grafana/grafana) | [gin 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/gin/middleware/metrics/README.md#example-of-use)<br>[gRPC 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/grpc/metrics/README.md#example-of-use)<br>[web或grpc监控示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/grpc/metrics/monitor-example-cn.md) |
+| 服务注册与发现 [etcd](https://github.com/etcd-io/etcd), [consul](https://github.com/hashicorp/consul), [nacos](https://github.com/alibaba/nacos) | [服务注册示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/servicerd/registry/README.md#example-of-use)<br>[服务发现示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/servicerd/discovery/README.md#example-of-use) |
+| 自适应采集 [profile](https://go.dev/blog/pprof) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/prof/go-profile-cn.md) |
+| 资源统计 [gopsutil](https://github.com/shirou/gopsutil) | [示例](https://github.com/go-dev-frame/sponge/tree/main/pkg/stat#example-of-use) |
+| 配置中心 [nacos](https://github.com/alibaba/nacos) | [示例](https://go-sponge.com/zh-cn/components?id=%e9%85%8d%e7%bd%ae%e4%b8%ad%e5%bf%83) |
+| 代码质量检查 [golangci-lint](https://github.com/golangci/golangci-lint) | - |
+| 持续集成部署 CI/CD [kubernetes](https://github.com/kubernetes/kubernetes), [docker](https://www.docker.com/), [jenkins](https://github.com/jenkinsci/jenkins)  | [示例](https://go-sponge.com/zh-cn/deployment?id=%e6%8c%81%e7%bb%ad%e9%9b%86%e6%88%90%e9%83%a8%e7%bd%b2) |
+| 生成项目业务架构图 [spograph](https://github.com/go-dev-frame/spograph) | [示例](https://github.com/go-dev-frame/spograph?tab=readme-ov-file#example-of-use) |
+| 生成自定义代码 [go template](https://pkg.go.dev/text/template@go1.23.3) | [json 示例](https://go-sponge.com/zh-cn/custom-template-field)<br>[sql 示例](https://go-sponge.com/zh-cn/custom-template-sql)<br>[protobuf 示例](https://go-sponge.com/zh-cn/custom-template-protobuf) |
+| AI助手 [deepseek](https://deepseek.com), [chatgpt](https://chatgpt.com) | [示例](https://github.com/go-dev-frame/sponge/blob/main/cmd/sponge/commands/assistant/generate.go#L42) |
 
 <br>
 
@@ -234,6 +237,10 @@ sponge 支持创建 `单体应用单体仓库(monolith)`、`微服务多仓库(m
 - [简单的分布式订单系统](https://github.com/go-dev-frame/sponge_examples/tree/main/9_order-grpc-distributed-transaction)
 - [秒杀抢购活动](https://github.com/go-dev-frame/sponge_examples/tree/main/_12_sponge-dtm-flashSale)
 - [电商系统](https://github.com/go-dev-frame/sponge_examples/tree/main/_14_eshop)
+
+####  sponge+AI 助手协同开发示例
+
+- [家电零售管理平台](https://github.com/go-dev-frame/sponge_examples/tree/main/_15_appliance_store)
 
 <br>
 <br>

@@ -1,4 +1,4 @@
 
 ## Change log
 
-- Built-in AI assistant (`DeepSeek` or `ChatGPT`) supports generation of business logic code from specified go files. 
+- Added `StrToUint` and `UintToStr` functions to fix the problem of converting sql to go type uint. 
