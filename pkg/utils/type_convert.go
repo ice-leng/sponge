@@ -45,6 +45,17 @@ func StrToUint64E(str string) (uint64, error) {
 	return strconv.ParseUint(str, 10, 64)
 }
 
+// StrToUint string to uint
+func StrToUint(str string) uint {
+	return uint(StrToUint64(str))
+}
+
+// StrToUintE string to uint
+func StrToUintE(str string) (uint, error) {
+	v, err := StrToUint64E(str)
+	return uint(v), err
+}
+
 // StrToFloat32 string to float32
 func StrToFloat32(str string) float32 {
 	v, _ := strconv.ParseFloat(str, 32)
@@ -74,6 +85,11 @@ func StrToFloat64E(str string) (float64, error) {
 // IntToStr int to string
 func IntToStr(v int) string {
 	return strconv.Itoa(v)
+}
+
+// UintToStr uint to string
+func UintToStr(v uint) string {
+	return Uint64ToStr(uint64(v))
 }
 
 // Uint64ToStr uint64 to string
