@@ -124,36 +124,6 @@ Sponge has built-in rich features and components (for on-demand use):
 | Custom template generation code [go template](https://pkg.go.dev/text/template@go1.23.3) | [json example](https://go-sponge.com/custom-template-field)<br>[sql example](https://go-sponge.com/custom-template-sql)<br>[protobuf example](https://go-sponge.com/custom-template-protobuf) |
 | AI assistant [deepseek](https://deepseek.com), [chatgpt](https://chatgpt.com) | [example](https://github.com/go-dev-frame/sponge/blob/main/cmd/sponge/commands/assistant/generate.go#L42) |
 
-- Web framework [gin](https://github.com/gin-gonic/gin)
-- RPC framework [gRPC](https://github.com/grpc/grpc-go)
-- Configuration parsing [viper](https://github.com/spf13/viper)
-- Logging component [zap](https://github.com/uber-go/zap)
-- ORM framework [gorm](https://github.com/go-gorm/gorm), [mongo-go-driver](https://github.com/mongodb/mongo-go-driver)
-- Cache [go-redis](https://github.com/go-redis/redis), [ristretto](https://github.com/dgraph-io/ristretto)
-- Automated API documentation [swagger](https://github.com/swaggo/swag), [protoc-gen-openapiv2](https://github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2)
-- Authentication [jwt](https://github.com/golang-jwt/jwt)
-- Websocket [gorilla/websocket](https://github.com/gorilla/websocket)
-- Crontab [cron](https://github.com/robfig/cron)
-- Message Queue [rabbitmq](https://github.com/rabbitmq/amqp091-go), [kafka](https://github.com/IBM/sarama)
-- Distributed Transaction Manager [dtm](https://github.com/dtm-labs/dtm)
-- Distributed lock [dlock](https://github.com/go-dev-frame/sponge/tree/main/pkg/dlock)
-- Parameter validation [validator](https://github.com/go-playground/validator)
-- Adaptive rate limiting [ratelimit](https://github.com/go-dev-frame/sponge/tree/main/pkg/shield/ratelimit)
-- Adaptive circuit breaking [circuitbreaker](https://github.com/go-dev-frame/sponge/tree/main/pkg/shield/circuitbreaker)
-- Distributed Tracing [opentelemetry](https://github.com/open-telemetry/opentelemetry-go)
-- Metrics monitoring [prometheus](https://github.com/prometheus/client_golang/prometheus), [grafana](https://github.com/grafana/grafana)
-- Service registration and discovery [etcd](https://github.com/etcd-io/etcd), [consul](https://github.com/hashicorp/consul), [nacos](https://github.com/alibaba/nacos)
-- Adaptive collecting [profile](https://go.dev/blog/pprof)
-- Resource statistics [gopsutil](https://github.com/shirou/gopsutil)
-- Configuration center [nacos](https://github.com/alibaba/nacos)
-- Code quality checking [golangci-lint](https://github.com/golangci/golangci-lint)
-- Continuous integration and deployment [jenkins](https://github.com/jenkinsci/jenkins), [docker](https://www.docker.com/), [kubernetes](https://github.com/kubernetes/kubernetes)
-- Generate project business architecture diagram [spograph](https://github.com/go-dev-frame/spograph)
-- Custom template generation code [go template](https://pkg.go.dev/text/template@go1.23.3)
-- Built-in AI Assistant [chatgpt](https://chatgpt.com), [deepseek](https://deepseek.com)
-
-> Please refer to [Components and Configuration Documentation](https://go-sponge.com/components) for specific usage methods of these functions or components in Sponge.
-
 <br>
 
 ### Generates Code Framework
