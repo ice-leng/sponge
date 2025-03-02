@@ -372,16 +372,14 @@ func getUnaryServerOptions() []grpc.ServerOption {
 	    interceptor.UnaryServerJwtAuth(
 	        // Choose to use one of the following 4 authorization
 			
-	        // case 1: default authorization
+	        // Case 1: default authorization
 	        // interceptor.WithDefaultVerify(), // can be ignored
-
-	        // case 2: default authorization with extra verification
+	        // default authorization with extra verification
 	        // interceptor.WithDefaultVerify(extraDefaultVerifyFn),
 
-	        // case 3: custom authorization
+	        // Case 2: custom authorization
 	        // interceptor.WithCustomVerify(),
-
-	        // case 4: custom authorization with extra verification
+	        // custom authorization with extra verification
 	        // interceptor.WithCustomVerify(extraCustomVerifyFn),
 
 	        // specify the gRPC API to ignore token verification(full path)
@@ -404,10 +402,10 @@ type user struct {
 func (s *user) Login(ctx context.Context, req *userV1.LoginRequest) (*userV1.LoginReply, error) {
 	// check user and password success
 
-	// case 1: generate token with default fields
+	// Case 1: default authorization
 	token, err := jwt.GenerateToken("123", "admin")
 	
-	// case 2: generate token with custom fields
+	// Case 2: custom authorization
 	fields := jwt.KV{"id": uint64(100), "name": "tom", "age": 10}
 	token, err := jwt.GenerateCustomToken(fields)
 
@@ -419,7 +417,13 @@ func (s *user) GetByID(ctx context.Context, req *userV1.GetUserByIDRequest) (*us
 	// if token is valid, won't get here, because the interceptor has returned an error message 
 
 	// if you want get jwt claims, you can use the following code
+	// Case 1: default authorization
 	claims, err := interceptor.GetJwtClaims(ctx)
+	
+	// Case 2: custom authorization
+	customClaims, err := interceptor.GetJwtCustomClaims(ctx)
+	
+	// ......
 
 	return &userV1.GetUserByIDReply{},nil
 }

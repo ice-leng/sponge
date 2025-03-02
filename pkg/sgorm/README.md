@@ -1,6 +1,6 @@
 ## sgorm
 
-`sgorm` is a library encapsulated on [gorm](gorm.io/gorm), and added features such as tracer, paging queries, etc.
+`sgorm` is a library encapsulated on [gorm](https://gorm.io/gorm), and added features such as tracer, paging queries, etc.
 
 Support `mysql`, `postgresql`, `sqlite`.
 

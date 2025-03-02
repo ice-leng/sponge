@@ -1,6 +1,6 @@
 ## rabbitmq
 
-rabbitmq library wrapped in [github.com/rabbitmq/amqp091-go](github.com/rabbitmq/amqp091-go), supports automatic reconnection and customized setting parameters, includes `direct`, `topic`, `fanout`, `headers`, `delayed message`, `publisher subscriber` a total of six message types, and dead letter is supported.
+`rabbitmq` is a rabbitmq client library based on [amqp091-go](https://github.com/rabbitmq/amqp091-go), supports automatic reconnection and customized setting parameters, includes `direct`, `topic`, `fanout`, `headers`, `delayed message`, `publisher subscriber` a total of six message types, and dead letter is supported.
 
 ### Example of use
 

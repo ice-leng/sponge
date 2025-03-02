@@ -1,6 +1,6 @@
 ## benchmark
 
-Compression testing of rpc methods and generation of reported results.
+`benchmark` is a library that tests the performance of RPC methods and generates report results, it is based on the [ghz](https://github.com/bojand/ghz) library.
 
 ### Example of use
 

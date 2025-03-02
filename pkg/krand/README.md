@@ -1,6 +1,6 @@
 ## krand
 
-Generate random strings, integers, floating point numbers.
+Generate random strings, integers, floating point numbers, and id.
 
 <br>
 
@@ -50,6 +50,8 @@ Generate random strings, integers, floating point numbers.
 <br>
 
 ### Generate id
+
+Generate an id that grows by datetime.
 
 ```go
     import "github.com/go-dev-frame/sponge/pkg/krand"

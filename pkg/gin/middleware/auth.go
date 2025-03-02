@@ -138,10 +138,9 @@ func Auth(opts ...AuthOption) gin.HandlerFunc {
 					c.Abort()
 					return
 				}
-			} else {
-				c.Set("uid", claims.UID)
-				c.Set("name", claims.Name)
 			}
+			c.Set("uid", claims.UID)
+			c.Set("name", claims.Name)
 		}
 
 		c.Next()

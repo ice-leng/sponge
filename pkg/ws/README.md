@@ -1,6 +1,6 @@
 ## WebSocket
 
-`ws` is based on the [github.com/gorilla/websocket](https://github.com/gorilla/websocket) library, support automatic client reconnection.
+`ws` is a websocket library based on [gorilla/websocket](https://github.com/gorilla/websocket), support automatic client reconnection.
 
 <br>
 

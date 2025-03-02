@@ -1,6 +1,6 @@
 ## jy2struct
 
-A library for generating go struct code, supporting json and yaml.
+`jy2struct`is a library for generating go struct code, supporting json and yaml.
 
 <br>
 

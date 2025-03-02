@@ -46,7 +46,7 @@ sponge 适用于快速开发各种高性能后端服务，包括但不限于：
 5. **AI 助手生成业务逻辑实现代码**  
    sponge 内置了AI助手(DeepSeek 或 ChatGPT)，两者优势互补，形成一套完整的高效开发解决方案：
     - **Sponge**：负责基础设施代码生成(服务框架、CRUD API 接口、缺少业务逻辑实现的自定义 API 接口等)。
-    - **DeepSeek 或 ChatGPT**：专注业务逻辑实现(表结构 DDL 设计、自定义 API 接口定义、业务逻辑实现代码)。
+    - **AI助手**：专注业务逻辑实现(表结构 DDL 设计、自定义 API 接口定义、业务逻辑实现代码)。
 
 <br>
 
@@ -110,11 +110,11 @@ sponge 内置了丰富的功能或组件(按需使用)：
 
 <br>
 
-### 生成代码的框架
+### 代码生成引擎
 
-sponge 支持基于自带模板和自定义模板两种方式生成你的项目所需的代码，下面是两种生成代码的框架图。
+sponge 的代码生成引擎支持**内置模板**和**自定义模板**两种方式生成项目所需的代码，下面是两种生成代码的框架图。
 
-1. sponge 基于自带模板生成代码框架如下图所示，支持 sql 和 protobuf 两种方式。
+1. sponge 基于内置模板生成代码框架如下图所示，支持 sql 和 protobuf 两种方式。
 
 <p align="center">
 <img width="1500px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/sponge-framework.png">

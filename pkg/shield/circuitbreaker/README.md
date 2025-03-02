@@ -6,7 +6,7 @@ Circuit Breaker for web middleware and rpc interceptor.
 
 ### Example of use
 
-**gin circuit breaker middleware**
+#### Gin circuit breaker middleware
 
 ```go
 import "github.com/go-dev-frame/sponge/pkg/shield/circuitbreaker"
@@ -42,7 +42,7 @@ func CircuitBreaker(opts ...CircuitBreakerOption) gin.HandlerFunc {
 
 <br>
 
-**rpc server circuit breaker interceptor** 
+#### gRPC server circuit breaker interceptor
 
 ```go
 import "github.com/go-dev-frame/sponge/pkg/shield/circuitbreaker"

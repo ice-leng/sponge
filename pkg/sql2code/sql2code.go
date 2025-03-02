@@ -1,6 +1,6 @@
-// Package sql2code provides for generating code for different purposes according to sql,
-// support generating json, gorm model, update parameter, request parameter code,
-// sql can be obtained from parameter, file, db three ways, priority from high to low.
+// Package sql2code is a code generation engine that generates CRUD code for model,
+// dao, handler, service, protobuf based on sql and supports database types mysql,
+// mongodb, postgresql, sqlite3.
 package sql2code
 
 import (

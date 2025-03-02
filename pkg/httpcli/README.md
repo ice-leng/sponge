@@ -1,10 +1,12 @@
 ### httpcli
 
-`httcli` is a simple HTTP request client, which only supports returning json format.
+`httcli` is a simple HTTP request client library, which only supports returning json format.
 
 <br>
 
 ### Example of use
+
+`Get`, `Delete`, `Post`, `Put`, `Patch` request example with params, headers, and body. There are two ways to request, the first is to call a method directly, and the second is to create a client using the `httpcli.New()` method and then call the corresponding method of the client.
 
 #### Request way 1
 
@@ -37,11 +39,11 @@
     // Post
     err = httpcli.Post(result, url, body)
     err = httpcli.Post(result, url, body, httpcli.WithParams(params))
-    err = httpcli.Delete(result, httpcli.WithParams(params), httpcli.WithHeaders(headers))
+    err = httpcli.Post(result, url, body, httpcli.WithParams(params), httpcli.WithHeaders(headers))
     // Put
-    err := httpcli.Put(result, url, body)
+    err = httpcli.Put(result, url, body)
     // Patch
-    err := httpcli.Patch(result, url, body)
+    err = httpcli.Patch(result, url, body)
 ```
 
 <br>
@@ -60,7 +62,7 @@ Get, Delete request example.
     cli := httpcli.New().SetURL(url).SetHeaders(headers).SetParams(params)
 
     // Get
-    resp, err := cli.GET()
+    resp, err := cli.Get()
     // Delete
     // resp, err := cli.Delete()
 

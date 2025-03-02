@@ -7,7 +7,7 @@ require (
 	github.com/IBM/sarama v1.43.2
 	github.com/alicebob/miniredis/v2 v2.23.0
 	github.com/bojand/ghz v0.117.0
-	github.com/dgraph-io/ristretto v0.1.1
+	github.com/dgraph-io/ristretto v0.2.0
 	github.com/fatih/color v1.13.0
 	github.com/felixge/fgprof v0.9.3
 	github.com/fsnotify/fsnotify v1.5.4

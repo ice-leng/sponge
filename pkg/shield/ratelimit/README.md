@@ -6,7 +6,7 @@ Adaptive rate limit, only available for linux systems.
 
 ### Example of use
 
-#### gin ratelimit middleware
+#### Gin ratelimit middleware
 
 ```go
 import (
@@ -40,7 +40,7 @@ func RateLimit(opts ...RateLimitOption) gin.HandlerFunc {
 
 <br>
 
-#### grpc ratelimit interceptor
+#### gRPC ratelimit interceptor
 
 ```go
 import (

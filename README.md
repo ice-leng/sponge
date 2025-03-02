@@ -62,7 +62,7 @@ Additionally, developers can use custom templates to generate various types of c
 5. **Built-in AI assistant generates business logic implementation code**  
    Sponge comes with a built-in AI assistant (ChatGPT and DeepSeek), combining the strengths of both to form a comprehensive and efficient development solution:
    - **Sponge**: Handles infrastructure code generation (service framework, CRUD API interfaces, and custom API interfaces without business logic implementation).
-   - **DeepSeek or ChatGPT**: Focuses on business logic implementation (table structure DDL design, custom API interface definition, and business logic implementation code).
+   - **AI assistant**: Focuses on business logic implementation (table structure DDL design, custom API interface definition, and business logic implementation code).
 
 <br>
 
@@ -70,7 +70,7 @@ Additionally, developers can use custom templates to generate various types of c
 
 1. **Install sponge**
 
-   Sponge supports installation on Windows, macOS, and Linux. Click to view the [**sponge installation guide**](https://github.com/go-dev-frame/sponge/blob/main/assets/install-cn.md).
+   Sponge supports installation on Windows, macOS, and Linux. Click to view the [**sponge installation guide**](https://github.com/go-dev-frame/sponge/blob/main/assets/install-en.md).
 
 2. **Open the code generation UI**
 
@@ -86,7 +86,7 @@ Additionally, developers can use custom templates to generate various types of c
    <img width="1500px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/en_sponge-ui.png">
    </p>
 
-   > To access from a browser on a different host, specify the host IP or domain when starting the UI, e.g., `sponge run -a http://your_host_ip:24631`. Alternatively, you can run the UI service in Docker to support cross-host access. Click to view the guide on [running the sponge UI service in Docker](https://github.com/go-dev-frame/sponge/blob/main/assets/install-cn.md#Docker%E7%8E%AF%E5%A2%83).
+   > To access from a browser on a different host, specify the host IP or domain when starting the UI, e.g., `sponge run -a http://your_host_ip:24631`. Alternatively, you can run the UI service in Docker to support cross-host access. Click to view the guide on [running the sponge UI service in Docker](https://github.com/go-dev-frame/sponge/blob/main/assets/install-en.md#Docker%E7%8E%AF%E5%A2%83).
 
 <br>
 
@@ -126,11 +126,11 @@ Sponge has built-in rich features and components (for on-demand use):
 
 <br>
 
-### Generates Code Framework
+### Code Generation Engine
 
-Sponge supports generating code using both built-in templates and custom templates, as shown in the diagrams below.
+The code generation engine of sponge supports two methods for generating the required project code: **built-in templates** and **custom templates**. Below are the framework diagrams for both approaches.
 
-1. The code generation framework based on Sponge's built-in templates is shown below. There are two approaches: SQL and Protobuf.
+1. The framework for code generation based on built-in templates in sponge is shown below, supporting both SQL and Protobuf formats.
 
 <p align="center">
 <img width="1500px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/sponge-framework.png">
@@ -138,7 +138,7 @@ Sponge supports generating code using both built-in templates and custom templat
 
 <br>
 
-2. The code generation framework based on custom templates is shown below. There are three approaches: JSON, SQL, and Protobuf.
+2. The framework for code generation based on custom templates in sponge is shown below, supporting JSON, SQL, and Protobuf formats.
 
 <p align="center">
 <img width="1200px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/template-framework.png">

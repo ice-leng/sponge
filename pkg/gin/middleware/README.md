@@ -1,12 +1,12 @@
 ## middleware
 
-Gin middleware plugin.
+Common gin middleware libraries.
 
 <br>
 
 ## Example of use
 
-### logging middleware
+### Logging middleware
 
 You can set the maximum length for printing, add a request id field, ignore print path, customize [zap](go.uber.org/zap) log.
 
@@ -43,7 +43,7 @@ You can set the maximum length for printing, add a request id field, ignore prin
 
 <br>
 
-### rate limiter middleware
+### Rate limiter middleware
 
 Adaptive flow limitation based on hardware resources.
 
@@ -82,7 +82,7 @@ Adaptive flow limitation based on hardware resources.
 
 <br>
 
-### jwt authorization middleware
+### JWT authorization middleware
 
 JWT supports two verification methods:
 
@@ -102,18 +102,15 @@ func main() {
 
     // Choose to use one of the following 4 authorization
 
-    // case 1: default authorization
-    r.GET("/user/:id", middleware.Auth(), h.GetByID)
-    r.GET("/user/:id", middleware.Auth(middleware.WithDefaultVerify()), h.GetByID) // equivalent to middleware.Auth()
+    // Case 1: default authorization
+    r.GET("/user/:id", middleware.Auth(), GetByID)  // equivalent to middleware.Auth(middleware.WithDefaultVerify())
+    // default authorization with extra verification
+    r.GET("/user/:id", middleware.Auth(middleware.WithDefaultVerify(extraDefaultVerifyFn)), GetByID)
 
-	// case 2: default authorization with extra verification
-	r.GET("/user/:id", middleware.Auth(middleware.WithDefaultVerify(extraDefaultVerifyFn)), h.GetByID)
-
-	// case 3: custom authorization
-	r.GET("/user/:id", middleware.Auth(middleware.WithCustomVerify()), h.GetByID)
-
-    // case 4: custom authorization with extra verification
-    r.GET("/user/:id", middleware.Auth(middleware.WithCustomVerify(extraCustomVerifyFn)), h.GetByID)
+    // Case 2: custom authorization
+    r.GET("/user/:id", middleware.Auth(middleware.WithCustomVerify()), GetByID)
+    // custom authorization with extra verification
+    r.GET("/user/:id", middleware.Auth(middleware.WithCustomVerify(extraCustomVerifyFn)), GetByID)
 
     r.Run(serverAddr)
 }
@@ -121,17 +118,28 @@ func main() {
 func Login(c *gin.Context) {
 	// ......
 
-	// case 1: generate token with default fields
+	// Case 1: generate token with default fields
 	token, err := jwt.GenerateToken("123", "admin")
 	
-	// case 2: generate token with custom fields
+	// Case 2: generate token with custom fields
 	fields := jwt.KV{"id": uint64(100), "name": "tom", "age": 10}
 	token, err := jwt.GenerateCustomToken(fields)
 
 	// ......
 }
 
-func GetByID(c *gin.Context) {}
+func GetByID(c *gin.Context) {
+	// Case 1: default authorization
+	uid := c.MustGet("uid").(string)
+	name := c.MustGet("name").(string)
+
+	// Case 2: custom authorization
+	// Get information according to key-value pairs set in extraCustomVerifyFn function.
+	// id, exists := c.Get("id")
+	// name, exists := c.Get("name")
+
+	// ......
+}
 
 func extraDefaultVerifyFn(claims *jwt.Claims, tokenTail10 string, c *gin.Context) error {
 	// In addition to jwt certification, additional checks can be customized here.
@@ -162,13 +170,17 @@ func extraCustomVerifyFn(claims *jwt.CustomClaims, tokenTail10 string, c *gin.Co
 	// age, exist := claims.GetInt("age")
 	// if !exist || age != fields["age"].(int) { return err }
 
+	// set key-value pairs in gin.Context
+	// c.Set("uid", id)
+	// c.Set("name", name)
+
 	return nil
 }
 ```
 
 <br>
 
-### tracing middleware
+### Tracing middleware
 
 ```go
 import "github.com/go-dev-frame/sponge/pkg/tracer"
