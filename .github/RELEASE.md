@@ -1,4 +1,6 @@
 
 ## Change log
 
-- Added `StrToUint` and `UintToStr` functions to fix the problem of converting sql to go type uint. 
+- Modified the README.md file to include the new features and changes.
+- Support static files in a Gin web application.
+- Fix bug [#95](https://github.com/go-dev-frame/sponge/issues/95).
