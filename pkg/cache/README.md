@@ -1,63 +1,69 @@
 ## cache
 
-memory and redis cache libraries.
+redis and memory cache libraries.
 
-## Example of use
+### Example of use
+
+#### Using Redis Cache
 
 ```go
+package main
 
-// Choose to create a memory or redis cache depending on CType
-cache := cache.NewUserExampleCache(&database.CacheType{
-  CType: "redis",
-  Rdb:   c.RedisClient,
-})
+import (
+	"github.com/redis/go-redis/v9"
+	"github.com/go-dev-frame/sponge/pkg/cache"
+	"github.com/go-dev-frame/sponge/pkg/encoding"
+)
 
-// -----------------------------------------------------------------------------------------
+func main() {
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       0,
+	})
 
-type userExampleDao struct {
-	db    *gorm.DB
-	cache cache.UserExampleCache
-}
-
-// NewUserExampleDao creating the dao interface
-func NewUserExampleDao(db *gorm.DB, cache cache.UserExampleCache) UserExampleDao {
-	return &userExampleDao{db: db, cache: cache}
-}
-
-// GetByID get a record based on id
-func (d *userExampleDao) GetByID(ctx context.Context, id uint64) (*model.UserExample, error) {
-	record, err := d.cache.Get(ctx, id)
-	if err == nil {
-		return record, nil
+	cachePrefix := ""
+	jsonEncoding := encoding.JSONEncoding{}
+	newObject := func() interface{} {
+		return &User{}
 	}
 
-	if errors.Is(err, database.ErrCacheNotFound) {
-		// get from mysql
-		table := &model.UserExample{}
-		err = d.db.WithContext(ctx).Where("id = ?", id).First(table).Error
-		if err != nil {
-			// if data is empty, set not found cache to prevent cache penetration(preventing Cache Penetration)
-			if errors.Is(err, database.ErrRecordNotFound) {
-				err = d.cache.SetCacheWithNotFound(ctx, id)
-				if err != nil {
-					return nil, err
-				}
-				return nil, database.ErrRecordNotFound
-			}
-			return nil, err
-		}
+	c := cache.NewRedisCache(redisClient, cachePrefix, jsonEncoding, newObject)
+	// operations
+	// c.Set(ctx, key, value, expiration)
+	// c.Get(ctx, key)
+	// c.Delete(ctx, key)
+}
+```
 
-		// set cache
-		err = d.cache.Set(ctx, id, table, 10*time.Minute)
-		if err != nil {
-			return nil, fmt.Errorf("cache.Set error: %v, id=%d", err, id)
-		}
-		return table, nil
-	} else if errors.Is(err, cacheBase.ErrPlaceholder) {
-		return nil, database.ErrRecordNotFound
+#### Using Memory Cache
+
+```go
+package main
+
+import (
+	"github.com/go-dev-frame/sponge/pkg/cache"
+	"github.com/go-dev-frame/sponge/pkg/encoding"
+)
+
+func main() {
+	// set memory cache client
+	//cache.InitGlobalMemory(
+	//	WithNumCounters(1e7),
+	//	WithMaxCost(1<<30),
+	//	WithBufferItems(64),
+	//)
+
+	cachePrefix := ""
+	jsonEncoding := encoding.JSONEncoding{}
+	newObject := func() interface{} {
+		return &User{}
 	}
 
-	// fail fast, if cache error return, don't request to db
-	return nil, err
+	c := cache.NewMemoryCache(redisClient, cachePrefix, jsonEncoding, newObject)
+	// operations
+	// c.Set(ctx, key, value, expiration)
+	// c.Get(ctx, key)
+	// c.Delete(ctx, key)
 }
 ```
