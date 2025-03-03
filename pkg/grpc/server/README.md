@@ -1,11 +1,11 @@
 ## grpc server
 
-Generic grpc server.
+`server` is a gRPC server library for Go, it provides a simple way to create and run a gRPC server.
 
 ### Example of use
 
 ```go
-	import "github.com/zhufuyi/sponge/pkg/grpc/server"
+	import "github.com/go-dev-frame/sponge/pkg/grpc/server"
 
 	port := 8282
 	registerFn := func(s *grpc.Server) {

@@ -6,10 +6,10 @@ Circuit Breaker for web middleware and rpc interceptor.
 
 ### Example of use
 
-**gin circuit breaker middleware**
+#### Gin circuit breaker middleware
 
 ```go
-import "github.com/zhufuyi/sponge/pkg/shield/circuitbreaker"
+import "github.com/go-dev-frame/sponge/pkg/shield/circuitbreaker"
 
 // CircuitBreaker a circuit breaker middleware
 func CircuitBreaker(opts ...CircuitBreakerOption) gin.HandlerFunc {
@@ -42,10 +42,10 @@ func CircuitBreaker(opts ...CircuitBreakerOption) gin.HandlerFunc {
 
 <br>
 
-**rpc server circuit breaker interceptor** 
+#### gRPC server circuit breaker interceptor
 
 ```go
-import "github.com/zhufuyi/sponge/pkg/shield/circuitbreaker"
+import "github.com/go-dev-frame/sponge/pkg/shield/circuitbreaker"
 
 // UnaryServerCircuitBreaker server-side unary circuit breaker interceptor
 func UnaryServerCircuitBreaker(opts ...CircuitBreakerOption) grpc.UnaryServerInterceptor {

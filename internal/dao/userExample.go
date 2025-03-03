@@ -3,17 +3,17 @@ package dao
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
 
-	cacheBase "github.com/zhufuyi/sponge/pkg/cache"
-	"github.com/zhufuyi/sponge/pkg/ggorm/query"
-	"github.com/zhufuyi/sponge/pkg/utils"
+	"github.com/go-dev-frame/sponge/pkg/logger"
+	"github.com/go-dev-frame/sponge/pkg/sgorm/query"
+	"github.com/go-dev-frame/sponge/pkg/utils"
 
-	"github.com/zhufuyi/sponge/internal/cache"
-	"github.com/zhufuyi/sponge/internal/model"
+	"github.com/go-dev-frame/sponge/internal/cache"
+	"github.com/go-dev-frame/sponge/internal/database"
+	"github.com/go-dev-frame/sponge/internal/model"
 )
 
 var _ UserExampleDao = (*userExampleDao)(nil)
@@ -130,32 +130,31 @@ func (d *userExampleDao) GetByID(ctx context.Context, id uint64) (*model.UserExa
 		return record, err
 	}
 
-	// get from cache or database
+	// get from cache
 	record, err := d.cache.Get(ctx, id)
 	if err == nil {
 		return record, nil
 	}
 
-	if errors.Is(err, model.ErrCacheNotFound) {
+	// get from database
+	if errors.Is(err, database.ErrCacheNotFound) {
 		// for the same id, prevent high concurrent simultaneous access to database
 		val, err, _ := d.sfg.Do(utils.Uint64ToStr(id), func() (interface{}, error) { //nolint
 			table := &model.UserExample{}
 			err = d.db.WithContext(ctx).Where("id = ?", id).First(table).Error
 			if err != nil {
-				// if data is empty, set not found cache to prevent cache penetration, default expiration time 10 minutes
-				if errors.Is(err, model.ErrRecordNotFound) {
-					err = d.cache.SetCacheWithNotFound(ctx, id)
-					if err != nil {
-						return nil, err
+				if errors.Is(err, database.ErrRecordNotFound) {
+					// set placeholder cache to prevent cache penetration, default expiration time 10 minutes
+					if err = d.cache.SetPlaceholder(ctx, id); err != nil {
+						logger.Warn("cache.SetPlaceholder error", logger.Err(err), logger.Any("id", id))
 					}
-					return nil, model.ErrRecordNotFound
+					return nil, database.ErrRecordNotFound
 				}
 				return nil, err
 			}
 			// set cache
-			err = d.cache.Set(ctx, id, table, cache.UserExampleExpireTime)
-			if err != nil {
-				return nil, fmt.Errorf("cache.Set error: %v, id=%d", err, id)
+			if err = d.cache.Set(ctx, id, table, cache.UserExampleExpireTime); err != nil {
+				logger.Warn("cache.Set error", logger.Err(err), logger.Any("id", id))
 			}
 			return table, nil
 		})
@@ -164,14 +163,15 @@ func (d *userExampleDao) GetByID(ctx context.Context, id uint64) (*model.UserExa
 		}
 		table, ok := val.(*model.UserExample)
 		if !ok {
-			return nil, model.ErrRecordNotFound
+			return nil, database.ErrRecordNotFound
 		}
 		return table, nil
-	} else if errors.Is(err, cacheBase.ErrPlaceholder) {
-		return nil, model.ErrRecordNotFound
 	}
 
-	// fail fast, if cache error return, don't request to db
+	if d.cache.IsPlaceholderErr(err) {
+		return nil, database.ErrRecordNotFound
+	}
+
 	return nil, err
 }
 
@@ -188,9 +188,9 @@ func (d *userExampleDao) GetByID(ctx context.Context, id uint64) (*model.UserExa
 // query parameters (not required):
 //
 //	name: column name
-//	exp: expressions, which default is "=",  support =, !=, >, >=, <, <=, like, in
+//	exp: expressions, which default is "=",  support =, !=, >, >=, <, <=, like, in, notin, isnull, isnotnull
 //	value: column value, if exp=in, multiple values are separated by commas
-//	logic: logical type, defaults to and when value is null, only &(and), ||(or)
+//	logic: logical type, default value is "and", support &, and, ||, or
 //
 // example: search for a male over 20 years of age
 //
@@ -216,7 +216,7 @@ func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params)
 
 	var total int64
 	if params.Sort != "ignore count" { // determine if count is required
-		err = d.db.WithContext(ctx).Model(&model.UserExample{}).Select([]string{"id"}).Where(queryStr, args...).Count(&total).Error
+		err = d.db.WithContext(ctx).Model(&model.UserExample{}).Where(queryStr, args...).Count(&total).Error
 		if err != nil {
 			return nil, 0, err
 		}

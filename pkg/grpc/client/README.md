@@ -1,11 +1,11 @@
-## grpc client
+## gRPC client
 
-Generic grpc client.
+`client` is a gRPC client library for Go. It provides a simple way to connect to a gRPC server and call its methods.
 
 ### Example of use
 
 ```go
-	import "github.com/zhufuyi/sponge/pkg/grpc/client"
+	import "github.com/go-dev-frame/sponge/pkg/grpc/client"
 
 	conn, err := client.Dial(context.Background(), "127.0.0.1:8282",
 		//client.WithServiceDiscover(builder),

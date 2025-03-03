@@ -1,10 +1,14 @@
 ## resolve
 
+`resolve` is a library that grpc client-side load balancing policy.
+
 ### Example of use
 
-#### grpc client
-
 ```go
+package main
+
+import "github.com/go-dev-frame/sponge/pkg/grpc/resolve"
+
 func getDialOptions() []grpc.DialOption {
 	var options []grpc.DialOption
 

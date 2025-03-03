@@ -24,6 +24,12 @@ const (
 	Like = "like"
 	// In include
 	In = "in"
+	// NotIN not include
+	NotIN = "notin"
+	// IsNull is null
+	IsNull = "isnull"
+	// IsNotNull is not null
+	IsNotNull = "isnotnull"
 
 	// AND logic and
 	AND string = "and"
@@ -32,21 +38,27 @@ const (
 )
 
 var expMap = map[string]string{
-	Eq:   " = ",
-	Neq:  " <> ",
-	Gt:   " > ",
-	Gte:  " >= ",
-	Lt:   " < ",
-	Lte:  " <= ",
-	Like: " LIKE ",
-	In:   " IN ",
+	Eq:        " = ",
+	Neq:       " <> ",
+	Gt:        " > ",
+	Gte:       " >= ",
+	Lt:        " < ",
+	Lte:       " <= ",
+	Like:      " LIKE ",
+	In:        " IN ",
+	NotIN:     " NOT IN ",
+	IsNull:    " IS NULL ",
+	IsNotNull: " IS NOT NULL ",
 
-	"=":  " = ",
-	"!=": " <> ",
-	">":  " > ",
-	">=": " >= ",
-	"<":  " < ",
-	"<=": " <= ",
+	"=":           " = ",
+	"!=":          " <> ",
+	">":           " > ",
+	">=":          " >= ",
+	"<":           " < ",
+	"<=":          " <= ",
+	"not in":      " NOT IN ",
+	"is null":     " IS NULL ",
+	"is not null": " IS NOT NULL ",
 }
 
 var logicMap = map[string]string{
@@ -59,6 +71,11 @@ var logicMap = map[string]string{
 	"||":  " OR ",
 	"AND": " AND ",
 	"OR":  " OR ",
+
+	"and:(": " AND ",
+	"and:)": " AND ",
+	"or:(":  " OR ",
+	"or:)":  " OR ",
 }
 
 // Params query parameters
@@ -75,7 +92,7 @@ type Params struct {
 // Deprecated: moved to package pkg/gorm/query Column
 type Column struct {
 	Name  string      `json:"name" form:"name"`   // column name
-	Exp   string      `json:"exp" form:"exp"`     // expressions, which default to = when the value is null, have =, !=, >, >=, <, <=, like, in
+	Exp   string      `json:"exp" form:"exp"`     // expressions, default value is "=", support =, !=, >, >=, <, <=, like, in, notin, isnull, isnotnull
 	Value interface{} `json:"value" form:"value"` // column value
 	Logic string      `json:"logic" form:"logic"` // logical type, defaults to and when the value is null, with &(and), ||(or)
 }
@@ -85,25 +102,48 @@ func (c *Column) checkValid() error {
 		return fmt.Errorf("field 'name' cannot be empty")
 	}
 	if c.Value == nil {
+		v := expMap[strings.ToLower(c.Exp)]
+		if v == " IS NULL " || v == " IS NOT NULL " {
+			return nil
+		}
 		return fmt.Errorf("field 'value' cannot be nil")
 	}
 	return nil
 }
 
 // converting ExpType to sql expressions and LogicType to sql using characters
-func (c *Column) convert() error {
+func (c *Column) convert() (string, error) {
+	symbol := "?"
 	if c.Exp == "" {
 		c.Exp = Eq
 	}
 	if v, ok := expMap[strings.ToLower(c.Exp)]; ok { //nolint
 		c.Exp = v
-		if c.Exp == " LIKE " {
-			c.Value = fmt.Sprintf("%%%v%%", c.Value)
-		}
-		if c.Exp == " IN " {
-			val, ok := c.Value.(string)
-			if !ok {
-				return fmt.Errorf("invalid value type '%s'", c.Value)
+		switch c.Exp {
+		case " LIKE ":
+			val, ok1 := c.Value.(string)
+			if !ok1 {
+				return symbol, fmt.Errorf("invalid value type '%s'", c.Value)
+			}
+			l := len(val)
+			if l > 2 {
+				val2 := val[1 : l-1]
+				val2 = strings.ReplaceAll(val2, "%", "\\%")
+				val2 = strings.ReplaceAll(val2, "_", "\\_")
+				val = string(val[0]) + val2 + string(val[l-1])
+			}
+			if strings.HasPrefix(val, "%") ||
+				strings.HasPrefix(val, "_") ||
+				strings.HasSuffix(val, "%") ||
+				strings.HasSuffix(val, "_") {
+				c.Value = val
+			} else {
+				c.Value = "%" + val + "%"
+			}
+		case " IN ", " NOT IN ":
+			val, ok1 := c.Value.(string)
+			if !ok1 {
+				return symbol, fmt.Errorf("invalid value type '%s'", c.Value)
 			}
 			iVal := []interface{}{}
 			ss := strings.Split(val, ",")
@@ -111,21 +151,27 @@ func (c *Column) convert() error {
 				iVal = append(iVal, s)
 			}
 			c.Value = iVal
+			symbol = "(?)"
+		case " IS NULL ", " IS NOT NULL ":
+			c.Value = nil
+			symbol = ""
 		}
 	} else {
-		return fmt.Errorf("unknown exp type '%s'", c.Exp)
+		return symbol, fmt.Errorf("unsported exp type '%s'", c.Exp)
 	}
 
 	if c.Logic == "" {
 		c.Logic = AND
-	}
-	if v, ok := logicMap[strings.ToLower(c.Logic)]; ok { //nolint
-		c.Logic = v
 	} else {
-		return fmt.Errorf("unknown logic type '%s'", c.Logic)
+		logic := strings.ToLower(c.Logic)
+		if _, ok := logicMap[logic]; ok { //nolint
+			c.Logic = logic
+		} else {
+			return symbol, fmt.Errorf("unsported logic type '%s'", c.Logic)
+		}
 	}
 
-	return nil
+	return symbol, nil
 }
 
 // ConvertToPage converted to conform to gorm rules based on the page size sort parameter
@@ -160,22 +206,31 @@ func (p *Params) ConvertToGormConditions() (string, []interface{}, error) {
 			return "", nil, err
 		}
 
-		err := column.convert()
+		symbol, err := column.convert()
 		if err != nil {
 			return "", nil, err
 		}
 
-		symbol := "?"
-		if column.Exp == " IN " {
-			symbol = "(?)"
-		}
 		if i == l-1 { // ignore the logical type of the last column
-			str += column.Name + column.Exp + symbol
+			switch column.Logic {
+			case "or:)", "and:)":
+				str += column.Name + column.Exp + symbol + " ) "
+			default:
+				str += column.Name + column.Exp + symbol
+			}
 		} else {
-			str += column.Name + column.Exp + symbol + column.Logic
+			switch column.Logic {
+			case "or:(", "and:(":
+				str += " ( " + column.Name + column.Exp + symbol + logicMap[column.Logic]
+			case "or:)", "and:)":
+				str += column.Name + column.Exp + symbol + " ) " + logicMap[column.Logic]
+			default:
+				str += column.Name + column.Exp + symbol + logicMap[column.Logic]
+			}
 		}
-		args = append(args, column.Value)
-
+		if column.Value != nil {
+			args = append(args, column.Value)
+		}
 		// when multiple columns are the same, determine whether the use of IN
 		if isUseIN {
 			if field != column.Name {
@@ -249,36 +304,19 @@ type Conditions struct {
 	Columns []Column `json:"columns" form:"columns" binding:"min=1"` // columns info
 }
 
-// CheckValid check valid
-func (c *Conditions) CheckValid() error {
-	if len(c.Columns) == 0 {
-		return fmt.Errorf("field 'columns' cannot be empty")
-	}
-
-	for _, column := range c.Columns {
-		err := column.checkValid()
-		if err != nil {
-			return err
-		}
-		if column.Exp != "" {
-			if _, ok := expMap[column.Exp]; !ok {
-				return fmt.Errorf("unknown exp type '%s'", column.Exp)
-			}
-		}
-		if column.Logic != "" {
-			if _, ok := logicMap[column.Logic]; !ok {
-				return fmt.Errorf("unknown logic type '%s'", column.Logic)
-			}
-		}
-	}
-
-	return nil
-}
-
 // ConvertToGorm conversion to gorm-compliant parameters based on the Columns parameter
 // ignore the logical type of the last column, whether it is a one-column or multi-column query
 // Deprecated: will be moved to package pkg/gorm/query ConvertToGorm
 func (c *Conditions) ConvertToGorm() (string, []interface{}, error) {
 	p := &Params{Columns: c.Columns}
 	return p.ConvertToGormConditions()
+}
+
+// CheckValid check valid
+func (c *Conditions) CheckValid() error {
+	if len(c.Columns) == 0 {
+		return fmt.Errorf("field 'columns' cannot be empty")
+	}
+
+	return nil
 }

@@ -1,5 +1,6 @@
+
 ## Change log
 
-- Fix for specifying schema in postgesql [#74](https://github.com/zhufuyi/sponge/issues/74).
-- Add statistics on grpc service connections in metrics.
-- Update command example.
+- Modified the README.md file to include the new features and changes.
+- Support static files in a Gin web application.
+- Fix bug [#95](https://github.com/go-dev-frame/sponge/issues/95).

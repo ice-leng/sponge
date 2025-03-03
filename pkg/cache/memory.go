@@ -5,12 +5,109 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/dgraph-io/ristretto"
 
-	"github.com/zhufuyi/sponge/pkg/encoding"
+	"github.com/go-dev-frame/sponge/pkg/encoding"
 )
+
+type options struct {
+	numCounters int64
+	maxCost     int64
+	bufferItems int64
+}
+
+func defaultOptions() *options {
+	return &options{
+		numCounters: 1e7,     // number of keys to track frequency of (10M).
+		maxCost:     1 << 30, // maximum cost of cache (1GB).
+		bufferItems: 64,      // number of keys per Get buffer.
+	}
+}
+
+// Option set the jwt options.
+type Option func(*options)
+
+func (o *options) apply(opts ...Option) {
+	for _, opt := range opts {
+		opt(o)
+	}
+}
+
+// WithNumCounters set number of keys.
+func WithNumCounters(numCounters int64) Option {
+	return func(o *options) {
+		o.numCounters = numCounters
+	}
+}
+
+// WithMaxCost set maximum cost of cache.
+func WithMaxCost(maxCost int64) Option {
+	return func(o *options) {
+		o.maxCost = maxCost
+	}
+}
+
+// WithBufferItems set number of keys per Get buffer.
+func WithBufferItems(bufferItems int64) Option {
+	return func(o *options) {
+		o.bufferItems = bufferItems
+	}
+}
+
+// InitMemory create a memory cache
+func InitMemory(opts ...Option) *ristretto.Cache {
+	o := defaultOptions()
+	o.apply(opts...)
+
+	// see: https://dgraph.io/blog/post/introducing-ristretto-high-perf-go-cache/
+	//		https://www.start.io/blog/we-chose-ristretto-cache-for-go-heres-why/
+	config := &ristretto.Config{
+		NumCounters: o.numCounters,
+		MaxCost:     o.maxCost,
+		BufferItems: o.bufferItems,
+	}
+	store, err := ristretto.NewCache(config)
+	if err != nil {
+		panic(err)
+	}
+	return store
+}
+
+// ----------------------------------------------------------------------------
+
+// global memory cache client
+var (
+	memoryCli *ristretto.Cache
+	once      sync.Once
+)
+
+// InitGlobalMemory init global memory cache
+func InitGlobalMemory(opts ...Option) {
+	memoryCli = InitMemory(opts...)
+}
+
+// GetGlobalMemoryCli get memory cache client
+func GetGlobalMemoryCli() *ristretto.Cache {
+	if memoryCli == nil {
+		once.Do(func() {
+			memoryCli = InitMemory() // default options
+		})
+	}
+	return memoryCli
+}
+
+// CloseGlobalMemory close memory cache
+func CloseGlobalMemory() error {
+	if memoryCli != nil {
+		memoryCli.Close()
+	}
+	return nil
+}
+
+// ----------------------------------------------------------------------------
 
 type memoryCache struct {
 	client            *ristretto.Cache
@@ -22,16 +119,8 @@ type memoryCache struct {
 
 // NewMemoryCache create a memory cache
 func NewMemoryCache(keyPrefix string, encode encoding.Encoding, newObject func() interface{}) Cache {
-	// see: https://dgraph.io/blog/post/introducing-ristretto-high-perf-go-cache/
-	//		https://www.start.io/blog/we-chose-ristretto-cache-for-go-heres-why/
-	config := &ristretto.Config{
-		NumCounters: 1e7,     // number of keys to track frequency of (10M).
-		MaxCost:     1 << 30, // maximum cost of cache (1GB).
-		BufferItems: 64,      // number of keys per Get buffer.
-	}
-	store, _ := ristretto.NewCache(config)
 	return &memoryCache{
-		client:    store,
+		client:    GetGlobalMemoryCli(),
 		KeyPrefix: keyPrefix,
 		encoding:  encode,
 		newObject: newObject,
@@ -52,6 +141,7 @@ func (m *memoryCache) Set(_ context.Context, key string, val interface{}, expira
 	if !ok {
 		return errors.New("SetWithTTL failed")
 	}
+	m.client.Wait()
 
 	return nil
 }
@@ -65,7 +155,7 @@ func (m *memoryCache) Get(_ context.Context, key string, val interface{}) error 
 
 	data, ok := m.client.Get(cacheKey)
 	if !ok {
-		return CacheNotFound
+		return CacheNotFound // not found, convert to redis nil error
 	}
 
 	if string(data.([]byte)) == NotFoundPlaceholder {

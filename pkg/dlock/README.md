@@ -1,6 +1,6 @@
 ## dlock
 
-`dlock` is a distributed lock library based on [**redsync**](https://github.com/go-redsync/redsync) and [**etcd**](https://github.com/etcd-io/etcd). It provides a simple and easy-to-use API for acquiring and releasing locks.
+`dlock` is a distributed lock library based on [**redsync**](https://github.com/go-redsync/redsync) and [**etcd**](https://github.com/etcd-io/etcd). It provides a simple and easy-to-use interface for acquiring and releasing locks.
 
 <br>
 
@@ -15,8 +15,8 @@ import (
     "context"
     "fmt"
     "time"
-    "github.com/zhufuyi/sponge/pkg/goredis"
-    "github.com/zhufuyi/sponge/pkg/dlock"
+    "github.com/go-dev-frame/sponge/pkg/goredis"
+    "github.com/go-dev-frame/sponge/pkg/dlock"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
     }
     defer redisCli.Close()
 
-    locker, err := NewRedisLock(redisCli, "test_lock")
+    locker, err := dlock.NewRedisLock(redisCli, "test_lock")
     if err != nil {
         panic(err)
     }
@@ -38,31 +38,37 @@ func main() {
     {
         ok, err := locker.TryLock(ctx)
         if err != nil {
-            panic(err)
+            fmt.Println("failed to TryLock", err)
+            return
         }
         if !ok {
-            fmt.Println("failed to acquire lock")
+            fmt.Println("failed to lock")
             return
         }
         defer func() {
             if err := locker.Unlock(ctx); err != nil {
-                panic(err)
+                fmt.Println("failed to unlock", err)
+                return
             }
         }()
-        // do something here
+        // business logic requiring lock protection is executed here
+        // ......
     }
 
     // case 2: lock acquired, block until released, timeout, ctx error
     {
         if err := locker.Lock(ctx); err != nil {
-            panic(err)
+            fmt.Println("failed to lock")
+            return
         }
         defer func() {
             if err := locker.Unlock(ctx); err != nil {
-                panic(err)
+                fmt.Println("failed to unlock", err)
+                return
             }
         }()
-        // do something here
+        // business logic requiring lock protection is executed here
+        // ......
     }
 }
 ```
@@ -78,8 +84,8 @@ import (
     "context"
     "fmt"
     "time"
-    "github.com/zhufuyi/sponge/pkg/etcdcli"
-    "github.com/zhufuyi/sponge/pkg/dlock"
+    "github.com/go-dev-frame/sponge/pkg/etcdcli"
+    "github.com/go-dev-frame/sponge/pkg/dlock"
 )
 
 func main() {
@@ -100,31 +106,37 @@ func main() {
     {
         ok, err := locker.TryLock(ctx)
         if err != nil {
-            panic(err)
+            fmt.Println("failed to TryLock", err)
+            return
         }
         if !ok {
-            fmt.Println("failed to acquire lock")
+            fmt.Println("failed to lock")
             return
         }
         defer func() {
             if err := locker.Unlock(ctx); err != nil {
-                panic(err)
+                fmt.Println("failed to unlock", err)
+                return
             }
         }()
-        // do something here
+        // business logic requiring lock protection is executed here
+        // ......
     }
 
     // case 2: lock acquired, block until released, timeout, ctx error
     {
         if err := locker.Lock(ctx); err != nil {
-            panic(err)
+            fmt.Println("failed to lock", err)
+            return
         }
         defer func() {
             if err := locker.Unlock(ctx); err != nil {
-                panic(err)
+                fmt.Println("failed to unlock", err)
+                return
             }
         }()
-        // do something here
+        // business logic requiring lock protection is executed here
+        // ......
     }
 }
 ```

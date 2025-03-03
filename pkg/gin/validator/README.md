@@ -1,6 +1,6 @@
 ## validator
 
-gin request parameter check library.
+`validator` is based on [validator](https://github.com/go-playground/validator) library. It provides request parameter validation for gin.
 
 <br>
 
@@ -12,7 +12,7 @@ package main
 import (
     "net/http"
 
-    "github.com/zhufuyi/sponge/pkg/gin/validator"
+    "github.com/go-dev-frame/sponge/pkg/gin/validator"
 
     "github.com/gin-gonic/gin"
     "github.com/gin-gonic/gin/binding"
@@ -21,6 +21,8 @@ import (
 func main() {
 	r := gin.Default()
 	binding.Validator = validator.Init()
+	
+	r.POST("/create_user", CreateUser)
 	
 	r.Run(":8080")
 }
@@ -41,29 +43,4 @@ func CreateUser(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"msg": "ok"})
 }
-
-type getUserRequest struct {
-	Page int    `json:"page" form:"page" binding:"gte=0"`
-	Limit int    `json:"limit" form:"limit" binding:"gte=1"`
-	Sort string `json:"sort" form:"sort" binding:"-"`
-}
-
-func GetUsers(c *gin.Context) {
-	form := &getUserRequest{}
-	err := c.ShouldBindQuery(form)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
-		return
-	}
-
-	users, err := getUsers(form)
-    if err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
-        return
-    }
-
-	c.JSON(http.StatusOK, gin.H{"users": users})
-}
-
-func getUsers(req *getUserRequest) ([]User,error){}
 ```

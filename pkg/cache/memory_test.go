@@ -6,14 +6,30 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/zhufuyi/sponge/pkg/encoding"
-	"github.com/zhufuyi/sponge/pkg/gotest"
-	"github.com/zhufuyi/sponge/pkg/utils"
+	"github.com/go-dev-frame/sponge/pkg/encoding"
+	"github.com/go-dev-frame/sponge/pkg/gotest"
+	"github.com/go-dev-frame/sponge/pkg/utils"
 )
 
+func TestInitMemoryCache(t *testing.T) {
+	cli1 := InitMemory(
+		WithNumCounters(1e7),
+		WithMaxCost(1<<30),
+		WithBufferItems(64),
+	)
+	defer cli1.Close()
+
+	InitGlobalMemory(
+		WithNumCounters(1e7),
+		WithMaxCost(1<<30),
+		WithBufferItems(64),
+	)
+	//defer CloseGlobalMemory()
+}
+
 type memoryUser struct {
-	ID   uint64
-	Name string
+	ID   uint64 `json:"id"`
+	Name string `json:"name"`
 }
 
 func newMemoryCache() *gotest.Cache {
@@ -101,7 +117,7 @@ func TestMemoryCacheError(t *testing.T) {
 	// Get empty result  test
 	key = utils.Uint64ToStr(testData.ID)
 	err = iCache.Get(c.Ctx, key, val)
-	assert.Error(t, err)
+	assert.NoError(t, err)
 
 	// Get result error test
 	key = utils.Uint64ToStr(testData.ID)
@@ -119,4 +135,23 @@ func TestMemoryCacheError(t *testing.T) {
 	// empty key test
 	err = iCache.SetCacheWithNotFound(c.Ctx, "")
 	assert.Error(t, err)
+}
+
+func BenchmarkGetFromMemory(b *testing.B) {
+	c := newMemoryCache()
+	defer c.Close()
+	testData := c.TestDataSlice[0].(*memoryUser)
+	iCache := c.ICache.(Cache)
+
+	key := utils.Uint64ToStr(testData.ID)
+	err := iCache.Set(c.Ctx, key, c.TestDataMap[key], time.Minute)
+	if err != nil {
+		b.Error(err)
+		return
+	}
+
+	for i := 0; i < b.N; i++ {
+		val := &memoryUser{}
+		_ = iCache.Get(c.Ctx, key, val)
+	}
 }

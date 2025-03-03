@@ -10,7 +10,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/zhufuyi/sponge/pkg/encoding"
+	"github.com/go-dev-frame/sponge/pkg/encoding"
 )
 
 // CacheNotFound no hit cache

@@ -23,7 +23,9 @@ func Parse(configFile string, obj interface{}, reloads ...func()) error {
 
 	filePathStr, filename := filepath.Split(confFileAbs)
 	ext := strings.TrimLeft(path.Ext(filename), ".")
-	filename = strings.ReplaceAll(filename, "."+ext, "") // excluding suffix names
+	if ext != "toml" {
+		filename = strings.ReplaceAll(filename, "."+ext, "") // excluding suffix names
+	}
 
 	viper.AddConfigPath(filePathStr) // path
 	viper.SetConfigName(filename)    // file name

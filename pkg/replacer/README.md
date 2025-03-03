@@ -1,13 +1,13 @@
 ## replacer
 
-A library of replacement file content, supports replacement of files in local directories and embedded directory files via embed.
+`replacer` is a library of replacement file content, supports replacement of files in local directories and embedded directory files via embed.
 
 <br>
 
 ### Example of use
 
 ```go
-import "github.com/zhufuyi/sponge/pkg/replacer"
+import "github.com/go-dev-frame/sponge/pkg/replacer"
 
 //go:embed dir
 var fs embed.FS

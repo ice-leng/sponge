@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zhufuyi/sponge/pkg/cache"
-	"github.com/zhufuyi/sponge/pkg/encoding"
+	"github.com/go-dev-frame/sponge/pkg/cache"
+	"github.com/go-dev-frame/sponge/pkg/encoding"
 
-	"github.com/zhufuyi/sponge/internal/model"
+	"github.com/go-dev-frame/sponge/internal/database"
 )
 
 // delete the templates code start
@@ -39,7 +39,7 @@ type cacheNameExampleCache struct {
 }
 
 // NewCacheNameExampleCache create a new cache
-func NewCacheNameExampleCache(cacheType *model.CacheType) CacheNameExampleCache {
+func NewCacheNameExampleCache(cacheType *database.CacheType) CacheNameExampleCache {
 	newObject := func() interface{} {
 		return ""
 	}

@@ -1,17 +1,17 @@
 ## middleware
 
-Gin middleware plugin.
+Common gin middleware libraries.
 
 <br>
 
 ## Example of use
 
-### logging middleware
+### Logging middleware
 
 You can set the maximum length for printing, add a request id field, ignore print path, customize [zap](go.uber.org/zap) log.
 
 ```go
-    import "github.com/zhufuyi/sponge/pkg/gin/middleware"
+    import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
 
     r := gin.Default()
 
@@ -35,7 +35,7 @@ You can set the maximum length for printing, add a request id field, ignore prin
 ### Allow cross-domain requests middleware
 
 ```go
-    import "github.com/zhufuyi/sponge/pkg/gin/middleware"
+    import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
 
     r := gin.Default()
     r.Use(middleware.Cors())
@@ -43,12 +43,12 @@ You can set the maximum length for printing, add a request id field, ignore prin
 
 <br>
 
-### rate limiter middleware
+### Rate limiter middleware
 
 Adaptive flow limitation based on hardware resources.
 
 ```go
-    import "github.com/zhufuyi/sponge/pkg/gin/middleware"
+    import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
 
     r := gin.Default()
 
@@ -71,7 +71,7 @@ Adaptive flow limitation based on hardware resources.
 ### Circuit Breaker middleware
 
 ```go
-    import "github.com/zhufuyi/sponge/pkg/gin/middleware"
+    import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
 
     r := gin.Default()
     r.Use(middleware.CircuitBreaker(
@@ -82,93 +82,109 @@ Adaptive flow limitation based on hardware resources.
 
 <br>
 
-### jwt authorization middleware
+### JWT authorization middleware
 
-#### standard authorization
+JWT supports two verification methods:
+
+- The default verification method includes fixed fields `uid` and `name` in the claim, and supports additional custom verification functions.
+- The custom verification method allows users to define the claim themselves and also supports additional custom verification functions.
 
 ```go
-import "github.com/zhufuyi/sponge/pkg/jwt"
-import "github.com/zhufuyi/sponge/pkg/gin/middleware"
+package main
+
+import "github.com/go-dev-frame/sponge/pkg/jwt"
+import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
 
 func main() {
     r := gin.Default()
 
     r.POST("/user/login", Login)
-    r.GET("/user/:id", middleware.Auth(), h.GetByID) // do not get claims
-    // r.GET("/user/:id", middleware.Auth(middleware.WithVerify(adminVerify)), h.GetByID) // get claims and check
+
+    // Choose to use one of the following 4 authorization
+
+    // Case 1: default authorization
+    r.GET("/user/:id", middleware.Auth(), GetByID)  // equivalent to middleware.Auth(middleware.WithDefaultVerify())
+    // default authorization with extra verification
+    r.GET("/user/:id", middleware.Auth(middleware.WithDefaultVerify(extraDefaultVerifyFn)), GetByID)
+
+    // Case 2: custom authorization
+    r.GET("/user/:id", middleware.Auth(middleware.WithCustomVerify()), GetByID)
+    // custom authorization with extra verification
+    r.GET("/user/:id", middleware.Auth(middleware.WithCustomVerify(extraCustomVerifyFn)), GetByID)
 
     r.Run(serverAddr)
 }
 
-func adminVerify(claims *jwt.Claims, tokenTail10 string, c *gin.Context) error {
-    if claims.Name != "admin" {
-        return errors.New("verify failed")
-    }
+func Login(c *gin.Context) {
+	// ......
 
-    // token := getToken(claims.UID) // from cache or database
-    // if tokenTail10 != token[len(token)-10:] { return err }
+	// Case 1: generate token with default fields
+	token, err := jwt.GenerateToken("123", "admin")
+	
+	// Case 2: generate token with custom fields
+	fields := jwt.KV{"id": uint64(100), "name": "tom", "age": 10}
+	token, err := jwt.GenerateCustomToken(fields)
 
-    return nil
+	// ......
 }
 
-func Login(c *gin.Context) {
-    // generate token
-    token, err := jwt.GenerateToken("123", "admin")
-    // save token
+func GetByID(c *gin.Context) {
+	// Case 1: default authorization
+	uid := c.MustGet("uid").(string)
+	name := c.MustGet("name").(string)
+
+	// Case 2: custom authorization
+	// Get information according to key-value pairs set in extraCustomVerifyFn function.
+	// id, exists := c.Get("id")
+	// name, exists := c.Get("name")
+
+	// ......
+}
+
+func extraDefaultVerifyFn(claims *jwt.Claims, tokenTail10 string, c *gin.Context) error {
+	// In addition to jwt certification, additional checks can be customized here.
+
+	// err := errors.New("verify failed")
+	// if claims.Name != "admin" {
+	//     return err
+	// }
+	// token := getToken(claims.UID) // from cache or database
+	// if tokenTail10 != token[len(token)-10:] { return err }
+
+	return nil
+}
+
+func extraCustomVerifyFn(claims *jwt.CustomClaims, tokenTail10 string, c *gin.Context) error {
+	// In addition to jwt certification, additional checks can be customized here.
+
+	// err := errors.New("verify failed")
+	// token, fields := getToken(id) // from cache or database
+	// if tokenTail10 != token[len(token)-10:] { return err }
+
+	// id, exist := claims.GetUint64("id")
+	// if !exist || id != fields["id"].(uint64) { return err }
+
+	// name, exist := claims.GetString("name")
+	// if !exist || name != fields["name"].(string) { return err }
+
+	// age, exist := claims.GetInt("age")
+	// if !exist || age != fields["age"].(int) { return err }
+
+	// set key-value pairs in gin.Context
+	// c.Set("uid", id)
+	// c.Set("name", name)
+
+	return nil
 }
 ```
 
 <br>
 
-#### custom authorization
+### Tracing middleware
 
 ```go
-import "github.com/zhufuyi/sponge/pkg/jwt"
-import "github.com/zhufuyi/sponge/pkg/gin/middleware"
-
-func main() {
-    r := gin.Default()
-
-    r.POST("/user/login", Login)
-    r.GET("/user/:id", middleware.AuthCustom(verify), h.GetByID) // get claims and check
-
-    r.Run(serverAddr)
-}
-
-// custom verify example
-func verify(claims *jwt.CustomClaims, tokenTail10 string, c *gin.Context) error {
-    err := errors.New("verify failed")
-
-    token, fields := getToken(id) // from cache or database
-    // if tokenTail10 != token[len(token)-10:] { return err }
-
-    id, exist := claims.GetUint64("id")
-    if !exist || id != fields["id"].(uint64) { return err }
-
-    name, exist := claims.GetString("name")
-    if !exist || name != fields["name"].(string) { return err }
-
-    age, exist := claims.GetInt("age")
-    if !exist || age != fields["age"].(int) { return err }
-
-    return nil
-}
-
-func Login(c *gin.Context) {
-    // generate token
-    fields := jwt.KV{"id": uint64(123), "name": "tom", "age": 10}
-    token, err := jwt.GenerateCustomToken(fields)
-    // save token and fields
-}
-```
-
-<br>
-
-### tracing middleware
-
-```go
-import "github.com/zhufuyi/sponge/pkg/tracer"
-import "github.com/zhufuyi/sponge/pkg/gin/middleware"
+import "github.com/go-dev-frame/sponge/pkg/tracer"
+import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
 
 func InitTrace(serviceName string) {
 	exporter, err := tracer.NewJaegerAgentExporter("192.168.3.37", "6831")
@@ -209,7 +225,7 @@ func SpanDemo(serviceName string, spanName string, ctx context.Context) {
 ### Metrics middleware
 
 ```go
-    import "github.com/zhufuyi/sponge/pkg/gin/middleware/metrics"
+    import "github.com/go-dev-frame/sponge/pkg/gin/middleware/metrics"
 
     r := gin.Default()
 
@@ -226,7 +242,7 @@ func SpanDemo(serviceName string, spanName string, ctx context.Context) {
 ### Request id
 
 ```go
-    import "github.com/zhufuyi/sponge/pkg/gin/middleware"
+    import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
 
     // Default request id
     r := gin.Default()
@@ -252,7 +268,7 @@ func SpanDemo(serviceName string, spanName string, ctx context.Context) {
 ### Timeout
 
 ```go
-    import "github.com/zhufuyi/sponge/pkg/gin/middleware"
+    import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
 
     r := gin.Default()
 

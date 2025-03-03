@@ -1,5 +1,4 @@
-// Package mysql is a library wrapped on top of gorm.io/gorm, with added features such as link tracing, paging queries, etc.
-// Deprecated: moved to package pkg/ggorm, will be deleted in the future
+// Package mysql provides a gorm driver for mysql.
 package mysql
 
 import (
@@ -14,15 +13,17 @@ import (
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
 	"gorm.io/plugin/dbresolver"
+
+	"github.com/go-dev-frame/sponge/pkg/sgorm/dbclose"
+	"github.com/go-dev-frame/sponge/pkg/sgorm/glog"
 )
 
 // Init mysql
-// Deprecated: moved to package pkg/ggorm InitMysql
-func Init(dns string, opts ...Option) (*gorm.DB, error) {
+func Init(dsn string, opts ...Option) (*gorm.DB, error) {
 	o := defaultOptions()
 	o.apply(opts...)
 
-	sqlDB, err := sql.Open("mysql", dns)
+	sqlDB, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +64,11 @@ func Init(dns string, opts ...Option) (*gorm.DB, error) {
 	return db, nil
 }
 
+// InitTidb init tidb
+func InitTidb(dsn string, opts ...Option) (*gorm.DB, error) {
+	return Init(dsn, opts...)
+}
+
 // gorm setting
 func gormConfig(o *options) *gorm.Config {
 	config := &gorm.Config{
@@ -77,7 +83,7 @@ func gormConfig(o *options) *gorm.Config {
 		if o.gLog == nil {
 			config.Logger = logger.Default.LogMode(o.logLevel)
 		} else {
-			config.Logger = NewCustomGormLogger(o)
+			config.Logger = glog.NewCustomGormLogger(o.gLog, o.requestIDKey, o.logLevel)
 		}
 	} else {
 		config.Logger = logger.Default.LogMode(logger.Silent)
@@ -118,4 +124,9 @@ func rwSeparationPlugin(o *options) gorm.Plugin {
 		Replicas: slaves,
 		Policy:   dbresolver.RandomPolicy{},
 	})
+}
+
+// Close close gorm db
+func Close(db *gorm.DB) error {
+	return dbclose.Close(db)
 }

@@ -1,6 +1,6 @@
 ## gotest
 
-gotest is a library that simulates the testing of cache, dao and handler.
+`gotest` is a library that simulates the testing of cache, dao and handler.
 
 <br>
 
