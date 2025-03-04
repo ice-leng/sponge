@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 PROJECT_NAME := "github.com/go-dev-frame/sponge"
 PKG := "$(PROJECT_NAME)"
-PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/ | grep -v /api/)
+PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/ | grep -v /api/ | grep -v /cmd/)
 
 # delete the templates code start
 .PHONY: install
@@ -161,7 +161,7 @@ image-build-rpc-test:
 
 
 .PHONY: patch
-# Patch some dependent code, e.g. make patch TYPE=types-pb , make patch TYPE=init-<your_db_driver>, your_db_driver is mysql, mongodb, postgresql, tidb, sqlite, for example: make patch TYPE=init-mysql
+# Patch some dependent code. 1. Add database initialization code, e.g. make patch TYPE=mysql, also supports mongodb, postgresql, sqlite. 2. Add dependent types.proto file, e.g. make patch TYPE=types-pb
 patch:
 	@bash scripts/patch.sh $(TYPE)
 

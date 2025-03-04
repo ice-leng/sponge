@@ -61,8 +61,8 @@ func New{{.Name}}Handler() {{.ProtoPkgName}}.{{.Name}}Logicer {
 	return &{{.LowerName}}Handler{
 		// example:
 		// 	{{.LowerName}}Dao: dao.New{{.Name}}Dao(
-		// 		model.GetDB(),
-		// 		cache.New{{.Name}}Cache(model.GetCacheType()),
+		// 		database.GetDB(),
+		// 		cache.New{{.Name}}Cache(database.GetCacheType()),
 		// 	),
 	}
 }
@@ -86,12 +86,12 @@ func (h *{{.LowerServiceName}}Handler) {{.MethodName}}(ctx context.Context, req 
 	//		    return nil, ecode.InvalidParams.Err()
 	//	    }
 	//
-	// 	reply, err := h.{{.LowerServiceName}}Dao.{{.MethodName}}(ctx, &model.{{.ServiceName}}{
+	//	    reply, err := h.{{.LowerServiceName}}Dao.{{.MethodName}}(ctx, &model.{{.ServiceName}}{
 {{- range .RequestFields}}
 	//     	{{.Name}}: req.{{.Name}},
 {{- end}}
 	//     })
-	// 	if err != nil {
+	//	    if err != nil {
 	//			logger.Warn("{{.MethodName}} error", logger.Err(err), middleware.CtxRequestIDField(ctx))
 	//			return nil, ecode.InternalServerError.Err()
 	//		}
