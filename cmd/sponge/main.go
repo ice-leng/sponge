@@ -6,8 +6,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/zhufuyi/sponge/cmd/sponge/global"
-	"github.com/zhufuyi/sponge/pkg/gofile"
+	"github.com/go-dev-frame/sponge/cmd/sponge/global"
 	"os"
 	"path/filepath"
 
@@ -16,7 +15,7 @@ import (
 )
 
 func main() {
-	err := generate.Init(generate.TplNameSponge, commands.GetSpongeDir()+gofile.GetPathDelimiter()+".sponge")
+	err := generate.Init()
 	if err != nil {
 		fmt.Printf("\n    %v\n\n", err)
 		return

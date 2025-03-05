@@ -152,11 +152,12 @@ using help:
 	_ = cmd.MarkFlagRequired("server-name")
 	cmd.Flags().StringVarP(&projectName, "project-name", "p", "", "project name")
 	_ = cmd.MarkFlagRequired("project-name")
-	cmd.Flags().StringVarP(&sqlArgs.DBDriver, "db-driver", "k", "mysql", "database driver, support mysql, mongodb, postgresql, tidb, sqlite")
+	cmd.Flags().StringVarP(&sqlArgs.DBDriver, "db-driver", "k", "mysql", "database driver, support mysql, mongodb, postgresql, sqlite")
 	cmd.Flags().StringVarP(&sqlArgs.DBDsn, "db-dsn", "d", "", "database content address, e.g. user:password@(host:port)/database. Note: if db-driver=sqlite, db-dsn must be a local sqlite db file, e.g. --db-dsn=/tmp/sponge_sqlite.db") //nolint
 	_ = cmd.MarkFlagRequired("db-dsn")
 	cmd.Flags().StringVarP(&dbTables, "db-table", "t", "", "table name, multiple names separated by commas")
 	_ = cmd.MarkFlagRequired("db-table")
+	cmd.Flags().StringVarP(&sqlArgs.TablePrefix, "db-table-prefix", "", "", "table prefix")
 	cmd.Flags().BoolVarP(&sqlArgs.IsEmbed, "embed", "e", false, "whether to embed gorm.model struct")
 	cmd.Flags().BoolVarP(&sqlArgs.IsExtendedAPI, "extended-api", "a", false, "whether to generate extended crud api, additional includes: DeleteByIDs, GetByCondition, ListByIDs, ListByLatestID")
 	cmd.Flags().BoolVarP(&suitedMonoRepo, "suited-mono-repo", "l", false, "whether the generated code is suitable for mono-repo")
@@ -180,12 +181,13 @@ type rpcGenerator struct {
 	outPath        string
 	suitedMonoRepo bool
 
-	fields []replacer.Field
+	fields        []replacer.Field
+	isCommonStyle bool
 }
 
 func (g *rpcGenerator) generateCode() (string, error) {
 	subTplName := codeNameGRPC
-	r := Replacers[TplNameSponge]
+	r, _ := replacer.New(SpongeDir)
 	if r == nil {
 		return "", errors.New("replacer is nil")
 	}
@@ -211,23 +213,55 @@ func (g *rpcGenerator) generateCode() (string, error) {
 			"userExample.go", "userExample_test.go",
 		},
 		"internal/config": {
-			"serverNameExample.go", "serverNameExample_test.go", "serverNameExample_cc.go",
+			"serverNameExample.go",
 		},
 		"internal/dao": {
 			"userExample.go", "userExample_test.go",
+		},
+		"internal/database": {
+			"init.go",
 		},
 		"internal/ecode": {
 			"systemCode_rpc.go", "userExample_rpc.go",
 		},
 		"internal/model": {
-			"init.go", "userExample.go",
+			"userExample.go",
 		},
 		"internal/server": {
-			"grpc.go", "grpc_test.go", "grpc_option.go",
+			"grpc.go", "grpc_option.go",
 		},
 		"internal/service": {
 			"service.go", "service_test.go", "userExample.go", "userExample_client_test.go",
 		},
+	}
+	err := SetSelectFiles(g.dbDriver, selectFiles)
+	if err != nil {
+		return "", err
+	}
+
+	info := g.codes[parser.CodeTypeCrudInfo]
+	crudInfo, _ := unmarshalCrudInfo(info)
+	if crudInfo.CheckCommonType() {
+		g.isCommonStyle = true
+		selectFiles["internal/cache"] = []string{"userExample.go.tpl"}
+		selectFiles["internal/dao"] = []string{"userExample.go.tpl"}
+		selectFiles["internal/ecode"] = []string{"systemCode_rpc.go", "userExample_rpc.go.tpl"}
+		selectFiles["internal/service"] = []string{"service.go", "service_test.go", "userExample.go.tpl"}
+		var fields []replacer.Field
+		if g.isExtendedAPI {
+			selectFiles["internal/dao"] = []string{"userExample.go.exp.tpl"}
+			selectFiles["internal/ecode"] = []string{"systemCode_rpc.go", "userExample_rpc.go.exp.tpl"}
+			selectFiles["internal/service"] = []string{"service.go", "service_test.go", "userExample.go.exp.tpl"}
+			fields = commonGRPCExtendedFields(r)
+		} else {
+			fields = commonGRPCFields(r)
+		}
+		contentFields, err := replaceFilesContent(r, getTemplateFiles(selectFiles), crudInfo)
+		if err != nil {
+			return "", err
+		}
+		g.fields = append(g.fields, contentFields...)
+		g.fields = append(g.fields, fields...)
 	}
 
 	if g.suitedMonoRepo {
@@ -259,9 +293,6 @@ func (g *rpcGenerator) generateCode() (string, error) {
 				"internal/dao": {
 					"userExample.go.mgo",
 				},
-				"internal/model": {
-					"init.go.mgo", "userExample.go",
-				},
 				"internal/service": {
 					"service.go", "service_test.go", "userExample.go.mgo", "userExample_client_test.go.mgo",
 				},
@@ -277,7 +308,7 @@ func (g *rpcGenerator) generateCode() (string, error) {
 
 	// ignore some directories and files
 	ignoreDirs := []string{"cmd/sponge"}
-	ignoreFiles := []string{"scripts/swag-docs.sh"}
+	ignoreFiles := []string{"scripts/swag-docs.sh", "configs/serverNameExample_cc.yml"}
 
 	r.SetSubDirsAndFiles(subDirs, subFiles...)
 	r.SetIgnoreSubDirs(ignoreDirs...)
@@ -305,7 +336,7 @@ func (g *rpcGenerator) addFields(r replacer.Replacer) []replacer.Field {
 	var fields []replacer.Field
 	fields = append(fields, g.fields...)
 	fields = append(fields, deleteFieldsMark(r, modelFile, startMark, endMark)...)
-	fields = append(fields, deleteFieldsMark(r, modelInitDBFile, startMark, endMark)...)
+	fields = append(fields, deleteFieldsMark(r, databaseInitDBFile, startMark, endMark)...)
 	fields = append(fields, deleteFieldsMark(r, daoFile, startMark, endMark)...)
 	fields = append(fields, deleteFieldsMark(r, daoMgoFile, startMark, endMark)...)
 	fields = append(fields, deleteFieldsMark(r, daoTestFile, startMark, endMark)...)
@@ -341,8 +372,8 @@ func (g *rpcGenerator) addFields(r replacer.Replacer) []replacer.Field {
 			Old: modelFileMark,
 			New: g.codes[parser.CodeTypeModel],
 		},
-		{ // replace the contents of the model/init.go file
-			Old: modelInitDBFileMark,
+		{ // replace the contents of the database/init.go file
+			Old: databaseInitDBFileMark,
 			New: getInitDBCode(g.dbDriver),
 		},
 		{ // replace the contents of the dao/userExample.go file
@@ -367,7 +398,7 @@ func (g *rpcGenerator) addFields(r replacer.Replacer) []replacer.Field {
 		},
 		{ // replace the contents of the service/userExample_client_test.go file
 			Old: serviceFileMark,
-			New: adjustmentOfIDType(g.codes[parser.CodeTypeService], g.dbDriver),
+			New: adjustmentOfIDType(g.codes[parser.CodeTypeService], g.dbDriver, g.isCommonStyle),
 		},
 		{ // replace the contents of the Dockerfile file
 			Old: dockerFileMark,
@@ -493,8 +524,16 @@ func (g *rpcGenerator) addFields(r replacer.Replacer) []replacer.Field {
 			New: sqliteDSNAdaptation(g.dbDriver, g.dbDSN),
 		},
 		{
+			Old: showDbNameMark,
+			New: CurrentDbDriver(g.dbDriver),
+		},
+		{
 			Old: "init.go.mgo",
 			New: "init.go",
+		},
+		{
+			Old: "mongodb.go.mgo",
+			New: "mongodb.go",
 		},
 		{
 			Old: "userExample_client_test.go.mgo",
@@ -511,10 +550,20 @@ func (g *rpcGenerator) addFields(r replacer.Replacer) []replacer.Field {
 		},
 	}...)
 
+	fields = append(fields, getGRPCServiceFields()...)
+
 	if g.suitedMonoRepo {
 		fs := serverCodeFields(codeNameGRPC, g.moduleName, g.serverName)
 		fields = append(fields, fs...)
 	}
 
 	return fields
+}
+
+func commonGRPCFields(r replacer.Replacer) []replacer.Field {
+	return commonServiceFields(r)
+}
+
+func commonGRPCExtendedFields(r replacer.Replacer) []replacer.Field {
+	return commonServiceExtendedFields(r)
 }

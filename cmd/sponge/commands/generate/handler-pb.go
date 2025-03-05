@@ -119,11 +119,12 @@ using help:
 	//_ = cmd.MarkFlagRequired("module-name")
 	cmd.Flags().StringVarP(&serverName, "server-name", "s", "", "server name")
 	//_ = cmd.MarkFlagRequired("server-name")
-	cmd.Flags().StringVarP(&sqlArgs.DBDriver, "db-driver", "k", "mysql", "database driver, support mysql, mongodb, postgresql, tidb, sqlite")
+	cmd.Flags().StringVarP(&sqlArgs.DBDriver, "db-driver", "k", "mysql", "database driver, support mysql, mongodb, postgresql, sqlite")
 	cmd.Flags().StringVarP(&sqlArgs.DBDsn, "db-dsn", "d", "", "database content address, e.g. user:password@(host:port)/database. Note: if db-driver=sqlite, db-dsn must be a local sqlite db file, e.g. --db-dsn=/tmp/sponge_sqlite.db") //nolint
 	_ = cmd.MarkFlagRequired("db-dsn")
 	cmd.Flags().StringVarP(&dbTables, "db-table", "t", "", "table name, multiple names separated by commas")
 	_ = cmd.MarkFlagRequired("db-table")
+	cmd.Flags().StringVarP(&sqlArgs.TablePrefix, "table-prefix", "p", "", "table name prefix, e.g. t_")
 	cmd.Flags().BoolVarP(&sqlArgs.IsEmbed, "embed", "e", false, "whether to embed gorm.model struct")
 	cmd.Flags().BoolVarP(&sqlArgs.IsExtendedAPI, "extended-api", "a", false, "whether to generate extended crud api, additional includes: DeleteByIDs, GetByCondition, ListByIDs, ListByLatestID")
 	cmd.Flags().BoolVarP(&suitedMonoRepo, "suited-mono-repo", "l", false, "whether the generated code is suitable for mono-repo")
@@ -148,7 +149,7 @@ type handlerPbGenerator struct {
 
 func (g *handlerPbGenerator) generateCode() (string, error) {
 	subTplName := codeNameHandlerPb
-	r := Replacers[TplNameSponge]
+	r, _ := replacer.New(SpongeDir)
 	if r == nil {
 		return "", errors.New("replacer is nil")
 	}
@@ -181,14 +182,56 @@ func (g *handlerPbGenerator) generateCode() (string, error) {
 			"userExample.go",
 		},
 	}
-	replaceFiles := make(map[string][]string)
 
+	info := g.codes[parser.CodeTypeCrudInfo]
+	crudInfo, _ := unmarshalCrudInfo(info)
+	if crudInfo.CheckCommonType() {
+		selectFiles = map[string][]string{
+			"api/serverNameExample/v1": {
+				"userExample.proto",
+			},
+			"internal/cache": {
+				"userExample.go.tpl",
+			},
+			"internal/dao": {
+				"userExample.go.tpl",
+			},
+			"internal/ecode": {
+				"userExample_http.go.tpl",
+			},
+			"internal/handler": {
+				"userExample_logic.go.tpl",
+			},
+			"internal/model": {
+				"userExample.go",
+			},
+		}
+		var fields []replacer.Field
+		if g.isExtendedAPI {
+			selectFiles["internal/dao"] = []string{"userExample.go.exp.tpl"}
+			selectFiles["internal/ecode"] = []string{"userExample_http.go.exp.tpl"}
+			selectFiles["internal/handler"] = []string{"userExample_logic.go.exp.tpl"}
+			fields = commonHandlerPbExtendedFields(r)
+		} else {
+			fields = commonHandlerPbFields(r)
+		}
+		contentFields, err := replaceFilesContent(r, getTemplateFiles(selectFiles), crudInfo)
+		if err != nil {
+			return "", err
+		}
+		g.fields = append(g.fields, contentFields...)
+		g.fields = append(g.fields, fields...)
+	}
+
+	replaceFiles := make(map[string][]string)
 	switch strings.ToLower(g.dbDriver) {
 	case DBDriverMysql, DBDriverPostgresql, DBDriverTidb, DBDriverSqlite:
 		g.fields = append(g.fields, getExpectedSQLForDeletionField(g.isEmbed)...)
 		if g.isExtendedAPI {
 			var fields []replacer.Field
-			replaceFiles, fields = handlerPbExtendedAPI(r)
+			if !crudInfo.CheckCommonType() {
+				replaceFiles, fields = handlerPbExtendedAPI(r)
+			}
 			g.fields = append(g.fields, fields...)
 		}
 	case DBDriverMongodb:
@@ -308,6 +351,10 @@ func (g *handlerPbGenerator) addFields(r replacer.Replacer) []replacer.Field {
 			New: "userExample.go",
 		},
 		{
+			Old: showDbNameMark,
+			New: CurrentDbDriver(g.dbDriver),
+		},
+		{
 			Old:             "UserExamplePb",
 			New:             "UserExample",
 			IsCaseSensitive: true,
@@ -417,4 +464,55 @@ func handlerPbMongoDBExtendedAPI(r replacer.Replacer) (map[string][]string, []re
 	}...)
 
 	return replaceFiles, fields
+}
+
+func commonHandlerPbFields(r replacer.Replacer) []replacer.Field {
+	var fields []replacer.Field
+
+	fields = append(fields, deleteFieldsMark(r, daoFile+tplSuffix, startMark, endMark)...)
+	fields = append(fields, deleteFieldsMark(r, handlerPbFile+tplSuffix, startMark, endMark)...)
+	fields = append(fields, []replacer.Field{
+		{
+			Old: "userExample_http.go.tpl",
+			New: "userExample_http.go",
+		},
+		{
+			Old: "userExample_logic.go.tpl",
+			New: "userExample.go",
+		},
+		{
+			Old: "userExample.go.tpl",
+			New: "userExample.go",
+		},
+	}...)
+
+	return fields
+}
+
+func commonHandlerPbExtendedFields(r replacer.Replacer) []replacer.Field {
+	var fields []replacer.Field
+
+	fields = append(fields, deleteFieldsMark(r, daoFile+expSuffix+tplSuffix, startMark, endMark)...)
+	fields = append(fields, deleteFieldsMark(r, handlerPbFile+expSuffix+tplSuffix, startMark, endMark)...)
+
+	fields = append(fields, []replacer.Field{
+		{
+			Old: "userExample_http.go.exp.tpl",
+			New: "userExample_http.go",
+		},
+		{
+			Old: "userExample_logic.go.exp.tpl",
+			New: "userExample.go",
+		},
+		{
+			Old: "userExample.go.tpl",
+			New: "userExample.go",
+		},
+		{
+			Old: "userExample.go.exp.tpl",
+			New: "userExample.go",
+		},
+	}...)
+
+	return fields
 }
