@@ -15,19 +15,30 @@ You can set the maximum length for printing, add a request id field, ignore prin
 
     r := gin.Default()
 
-    // default
-    r.Use(middleware.Logging()) // simplified logging using middleware.SimpleLog()
-
-    // --- or ---
-
-    // custom
-    r.Use(middleware.Logging(    // simplified logging using middleware.SimpleLog(WithRequestIDFromHeader())
+    // Print input parameters and return results
+    // case 1:
+    r.Use(middleware.Logging()) // default
+    // case 2:
+    r.Use(middleware.Logging( // custom
         middleware.WithMaxLen(400),
-        WithRequestIDFromHeader(),
-        //WithRequestIDFromContext(),
+        middleware.WithRequestIDFromHeader(),
+        //middleware.WithRequestIDFromContext(),
         //middleware.WithLog(log), // custom zap log
         //middleware.WithIgnoreRoutes("/hello"),
-    ))
+    ))    
+
+    // ----------------------------------------
+
+    // Print only return results
+    // case 1:
+    r.Use(middleware.SimpleLog()) // default
+    // case 2:
+    r.Use(middleware.SimpleLog( // custom
+        middleware.WithRequestIDFromHeader(),
+        //middleware.WithRequestIDFromContext(),
+        //middleware.WithLog(log), // custom zap log
+        //middleware.WithIgnoreRoutes("/hello"),
+    ))    
 ```
 
 <br>
@@ -52,17 +63,15 @@ Adaptive flow limitation based on hardware resources.
 
     r := gin.Default()
 
-    // default
+    // case 1: default
     r.Use(middleware.RateLimit())
 
-    // --- or ---
-
-    // custom
+    // case 2: custom
     r.Use(middleware.RateLimit(
-        WithWindow(time.Second*10),
-        WithBucket(100),
-        WithCPUThreshold(100),
-        WithCPUQuota(0.5),
+        middleware.WithWindow(time.Second*10),
+        middleware.WithBucket(1000),
+        middleware.WithCPUThreshold(100),
+        middleware.WithCPUQuota(0.5),
     ))
 ```
 
@@ -84,97 +93,100 @@ Adaptive flow limitation based on hardware resources.
 
 ### JWT authorization middleware
 
-JWT supports two verification methods:
-
-- The default verification method includes fixed fields `uid` and `name` in the claim, and supports additional custom verification functions.
-- The custom verification method allows users to define the claim themselves and also supports additional custom verification functions.
-
 ```go
 package main
 
-import "github.com/go-dev-frame/sponge/pkg/jwt"
-import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+    "github.com/go-dev-frame/sponge/pkg/gin/response"
+    "github.com/go-dev-frame/sponge/pkg/jwt"
+    "time"
+)
 
-func main() {
+func web() {
     r := gin.Default()
 
-    r.POST("/user/login", Login)
+    // Case 1: default jwt options, signKey, signMethod(HS256), expiry time(24 hour)
+    {
+        r.POST("/auth/login", LoginDefault)
+        r.GET("/demo1/user/:id", middleware.Auth(), GetByID)
+        r.GET("/demo2/user/:id", middleware.Auth(middleware.WithReturnErrReason()), GetByID)
+        r.GET("/demo3/user/:id", middleware.Auth(middleware.WithExtraVerify(extraVerifyFn)), GetByID)
+    }
 
-    // Choose to use one of the following 4 authorization
+    // Case 2: custom jwt options, signKey, signMethod(HS512), expiry time(12 hour), fields, claims
+    {
+        signKey := []byte("custom-sign-key")
+        jwtAuth1 := middleware.Auth(middleware.WithSignKey(signKey))
+        jwtAuth2 := middleware.Auth(middleware.WithSignKey(signKey), middleware.WithReturnErrReason())
+        jwtAuth3 := middleware.Auth(middleware.WithSignKey(signKey), middleware.WithExtraVerify(extraVerifyFn))
 
-    // Case 1: default authorization
-    r.GET("/user/:id", middleware.Auth(), GetByID)  // equivalent to middleware.Auth(middleware.WithDefaultVerify())
-    // default authorization with extra verification
-    r.GET("/user/:id", middleware.Auth(middleware.WithDefaultVerify(extraDefaultVerifyFn)), GetByID)
+        r.POST("/auth/login", LoginCustom)
+        r.GET("/demo4/user/:id", jwtAuth1, GetByID)
+        r.GET("/demo5/user/:id", jwtAuth2, GetByID)
+        r.GET("/demo6/user/:id", jwtAuth3, GetByID)
+    }
 
-    // Case 2: custom authorization
-    r.GET("/user/:id", middleware.Auth(middleware.WithCustomVerify()), GetByID)
-    // custom authorization with extra verification
-    r.GET("/user/:id", middleware.Auth(middleware.WithCustomVerify(extraCustomVerifyFn)), GetByID)
-
-    r.Run(serverAddr)
+    r.Run(":8080")
 }
 
-func Login(c *gin.Context) {
-	// ......
+func LoginDefault(c *gin.Context) {
+    // ......
 
-	// Case 1: generate token with default fields
-	token, err := jwt.GenerateToken("123", "admin")
-	
-	// Case 2: generate token with custom fields
-	fields := jwt.KV{"id": uint64(100), "name": "tom", "age": 10}
-	token, err := jwt.GenerateCustomToken(fields)
+    _, token, err := jwt.GenerateToken("100")
 
-	// ......
+    response.Success(c, token)
+}
+
+func LoginCustom(c *gin.Context) {
+    // ......
+ 
+    uid := "100"
+    fields := map[string]interface{}{
+        "name":   "bob",
+        "age":    10,
+        "is_vip": true,
+    }
+
+    _, token, err := jwt.GenerateToken(
+        uid,
+        jwt.WithGenerateTokenSignKey([]byte("custom-sign-key")),
+        jwt.WithGenerateTokenSignMethod(jwt.HS512),
+        jwt.WithGenerateTokenFields(fields),
+        jwt.WithGenerateTokenClaims([]jwt.RegisteredClaimsOption{
+            jwt.WithExpires(time.Hour * 12),
+            //jwt.WithIssuedAt(now),
+            // jwt.WithSubject("123"),
+            // jwt.WithIssuer("https://auth.example.com"),
+            // jwt.WithAudience("https://api.example.com"),
+            // jwt.WithNotBefore(now),
+            // jwt.WithJwtID("abc1234xxx"),
+        }...),
+    )
+
+    response.Success(c, token)
 }
 
 func GetByID(c *gin.Context) {
-	// Case 1: default authorization
-	uid := c.MustGet("uid").(string)
-	name := c.MustGet("name").(string)
+    uid := c.MustGet("id").(string)
 
-	// Case 2: custom authorization
-	// Get information according to key-value pairs set in extraCustomVerifyFn function.
-	// id, exists := c.Get("id")
-	// name, exists := c.Get("name")
-
-	// ......
+    response.Success(c, gin.H{"id": uid})
 }
 
-func extraDefaultVerifyFn(claims *jwt.Claims, tokenTail10 string, c *gin.Context) error {
-	// In addition to jwt certification, additional checks can be customized here.
+func extraVerifyFn(claims *jwt.Claims, c *gin.Context) error {
+    // judge whether the user is disabled, query whether jwt id exists from the blacklist
+    //if CheckBlackList(uid, claims.ID) {
+    //    return errors.New("user is disabled")
+    //}
 
-	// err := errors.New("verify failed")
-	// if claims.Name != "admin" {
-	//     return err
-	// }
-	// token := getToken(claims.UID) // from cache or database
-	// if tokenTail10 != token[len(token)-10:] { return err }
+    // get fields from claims
+    //uid := claims.UID
+    //name, _ := claims.GetString("name")
+    //age, _ := claims.GetInt("age")
+    //isVip, _ := claims.GetBool("is_vip")
 
-	return nil
-}
-
-func extraCustomVerifyFn(claims *jwt.CustomClaims, tokenTail10 string, c *gin.Context) error {
-	// In addition to jwt certification, additional checks can be customized here.
-
-	// err := errors.New("verify failed")
-	// token, fields := getToken(id) // from cache or database
-	// if tokenTail10 != token[len(token)-10:] { return err }
-
-	// id, exist := claims.GetUint64("id")
-	// if !exist || id != fields["id"].(uint64) { return err }
-
-	// name, exist := claims.GetString("name")
-	// if !exist || name != fields["name"].(string) { return err }
-
-	// age, exist := claims.GetInt("age")
-	// if !exist || age != fields["age"].(int) { return err }
-
-	// set key-value pairs in gin.Context
-	// c.Set("uid", id)
-	// c.Set("name", name)
-
-	return nil
+    return nil
 }
 ```
 
@@ -187,36 +199,36 @@ import "github.com/go-dev-frame/sponge/pkg/tracer"
 import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
 
 func InitTrace(serviceName string) {
-	exporter, err := tracer.NewJaegerAgentExporter("192.168.3.37", "6831")
-	if err != nil {
-		panic(err)
-	}
+    exporter, err := tracer.NewJaegerAgentExporter("192.168.3.37", "6831")
+    if err != nil {
+        panic(err)
+    }
 
-	resource := tracer.NewResource(
-		tracer.WithServiceName(serviceName),
-		tracer.WithEnvironment("dev"),
-		tracer.WithServiceVersion("demo"),
-	)
+    resource := tracer.NewResource(
+        tracer.WithServiceName(serviceName),
+        tracer.WithEnvironment("dev"),
+        tracer.WithServiceVersion("demo"),
+    )
 
-	tracer.Init(exporter, resource) // collect all by default
+    tracer.Init(exporter, resource) // collect all by default
 }
 
 func NewRouter(
-	r := gin.Default()
-	r.Use(middleware.Tracing("your-service-name"))
+    r := gin.Default()
+    r.Use(middleware.Tracing("your-service-name"))
 
-	// ......
+    // ......
 )
 
 // if necessary, you can create a span in the program
 func SpanDemo(serviceName string, spanName string, ctx context.Context) {
-	_, span := otel.Tracer(serviceName).Start(
-		ctx, spanName,
-		trace.WithAttributes(attribute.String(spanName, time.Now().String())),
-	)
-	defer span.End()
+    _, span := otel.Tracer(serviceName).Start(
+        ctx, spanName,
+        trace.WithAttributes(attribute.String(spanName, time.Now().String())),
+    )
+    defer span.End()
 
-	// ......
+    // ......
 }
 ```
 

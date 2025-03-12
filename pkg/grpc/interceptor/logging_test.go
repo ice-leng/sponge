@@ -1,6 +1,7 @@
 package interceptor
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -15,7 +16,7 @@ func TestUnaryClientLog(t *testing.T) {
 		UnaryClientRequestID(),
 		UnaryClientLog(logger.Get(), WithReplaceGRPCLogger()),
 	)
-	_ = sayHelloMethod(cli)
+	_ = sayHelloMethod(context.Background(), cli)
 }
 
 func TestUnaryServerLog(t *testing.T) {
@@ -26,7 +27,7 @@ func TestUnaryServerLog(t *testing.T) {
 	)
 	time.Sleep(time.Millisecond * 200)
 	cli := newUnaryRPCClient(addr)
-	_ = sayHelloMethod(cli)
+	_ = sayHelloMethod(context.Background(), cli)
 }
 
 func TestStreamClientLog(t *testing.T) {
@@ -36,7 +37,7 @@ func TestStreamClientLog(t *testing.T) {
 		StreamClientRequestID(),
 		StreamClientLog(logger.Get(), WithReplaceGRPCLogger()),
 	)
-	_ = discussHelloMethod(cli)
+	_ = discussHelloMethod(context.Background(), cli)
 	time.Sleep(time.Millisecond)
 }
 
@@ -54,7 +55,7 @@ func TestUnaryServerLog_ignore(t *testing.T) {
 	)
 	time.Sleep(time.Millisecond * 200)
 	cli := newUnaryRPCClient(addr)
-	_ = sayHelloMethod(cli)
+	_ = sayHelloMethod(context.Background(), cli)
 }
 
 func TestStreamServerLog(t *testing.T) {
@@ -71,7 +72,7 @@ func TestStreamServerLog(t *testing.T) {
 	)
 	time.Sleep(time.Millisecond * 200)
 	cli := newStreamRPCClient(addr)
-	_ = discussHelloMethod(cli)
+	_ = discussHelloMethod(context.Background(), cli)
 	time.Sleep(time.Millisecond)
 }
 
