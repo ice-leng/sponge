@@ -25,8 +25,8 @@ func OpenUICommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "run",
-		Short: "Run code generation UI service",
-		Long:  "Run code generation UI service.",
+		Short: "Run code generation engine service, generate code in UI interface",
+		Long:  "Run code generation engine service, generate code in UI interface.",
 		Example: color.HiBlackString(`  # Running ui service, local browser access only.
   sponge run
 
@@ -43,7 +43,7 @@ func OpenUICommand() *cobra.Command {
 					return err
 				}
 			}
-			fmt.Printf("The code generation service has started, version = %s, please visit %s in your browser.\n",
+			fmt.Printf("The code generation engine service is already running, version = %s, access the url %s in your browser.\n",
 				getVersion(), color.HiCyanString(spongeAddr))
 			go func() {
 				_ = open(spongeAddr)

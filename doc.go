@@ -26,7 +26,7 @@
 //
 // plugins     Managing sponge dependency plugins
 //
-// run         Run code generation UI service
+// run         Run code generation engine service, generate code in UI interface
 //
 // template    Generate code based on custom templates
 //

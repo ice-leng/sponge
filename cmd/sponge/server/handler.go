@@ -193,7 +193,12 @@ func handleGenerateCode(c *gin.Context, outPath string, arg string) {
 	}
 
 	zipFile := out + ".zip"
-	err := CompressPathToZip(out, zipFile)
+	var err error
+	if gofile.IsWindows() {
+		err = AdaptToWindowsZip(out, zipFile)
+	} else {
+		err = CompressPathToZip(out, zipFile)
+	}
 	if err != nil {
 		responseErr(c, err, errcode.InternalServerError)
 		return
@@ -422,6 +427,56 @@ func compress(file *os.File, prefix string, zw *zip.Writer) error {
 	}
 
 	return nil
+}
+
+func AdaptToWindowsZip(outPath, targetFile string) error {
+	d, err := os.Create(targetFile)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+
+	w := zip.NewWriter(d)
+	defer w.Close()
+
+	baseDir := filepath.Dir(outPath)
+
+	return filepath.Walk(outPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(baseDir, path)
+		if err != nil {
+			return err
+		}
+		header.Name = filepath.ToSlash(relPath) // convert to slash path
+
+		if info.IsDir() {
+			header.Name += "/"
+			_, err = w.CreateHeader(header)
+			return err
+		}
+
+		writer, err := w.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, err = io.Copy(writer, file)
+		return err
+	})
 }
 
 func getSpongeDir() string {

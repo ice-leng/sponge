@@ -106,8 +106,8 @@ func HandlerPbCommand() *cobra.Command {
 using help:
   1. move the folders "api" and "internal" to your project code folder.
   2. open a terminal and execute the command: make proto
-  3. compile and run service: make run
-  4. visit http://localhost:8080/apis/swagger/index.html in your browser, and test the http CRUD api.
+  3. compile and run server: make run
+  4. access http://localhost:8080/apis/swagger/index.html in your browser, and test the http CRUD api.
 
 `)
 			fmt.Printf("generate \"handler-pb\" code successfully, out = %s\n", outPath)

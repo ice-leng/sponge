@@ -11,34 +11,39 @@ Common gin middleware libraries.
 You can set the maximum length for printing, add a request id field, ignore print path, customize [zap](go.uber.org/zap) log.
 
 ```go
-    import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+)
 
+func NewRouter() *gin.Engine {
     r := gin.Default()
+    // ......
 
     // Print input parameters and return results
-    // case 1:
-    r.Use(middleware.Logging()) // default
-    // case 2:
-    r.Use(middleware.Logging( // custom
-        middleware.WithMaxLen(400),
-        middleware.WithRequestIDFromHeader(),
-        //middleware.WithRequestIDFromContext(),
-        //middleware.WithLog(log), // custom zap log
-        //middleware.WithIgnoreRoutes("/hello"),
-    ))    
+    // Case 1: default
+    {
+        r.Use(middleware.Logging()
+    }
+    // Case 2: custom
+    {
+        r.Use(middleware.Logging(
+            middleware.WithLog(logger.Get()))
+            middleware.WithMaxLen(400),
+            middleware.WithRequestIDFromHeader(),
+            //middleware.WithRequestIDFromContext(),
+            //middleware.WithIgnoreRoutes("/hello"),
+        ))
+    }
 
-    // ----------------------------------------
+    /*******************************************
+    TIP: You can use middleware.SimpleLog instead of
+           middleware.Logging, it only prints return results
+    *******************************************/
 
-    // Print only return results
-    // case 1:
-    r.Use(middleware.SimpleLog()) // default
-    // case 2:
-    r.Use(middleware.SimpleLog( // custom
-        middleware.WithRequestIDFromHeader(),
-        //middleware.WithRequestIDFromContext(),
-        //middleware.WithLog(log), // custom zap log
-        //middleware.WithIgnoreRoutes("/hello"),
-    ))    
+    // ......
+    return r
+}
 ```
 
 <br>
@@ -46,10 +51,20 @@ You can set the maximum length for printing, add a request id field, ignore prin
 ### Allow cross-domain requests middleware
 
 ```go
-    import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+)
 
+func NewRouter() *gin.Engine {
     r := gin.Default()
+    // ......
+
     r.Use(middleware.Cors())
+
+    // ......
+    return r
+}
 ```
 
 <br>
@@ -59,20 +74,29 @@ You can set the maximum length for printing, add a request id field, ignore prin
 Adaptive flow limitation based on hardware resources.
 
 ```go
-    import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+)
 
+func NewRouter() *gin.Engine {
     r := gin.Default()
+    // ......
 
-    // case 1: default
+    // Case 1: default
     r.Use(middleware.RateLimit())
 
-    // case 2: custom
+    // Case 2: custom
     r.Use(middleware.RateLimit(
         middleware.WithWindow(time.Second*10),
         middleware.WithBucket(1000),
         middleware.WithCPUThreshold(100),
         middleware.WithCPUQuota(0.5),
     ))
+
+    // ......
+    return r
+}
 ```
 
 <br>
@@ -80,13 +104,23 @@ Adaptive flow limitation based on hardware resources.
 ### Circuit Breaker middleware
 
 ```go
-    import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+)
 
+func NewRouter() *gin.Engine {
     r := gin.Default()
+    // ......
+
     r.Use(middleware.CircuitBreaker(
         //middleware.WithValidCode(http.StatusRequestTimeout), // add error code 408 for circuit breaker
         //middleware.WithDegradeHandler(handler), // add custom degrade handler
     ))
+
+    // ......
+    return r
+}
 ```
 
 <br>
@@ -97,14 +131,14 @@ Adaptive flow limitation based on hardware resources.
 package main
 
 import (
+    "time"
     "github.com/gin-gonic/gin"
     "github.com/go-dev-frame/sponge/pkg/gin/middleware"
     "github.com/go-dev-frame/sponge/pkg/gin/response"
     "github.com/go-dev-frame/sponge/pkg/jwt"
-    "time"
 )
 
-func web() {
+func main() {
     r := gin.Default()
 
     // Case 1: default jwt options, signKey, signMethod(HS256), expiry time(24 hour)
@@ -195,8 +229,11 @@ func extraVerifyFn(claims *jwt.Claims, c *gin.Context) error {
 ### Tracing middleware
 
 ```go
-import "github.com/go-dev-frame/sponge/pkg/tracer"
-import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+    "github.com/go-dev-frame/sponge/pkg/tracer"
+)
 
 func InitTrace(serviceName string) {
     exporter, err := tracer.NewJaegerAgentExporter("192.168.3.37", "6831")
@@ -213,15 +250,18 @@ func InitTrace(serviceName string) {
     tracer.Init(exporter, resource) // collect all by default
 }
 
-func NewRouter(
+func NewRouter() *gin.Engine {
     r := gin.Default()
+    // ......
+
     r.Use(middleware.Tracing("your-service-name"))
 
     // ......
-)
+    return r
+}
 
 // if necessary, you can create a span in the program
-func SpanDemo(serviceName string, spanName string, ctx context.Context) {
+func CreateSpanDemo(serviceName string, spanName string, ctx context.Context) {
     _, span := otel.Tracer(serviceName).Start(
         ctx, spanName,
         trace.WithAttributes(attribute.String(spanName, time.Now().String())),
@@ -237,9 +277,15 @@ func SpanDemo(serviceName string, spanName string, ctx context.Context) {
 ### Metrics middleware
 
 ```go
-    import "github.com/go-dev-frame/sponge/pkg/gin/middleware/metrics"
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+    "github.com/go-dev-frame/sponge/pkg/gin/middleware/metrics"
+)
 
+func NewRouter() *gin.Engine {
     r := gin.Default()
+    // ......
 
     r.Use(metrics.Metrics(r,
         //metrics.WithMetricsPath("/demo/metrics"), // default is /metrics
@@ -247,6 +293,9 @@ func SpanDemo(serviceName string, spanName string, ctx context.Context) {
         //metrics.WithIgnoreRequestMethods(http.MethodHead),  // ignore request methods
         //metrics.WithIgnoreRequestPaths("/ping", "/health"), // ignore request paths
     ))
+
+    // ......
+    return r
 ```
 
 <br>
@@ -254,25 +303,33 @@ func SpanDemo(serviceName string, spanName string, ctx context.Context) {
 ### Request id
 
 ```go
-    import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+)
 
-    // Default request id
+func NewRouter() *gin.Engine {
     r := gin.Default()
-    r.Use(middleware.RequestID())
+    // ......
 
-    // --- or ---
+    // Case 1: default request id
+    {
+        r.Use(middleware.RequestID())
+    }
+    // Case 2: custom request id key
+    {
+        //r.User(middleware.RequestID(
+        //    middleware.WithContextRequestIDKey("your ctx request id key"), // default is request_id
+        //    middleware.WithHeaderRequestIDKey("your header request id key"), // default is X-Request-Id
+        //))
+        // If you change the ContextRequestIDKey, you have to set the same key name if you want to print the request id in the mysql logs as well.
+        // example:
+        //     db, err := mysql.Init(dsn,mysql.WithLogRequestIDKey("your ctx request id key"))  // print request_id
+    }
 
-    // Customized request id key
-    //r.User(middleware.RequestID(
-    //    middleware.WithContextRequestIDKey("your ctx request id key"), // default is request_id
-    //    middleware.WithHeaderRequestIDKey("your header request id key"), // default is X-Request-Id
-    //))
-    // If you change the ContextRequestIDKey, you have to set the same key name if you want to print the request id in the mysql logs as well.
-    // example: 
-    // db, err := mysql.Init(dsn,
-        // mysql.WithLogRequestIDKey("your ctx request id key"),  // print request_id
-        // ...
-    // )
+    // ......
+    return r
+}
 ```
 
 <br>
@@ -280,17 +337,30 @@ func SpanDemo(serviceName string, spanName string, ctx context.Context) {
 ### Timeout
 
 ```go
-    import "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+import (
+    "github.com/gin-gonic/gin"
+    "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+)
 
+func NewRouter() *gin.Engine {
     r := gin.Default()
+    // ......
 
-    // way1: global set timeout
-    r.Use(middleware.Timeout(time.Second*5))
-
-    // --- or ---
-
-    // way2: router set timeout
-    r.GET("/userExample/:id", middleware.Timeout(time.Second*3), h.GetByID)
-
+    // Case 1: global set timeout
+    {
+        r.Use(middleware.Timeout(time.Second*5))
+    }
+    // Case 2: set timeout for specifyed router
+    {
+        r.GET("/userExample/:id", middleware.Timeout(time.Second*3), GetByID)
+    }
     // Note: If timeout is set both globally and in the router, the minimum timeout prevails
+
+    // ......
+    return r
+}
+
+func GetByID(c *gin.Context) {
+    // do something
+}
 ```
