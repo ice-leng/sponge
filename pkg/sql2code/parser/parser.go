@@ -108,7 +108,12 @@ func ParseSQL(sql string, options ...Option) (map[string]string, error) {
 			protoFileCodes = append(protoFileCodes, code.protoFile)
 			serviceStructCodes = append(serviceStructCodes, code.serviceStruct)
 			modelJSONCodes = append(modelJSONCodes, code.modelJSON)
-			tableNames = append(tableNames, toCamel(ct.Table.Name.String()))
+			tableName := ct.Table.Name.String()
+			tablePrefix := opt.TablePrefix
+			if tablePrefix != "" && strings.HasPrefix(tableName, tablePrefix) {
+				tableName = tableName[len(tablePrefix):]
+			}
+			tableNames = append(tableNames, toCamel(tableName))
 			primaryKeysCodes = append(primaryKeysCodes, code.crudInfo)
 			tableInfoCodes = append(tableInfoCodes, string(code.tableInfo))
 			for _, s := range code.importPaths {

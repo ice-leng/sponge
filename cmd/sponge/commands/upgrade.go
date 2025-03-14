@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"github.com/go-dev-frame/sponge/cmd/sponge/global"
 	"os"
 	"sort"
 	"strings"
@@ -100,6 +101,15 @@ func runUpgradeCommand(targetVersion string) error {
 	if result.Err != nil {
 		return result.Err
 	}
+
+	// 本地安装 替换远程安装
+	result = gobash.Run(ctx, "go", "install")
+	for v := range result.StdOut {
+		_ = v
+	}
+	if result.Err != nil {
+		return result.Err
+	}
 	return nil
 }
 
@@ -134,7 +144,8 @@ func copyToTempDir(targetVersion string) (string, error) {
 		spongeDirName = "sponge@" + targetVersion
 	}
 
-	srcDir := adaptPathDelimiter(fmt.Sprintf("%s/pkg/mod/github.com/go-dev-frame/%s", gopath, spongeDirName))
+	//srcDir := adaptPathDelimiter(fmt.Sprintf("%s/pkg/mod/github.com/go-dev-frame/%s", gopath, spongeDirName))
+	srcDir := adaptPathDelimiter(global.Root)
 	if compareVersion(separatedVersion, targetVersion) {
 		srcDir = strings.ReplaceAll(srcDir, "go-dev-frame", "zhufuyi")
 	}

@@ -331,6 +331,8 @@ func (g *httpGenerator) generateCode() (string, error) {
 			//"internal/service",
 			//"internal/rpcclient",
 			"internal/config",
+			"internal/server",
+			"internal/database",
 		}...)
 		ignoreFiles = append(ignoreFiles, []string{
 			".gitignore",
@@ -342,11 +344,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"go.mod",
 			"go.sum",
 			"internal/ecode/systemCode_http.go",
-			"internal/model/init.go",
 			"internal/routers/routers.go",
-			"internal/server/http.go",
-			"internal/server/http_option.go",
-			"internal/server/http_test.go",
 			"internal/types/swagger_types.go",
 		}...)
 	}

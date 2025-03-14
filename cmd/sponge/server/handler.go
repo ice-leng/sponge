@@ -5,11 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/go-dev-frame/sponge/cmd/sponge/global"
 	"io"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -73,7 +75,8 @@ func ListTables(c *gin.Context) {
 		response.Error(c, errcode.InvalidParams.RewriteMsg(err.Error()))
 		return
 	}
-
+	dbParams := strings.Split(form.Dsn, ";")
+	form.Dsn = dbParams[0]
 	var tables []string
 	switch strings.ToLower(form.DbDriver) {
 	case sgorm.DBDriverMysql, sgorm.DBDriverTidb:
@@ -160,6 +163,25 @@ func handleGenerateCode(c *gin.Context, outPath string, arg string) {
 			out = params.ModuleName + "-" + out
 		}
 	}
+
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*2) // nolint
+	// mac 文件生成
+	if runtime.GOOS == "darwin" {
+		outLine := global.Path
+		if params.SuitedMonoRepo {
+			outLine += "-mono-repo"
+		}
+		argsLine := append(args, fmt.Sprintf("--out=%s", outLine))
+		resultLine := gobash.Run(ctx, "sponge", argsLine...)
+		for v := range resultLine.StdOut {
+			_ = v
+		}
+		if resultLine.Err != nil {
+			responseErr(c, resultLine.Err, errcode.InternalServerError)
+			return
+		}
+	}
+
 	if params.SuitedMonoRepo {
 		out += "-mono-repo"
 	}
@@ -167,7 +189,7 @@ func handleGenerateCode(c *gin.Context, outPath string, arg string) {
 	out = os.TempDir() + gofile.GetPathDelimiter() + "sponge-generate-code" + gofile.GetPathDelimiter() + out
 	args = append(args, fmt.Sprintf("--out=%s", out))
 
-	ctx, _ := context.WithTimeout(context.Background(), time.Minute*2) // nolint
+	//ctx, _ := context.WithTimeout(context.Background(), time.Minute*2) // nolint
 	result := gobash.Run(ctx, "sponge", args...)
 	resultInfo := ""
 	count := 0
