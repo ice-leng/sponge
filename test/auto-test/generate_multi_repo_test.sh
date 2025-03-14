@@ -47,14 +47,17 @@ function checkResult() {
     fi
 }
 
-function printTestResult() {
-  local errCount=$1
-  local serverDir=$2
-  if [ ${errCount} -eq 0 ]; then
+serverRunSuccess="false"
+
+function checkAndPrintTestResult() {
+  if [ "$serverRunSuccess" == "true" ]; then
     echo -e "\n\n${colorGreen}--------------------- [${serverDir}] test result: passed ---------------------${markEnd}\n"
-  else
-    echo -e "\n\n${colorRed}--------------------- [${serverDir}] test result: failed ---------------------${markEnd}\n"
   fi
+  serverRunSuccess="false" # reset serverRunSuccess
+}
+
+function printTestFailed() {
+  echo -e "\n\n${colorRed}--------------------- [${serverDir}] test result: failed ---------------------${markEnd}\n"
 }
 
 function stopService() {
@@ -89,12 +92,12 @@ function checkServiceStarted() {
     sleep 1
     pid=$(ps -ef | grep "${processMark}" | grep -v grep | awk '{print $2}')
     if [ "${pid}" != "" ]; then
-        printTestResult 0 $serverDir
+        serverRunSuccess="true"
         break
     fi
     (( timeCount++ ))
     if (( timeCount >= 20 )); then
-      printTestResult 1 $serverDir
+      printTestFailed
       return 1
     fi
   done
@@ -117,6 +120,7 @@ function runningHTTPService() {
   sleep 1
   stopService $name
   checkResult $?
+  checkAndPrintTestResult
 }
 
 function runningProtoService() {
@@ -136,6 +140,7 @@ function runningProtoService() {
   sleep 1
   stopService $name
   checkResult $?
+  checkAndPrintTestResult
 }
 
 # -------------------------------------------------------------------------------------------
@@ -380,9 +385,129 @@ function generate_grpc_mongodb() {
 
 # ---------------------------------------------------------------
 
+function generate_grpc_http_mysql() {
+  local serverName="user"
+  local outDir="multi-09-grpc-http-mysql"
+  echo -e "\n\n"
+  echo -e "create service code to directory $outDir"
+  if [ -d "${outDir}" ]; then
+    echo -e "$outDir already exists\n\n"
+  else
+    echo -e "\n${colorCyan}sponge micro grpc-http --server-name=$serverName --module-name=$serverName --project-name=edusys --db-driver=mysql --db-dsn=$mysqlDsn --db-table=$mysqlTable1 --embed=true --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro grpc-http --server-name=$serverName --module-name=$serverName --project-name=edusys --db-driver=mysql --db-dsn=$mysqlDsn --db-table=$mysqlTable1 --embed=true --extended-api=$isExtended --out=$outDir
+    checkResult $?
+
+    echo -e "\n${colorCyan}sponge micro service-handler --db-driver=mysql --db-dsn=$mysqlDsn --db-table=$mysqlTable2,$mysqlTable3 --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro service-handler --db-driver=mysql --db-dsn=$mysqlDsn --db-table=$mysqlTable2,$mysqlTable3 --extended-api=$isExtended --out=$outDir
+    checkResult $?
+  fi
+
+  if [ "$isOnlyGenerateCode" == "true" ]; then
+    echo -e "\n\n"
+    return
+  fi
+
+  cd $outDir
+  runningProtoService $serverName $outDir
+  checkResult $?
+  sleep 1
+  cd -
+}
+
+function generate_grpc_http_postgresql() {
+  local serverName="user"
+  local outDir="multi-10-grpc-http-postgresql"
+  echo -e "\n\n"
+  echo -e "create service code to directory $outDir"
+  if [ -d "${outDir}" ]; then
+    echo -e "$outDir already exists\n\n"
+  else
+    echo -e "\n${colorCyan}sponge micro grpc-http --server-name=$serverName --module-name=$serverName --project-name=edusys --db-driver=postgresql --db-dsn=$postgresqlDsn --db-table=$postgresqlTable1 --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro grpc-http --server-name=$serverName --module-name=$serverName --project-name=edusys --db-driver=postgresql --db-dsn=$postgresqlDsn --db-table=$postgresqlTable1 --extended-api=$isExtended --out=$outDir
+    checkResult $?
+
+    echo -e "\n${colorCyan}sponge micro service-handler --db-driver=postgresql --db-dsn=$postgresqlDsn --db-table=$postgresqlTable2,$postgresqlTable3 --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro service-handler --db-driver=postgresql --db-dsn=$postgresqlDsn --db-table=$postgresqlTable2,$postgresqlTable3 --extended-api=$isExtended --out=$outDir
+    checkResult $?
+  fi
+
+  if [ "$isOnlyGenerateCode" == "true" ]; then
+    echo -e "\n\n"
+    return
+  fi
+
+  cd $outDir
+  runningProtoService $serverName $outDir
+  checkResult $?
+  sleep 1
+  cd -
+}
+
+function generate_grpc_http_sqlite() {
+  local serverName="user"
+  local outDir="multi-11-grpc-http-sqlite"
+  echo -e "\n\n"
+  echo -e "create service code to directory $outDir"
+  if [ -d "${outDir}" ]; then
+    echo -e "$outDir already exists\n\n"
+  else
+    echo -e "\n${colorCyan}sponge micro grpc-http --server-name=$serverName --module-name=$serverName --project-name=edusys --db-driver=sqlite --db-dsn=$sqliteDsn --db-table=$sqliteTable1 --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro grpc-http --server-name=$serverName --module-name=$serverName --project-name=edusys --db-driver=sqlite --db-dsn=$sqliteDsn --db-table=$sqliteTable1 --extended-api=$isExtended --out=$outDir
+    checkResult $?
+
+    echo -e "\n${colorCyan}sponge micro service-handler --db-driver=sqlite --db-dsn=$sqliteDsn --db-table=$sqliteTable2,$sqliteTable3 --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro service-handler --db-driver=sqlite --db-dsn=$sqliteDsn --db-table=$sqliteTable2,$sqliteTable3 --extended-api=$isExtended --out=$outDir
+    checkResult $?
+
+    sed -E -i 's/\\\\sql\\\\/\\\\\.\.\\\\\sql\\\\/g' ${outDir}/configs/${serverName}.yml
+  fi
+
+  if [ "$isOnlyGenerateCode" == "true" ]; then
+    echo -e "\n\n"
+    return
+  fi
+
+  cd $outDir
+  runningProtoService $serverName $outDir
+  checkResult $?
+  sleep 1
+  cd -
+}
+
+function generate_grpc_http_mongodb() {
+  local serverName="user"
+  local outDir="multi-12-grpc-http-mongodb"
+  echo -e "\n\n"
+  echo -e "create service code to directory $outDir"
+  if [ -d "${outDir}" ]; then
+    echo -e "$outDir already exists\n\n"
+  else
+    echo -e "\n${colorCyan}sponge micro grpc-http --server-name=$serverName --module-name=$serverName --project-name=edusys --db-driver=mongodb --db-dsn=$mongodbDsn --db-table=$mongodbCollection1 --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro grpc-http --server-name=$serverName --module-name=$serverName --project-name=edusys --db-driver=mongodb --db-dsn=$mongodbDsn --db-table=$mongodbCollection1 --extended-api=$isExtended --out=$outDir
+    checkResult $?
+
+    echo -e "\n${colorCyan}sponge micro service-handler --db-driver=mongodb --db-dsn=$mongodbDsn --db-table=$mongodbCollection2,$mongodbCollection3 --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro service-handler --db-driver=mongodb --db-dsn=$mongodbDsn --db-table=$mongodbCollection2,$mongodbCollection3 --extended-api=$isExtended --out=$outDir
+    checkResult $?
+  fi
+
+  if [ "$isOnlyGenerateCode" == "true" ]; then
+    echo -e "\n\n"
+    return
+  fi
+
+  cd $outDir
+  runningProtoService $serverName $outDir
+  checkResult $?
+  sleep 1
+  cd -
+}
+
+# ---------------------------------------------------------------
+
 function generate_http_pb_mysql() {
   local serverName="user"
-  local outDir="multi-09-http-pb-mysql"
+  local outDir="multi-13-http-pb-mysql"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
   if [ -d "${outDir}" ]; then
@@ -420,7 +545,7 @@ function generate_http_pb_mysql() {
 
 function generate_http_pb_mongodb() {
   local serverName="user"
-  local outDir="multi-10-http-pb-mongodb"
+  local outDir="multi-14-http-pb-mongodb"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
   if [ -d "${outDir}" ]; then
@@ -458,7 +583,7 @@ function generate_http_pb_mongodb() {
 
 function generate_grpc_pb_mysql() {
   local serverName="user"
-  local outDir="multi-11-grpc-pb-mysql"
+  local outDir="multi-15-grpc-pb-mysql"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
   if [ -d "${outDir}" ]; then
@@ -496,7 +621,7 @@ function generate_grpc_pb_mysql() {
 
 function generate_grpc_pb_mongodb() {
   local serverName="user"
-  local outDir="multi-12-grpc-pb-mongodb"
+  local outDir="multi-16-grpc-pb-mongodb"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
   if [ -d "${outDir}" ]; then
@@ -534,7 +659,7 @@ function generate_grpc_pb_mongodb() {
 
 function generate_grpc_http_pb_mysql() {
   local serverName="user"
-  local outDir="multi-13-grpc-http-pb-mysql"
+  local outDir="multi-17-grpc-http-pb-mysql"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
   if [ -d "${outDir}" ]; then
@@ -572,7 +697,7 @@ function generate_grpc_http_pb_mysql() {
 
 function generate_grpc_http_pb_mongodb() {
   local serverName="user"
-  local outDir="multi-14-grpc-http-pb-mongodb"
+  local outDir="multi-18-grpc-http-pb-mongodb"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
   if [ -d "${outDir}" ]; then
@@ -609,7 +734,7 @@ function generate_grpc_http_pb_mongodb() {
 
 function generate_http_pb_mixed() {
   local serverName="user"
-  local outDir="multi-15-http-pb-mixed"
+  local outDir="multi-19-http-pb-mixed"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
   if [ -d "${outDir}" ]; then
@@ -634,7 +759,7 @@ function generate_http_pb_mixed() {
 
 function generate_grpc_pb_mixed() {
   local serverName="user"
-  local outDir="multi-16-grpc-pb-mixed"
+  local outDir="multi-20-grpc-pb-mixed"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
   if [ -d "${outDir}" ]; then
@@ -661,7 +786,7 @@ function generate_grpc_pb_mixed() {
 
 function generate_grpc_gw_pb_mixed() {
   local serverName="user_gw"
-  local outDir="multi-17-grpc-gw-pb-mixed"
+  local outDir="multi-21-grpc-gw-pb-mixed"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
   if [ -d "${outDir}" ]; then
@@ -686,7 +811,7 @@ function generate_grpc_gw_pb_mixed() {
 
 function generate_grpc_gw_pb() {
   local serverName="user_gw"
-  local outDir="multi-18-grpc-gw-pb"
+  local outDir="multi-22-grpc-gw-pb"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
   if [ -d "${outDir}" ]; then
@@ -725,6 +850,11 @@ function main() {
   generate_grpc_postgresql
   generate_grpc_sqlite
   generate_grpc_mongodb
+
+  generate_grpc_http_mysql
+  generate_grpc_http_postgresql
+  generate_grpc_http_sqlite
+  generate_grpc_http_mongodb
 
   generate_http_pb_mysql
   generate_http_pb_mongodb

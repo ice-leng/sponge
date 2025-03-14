@@ -43,15 +43,14 @@ const (
 	// DBDriverMongodb mongodb driver
 	DBDriverMongodb = "mongodb"
 
-	undeterminedDBDriver = "undetermined" // used in services created based on protobuf.
-
 	// code name
 	codeNameHTTP        = "http"
 	codeNameGRPC        = "grpc"
 	codeNameHTTPPb      = "http-pb"
 	codeNameGRPCPb      = "grpc-pb"
 	codeNameGRPCGW      = "grpc-gw-pb"
-	codeNameGRPCHTTP    = "grpc-http-pb"
+	codeNameGRPCHTTP    = "grpc-http"
+	codeNameGRPCHTTPPb  = "grpc-http-pb"
 	codeNameHandler     = "handler"
 	codeNameHandlerPb   = "handler-pb"
 	codeNameService     = "service"
@@ -71,6 +70,8 @@ const (
 )
 
 var (
+	undeterminedDBDriver = "undetermined" // used in services created based on protobuf.
+
 	modelFile     = "model/userExample.go"
 	modelFileMark = "// todo generate model code to here"
 

@@ -1,27 +1,18 @@
 #!/bin/bash
 
 testServerName="user"
-testServerDir="auto-05-micro-grpc-pb"
+testServerDir="auto-03-micro-grpc-http"
 projectName="edusys"
-protobufFile="files/user_rpc.proto"
-protoServiceNameCamelFCL="userRpc"
+
+mysqlDSN="root:123456@(192.168.3.37:3306)/account"
+mysqlTable="user"
+mysqlTableNameCamelFCL="user"
 
 colorCyan='\e[1;36m'
 colorGreen='\e[1;32m'
 colorRed='\e[1;31m'
 markEnd='\e[0m'
 errCount=0
-
-srcStr1='func (s *userRpc) Register(ctx context.Context, req *userV1.RegisterRequest) (*userV1.RegisterReply, error) {'
-dstStr1='func (s *userRpc) Register(ctx context.Context, req *userV1.RegisterRequest) (*userV1.RegisterReply, error) {
-    return &userV1.RegisterReply{
-        Id: 111,
-    }, nil
-'
-srcStr2='Email:    "",'
-dstStr2='Email:    "foo@bar.com",'
-srcStr3='Password: "",'
-dstStr3='Password: "123456",'
 
 function checkResult() {
   result=$1
@@ -42,6 +33,7 @@ function printTestResult() {
     echo -e "\n\n${colorGreen}--------------------- [${testServerDir}] test result: passed ---------------------${markEnd}\n"
   else
     echo -e "\n\n${colorRed}--------------------- [${testServerDir}] test result: failed ${errCount} ---------------------${markEnd}\n"
+    exit 1
   fi
 }
 
@@ -87,33 +79,27 @@ function testRequest() {
   checkServiceStarted $testServerName
   sleep 1
 
+  echo -e "start testing [${testServerName}] api:\n\n"
+  echo -e "${colorCyan}curl -X GET http://localhost:8080/api/v1/user/1 ${markEnd}"
+  curl -X GET http://localhost:8080/api/v1/user/1
+  checkErrCount $?
+
   cd internal/service
   echo -e "start testing [${testServerName}] api:\n\n"
-  echo -e "${colorCyan}go test -run Test_service_${protoServiceNameCamelFCL}_methods/Register ${markEnd}"
-  go test -run Test_service_${protoServiceNameCamelFCL}_methods/Register
+  echo -e "${colorCyan}go test -run Test_service_${mysqlTableNameCamelFCL}_methods/GetByID ${markEnd}"
+  sed -i "s/Id: 0,/Id: 1,/g" ${mysqlTableNameCamelFCL}_client_test.go
+  go test -run Test_service_${mysqlTableNameCamelFCL}_methods/GetByID
+  checkErrCount $?
+
+  echo -e "\n\n"
+  echo -e "${colorCyan}go test -run Test_service_${mysqlTableNameCamelFCL}_methods/ListByLastID ${markEnd}"
+  sed -i "s/Limit:  0,/Limit:  3,/g" ${mysqlTableNameCamelFCL}_client_test.go
+  go test -run Test_service_${mysqlTableNameCamelFCL}_methods/ListByLastID
   checkErrCount $?
 
   cd -
   printTestResult
   stopService $testServerName
-}
-
-function replaceContent() {
-    local file="$1"
-    local src="$2"
-    local dst="$3"
-
-    if [ ! -f "$file" ]; then
-        echo "file $file not found!"
-        return 1
-    fi
-
-    # Use sed for multiline substitution to ensure special characters are parsed correctly
-    sed -i.bak -e "/$(echo "$src" | sed 's/[]\/$*.^[]/\\&/g')/{
-        r /dev/stdin
-        d
-    }" "$file" <<< "$dst"
-	checkResult $?
 }
 
 echo -e "\n\n"
@@ -122,8 +108,8 @@ if [ -d "${testServerDir}" ]; then
   echo "service ${testServerDir} already exists"
 else
   echo "create service ${testServerDir}"
-  echo -e "${colorCyan}sponge micro rpc-pb --module-name=${testServerName} --server-name=${testServerName} --project-name=${projectName} --protobuf-file=${protobufFile} --out=./${testServerDir} ${markEnd}"
-  sponge micro rpc-pb --module-name=${testServerName} --server-name=${testServerName} --project-name=${projectName} --protobuf-file=${protobufFile} --out=./${testServerDir}
+  echo -e "\n${colorCyan}sponge micro grpc-http --module-name=${testServerName} --server-name=${testServerName} --project-name=${projectName} --db-dsn=${mysqlDSN} --db-table=${mysqlTable} --out=./${testServerDir} ${markEnd}"
+  sponge micro grpc-http --module-name=${testServerName} --server-name=${testServerName} --project-name=${projectName} --db-dsn=${mysqlDSN} --db-table=${mysqlTable} --out=./${testServerDir}
   checkResult $?
 fi
 
@@ -132,14 +118,6 @@ checkResult $?
 
 echo "make proto"
 make proto
-checkResult $?
-
-echo "replace template code"
-replaceContent ./internal/service/user_rpc.go "$srcStr1" "$dstStr1"
-checkResult $?
-replaceContent ./internal/service/user_rpc_client_test.go "$srcStr2" "$dstStr2"
-checkResult $?
-replaceContent ./internal/service/user_rpc_client_test.go "$srcStr3" "$dstStr3"
 checkResult $?
 
 testRequest &

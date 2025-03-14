@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testServerName="user"
-testServerDir="1_web_http_${testServerName}"
+testServerDir="auto-01-web-http"
 projectName="edusys"
 
 mysqlDSN="root:123456@(192.168.3.37:3306)/account"

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testServerName="user"
-testServerDir="3_web_http_pb_${testServerName}"
+testServerDir="auto-04-web-http-pb"
 projectName="edusys"
 protobufFile="files/user_http.proto"
 
