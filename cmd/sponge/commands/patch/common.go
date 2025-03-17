@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/zhufuyi/sponge/pkg/gofile"
+	"github.com/go-dev-frame/sponge/pkg/gofile"
 )
 
 // get moduleName and serverName from directory
@@ -62,4 +62,14 @@ func listErrCodeFiles(dir string) ([]string, error) {
 	}
 
 	return filterFiles, nil
+}
+
+func getSubFiles(selectedFiles map[string][]string) []string {
+	subFiles := []string{}
+	for dir, files := range selectedFiles {
+		for _, file := range files {
+			subFiles = append(subFiles, dir+"/"+file)
+		}
+	}
+	return subFiles
 }

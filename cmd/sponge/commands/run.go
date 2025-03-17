@@ -12,7 +12,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
-	"github.com/zhufuyi/sponge/cmd/sponge/server"
+	"github.com/go-dev-frame/sponge/cmd/sponge/server"
 )
 
 // OpenUICommand run the sponge ui service
@@ -43,7 +43,8 @@ func OpenUICommand() *cobra.Command {
 					return err
 				}
 			}
-			fmt.Printf("ice modified sponge command ui service is running, port = %d, verson = %s, visit %s in your browser.\n\n", port, getVersion(), spongeAddr)
+			fmt.Printf("Ice modified the code generation service has started, version = %s, please visit %s in your browser.\n",
+				getVersion(), color.HiCyanString(spongeAddr))
 			go func() {
 				_ = open(spongeAddr)
 			}()

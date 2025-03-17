@@ -1,33 +1,63 @@
 ## frontend
 
-Embed front-end web static files in gin and add routing.
+`frontend` is a library for serving static files in a Gin web application. It supports local static files and embedding static files in binary.
 
 <br>
 
 ### Example of use
 
+### Local static files
+
 ```go
-import "github.com/zhufuyi/sponge/pkg/gin/frontend"
+package main
 
-//go:embed user
-var staticFS embed.FS
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/go-dev-frame/sponge/pkg/gin/frontend"
+)
 
-func setFrontendRouter(r *gin.Engine) error {
-	var (
-		isUseEmbedFS   = true
-		htmlDir        = "user/home"
-		configFile     = "user/home/config.js"
-		modifyConfigFn = func(content []byte) []byte {
-			// modify config code
-			return content
-		}
+func main() {
+	r := gin.Default()
+	f := frontend.New("dist",
+		// frontend.With404ToHome(),
 	)
-
-	err := frontend.New(staticFS, isUseEmbedFs, htmlDir, configFile, modifyConfigFn).SetRouter(r)
+	err := f.SetRouter(r)
 	if err != nil {
 		panic(err)
 	}
+	err = r.Run(":8080")
+	panic(err)
 }
 ```
 
-Note: in the above example, `user` is the directory where the front-end is located, the static file index.html is in the `user/home` directory. If isUseEmbedFS is false and apiBaseUrl is set in the configuration file, cross-host access is supported.
+#### Embedding static files in binary
+
+```go
+package main
+
+import (
+	"embed"
+	"github.com/gin-gonic/gin"
+	"github.com/go-dev-frame/sponge/pkg/gin/frontend"
+)
+
+//go:embed dist
+var staticFS embed.FS
+
+func main() {
+	r := gin.Default()
+	f := frontend.New("dist",
+		frontend.WithEmbedFS(staticFS),
+		//frontend.WithHandleContent(func(content []byte) []byte {
+		//	return bytes.ReplaceAll(content, []byte("http://localhost:24631/api/v1"), []byte("http://192.168.3.37:24631/api/v1"))
+		//}, "appConfig.js"),
+		// frontend.With404ToHome(),
+	)
+	err := f.SetRouter(r)
+	if err != nil {
+		panic(err)
+	}
+	err = r.Run(":8080")
+	panic(err)
+}
+```

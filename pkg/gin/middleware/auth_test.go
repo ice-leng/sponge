@@ -11,11 +11,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/go-dev-frame/sponge/pkg/gin/response"
+	"github.com/go-dev-frame/sponge/pkg/httpcli"
+	"github.com/go-dev-frame/sponge/pkg/jwt"
+	"github.com/go-dev-frame/sponge/pkg/utils"
 	"github.com/stretchr/testify/assert"
-	"github.com/zhufuyi/sponge/pkg/gin/response"
-	"github.com/zhufuyi/sponge/pkg/httpcli"
-	"github.com/zhufuyi/sponge/pkg/jwt"
-	"github.com/zhufuyi/sponge/pkg/utils"
 )
 
 var (
@@ -27,7 +27,7 @@ var (
 	errMsg = http.StatusText(http.StatusUnauthorized)
 )
 
-func verify(claims *jwt.Claims, tokenTail10 string, c *gin.Context) error {
+func extraDefaultVerifyFn(claims *jwt.Claims, tokenTail10 string, c *gin.Context) error {
 	if claims.UID != uid || claims.Name != name {
 		return errors.New("verify failed")
 	}
@@ -38,7 +38,7 @@ func verify(claims *jwt.Claims, tokenTail10 string, c *gin.Context) error {
 	return nil
 }
 
-func verifyCustom(claims *jwt.CustomClaims, tokenTail10 string, c *gin.Context) error {
+func extraCustomVerifyFn(claims *jwt.CustomClaims, tokenTail10 string, c *gin.Context) error {
 	err := errors.New("verify failed")
 
 	//token, fields := getToken(id)
@@ -83,7 +83,8 @@ func runAuthHTTPServer() string {
 	}
 	r.GET("/auth/login", loginHandler)
 	r.GET("/user/:id", Auth(), getUserByIDHandler)
-	r.GET("/user/toHTTPCode/:id", Auth(WithVerify(verify), WithSwitchHTTPCode()), getUserByIDHandler)
+	r.GET("/user_default/:id", Auth(WithDefaultVerify()), getUserByIDHandler)
+	r.GET("/user/toHTTPCode/:id", Auth(WithDefaultVerify(extraDefaultVerifyFn), WithSwitchHTTPCode()), getUserByIDHandler)
 
 	loginCustomHandler := func(c *gin.Context) {
 		token, _ := jwt.GenerateCustomToken(fields)
@@ -91,8 +92,11 @@ func runAuthHTTPServer() string {
 		response.Success(c, token)
 	}
 	r.GET("/auth/customLogin", loginCustomHandler)
-	r.GET("/user/custom/:id", AuthCustom(verifyCustom), getUserByIDHandler)
-	r.GET("/user/custom/toHTTPCode/:id", AuthCustom(verifyCustom, WithSwitchHTTPCode()), getUserByIDHandler)
+	r.GET("/user/custom/:id", Auth(WithCustomVerify()), getUserByIDHandler)
+	r.GET("/user/custom/toHTTPCode/:id", Auth(WithCustomVerify(extraCustomVerifyFn), WithSwitchHTTPCode()), getUserByIDHandler)
+
+	r.GET("/user/custom2/:id", AuthCustom(extraCustomVerifyFn), getUserByIDHandler)
+	r.GET("/user/custom2/toHTTPCode/:id", AuthCustom(extraCustomVerifyFn, WithSwitchHTTPCode()), getUserByIDHandler)
 
 	go func() {
 		err := r.Run(serverAddr)
@@ -105,7 +109,7 @@ func runAuthHTTPServer() string {
 	return requestAddr
 }
 
-func TestAuth(t *testing.T) {
+func TestDefaultAuth(t *testing.T) {
 	requestAddr := runAuthHTTPServer()
 
 	// get token
@@ -119,6 +123,10 @@ func TestAuth(t *testing.T) {
 
 	// success
 	val, err := getUser(requestAddr+"/user/"+uid, authorization)
+	assert.Equal(t, val["data"], uid)
+
+	// success
+	val, err = getUser(requestAddr+"/user_default/"+uid, authorization)
 	assert.Equal(t, val["data"], uid)
 
 	// success
@@ -139,7 +147,7 @@ func TestAuth(t *testing.T) {
 	assert.Equal(t, val["msg"], errMsg)
 }
 
-func TestAuthCustom(t *testing.T) {
+func TestCustomAuth(t *testing.T) {
 	requestAddr := runAuthHTTPServer()
 
 	// get token
@@ -154,9 +162,13 @@ func TestAuthCustom(t *testing.T) {
 	// success
 	val, _ := getUserCustom(requestAddr+"/user/custom/"+uid, authorization)
 	assert.Equal(t, val["data"], uid)
+	val, _ = getUserCustom(requestAddr+"/user/custom2/"+uid, authorization)
+	assert.Equal(t, val["data"], uid)
 
 	// success
 	val, _ = getUserCustom(requestAddr+"/user/custom/toHTTPCode/"+uid, authorization)
+	assert.Equal(t, val["data"], uid)
+	val, _ = getUserCustom(requestAddr+"/user/custom2/toHTTPCode/"+uid, authorization)
 	assert.Equal(t, val["data"], uid)
 
 	// verify name error, return 401

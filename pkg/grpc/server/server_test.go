@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/zhufuyi/sponge/pkg/grpc/metrics"
-	"github.com/zhufuyi/sponge/pkg/logger"
-	"github.com/zhufuyi/sponge/pkg/utils"
+	"github.com/go-dev-frame/sponge/pkg/grpc/metrics"
+	"github.com/go-dev-frame/sponge/pkg/logger"
+	"github.com/go-dev-frame/sponge/pkg/utils"
 )
 
 var fn = func(s *grpc.Server) {
@@ -42,7 +42,7 @@ func TestRun(t *testing.T) {
 	t.Log("grpc server started", port)
 	time.Sleep(time.Second * 2)
 
-	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", port), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(fmt.Sprintf("localhost:%d", port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Error(err)
 		return

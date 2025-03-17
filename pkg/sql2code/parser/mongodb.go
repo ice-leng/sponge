@@ -13,8 +13,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	mgoOptions "go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/zhufuyi/sponge/pkg/mgo"
-	"github.com/zhufuyi/sponge/pkg/utils"
+	"github.com/go-dev-frame/sponge/pkg/mgo"
+	"github.com/go-dev-frame/sponge/pkg/utils"
 )
 
 const (
@@ -261,10 +261,11 @@ func ConvertToSQLByMgoFields(tableName string, fields []*MgoField) (string, map[
 			protoObjectStrs = append(protoObjectStrs, field.ProtoObjectStr)
 		}
 	}
-	if isHaveID {
-		fieldStr = "    id bigint unsigned primary key,\n" + fieldStr
-	}
+
 	fieldStr = strings.TrimSuffix(fieldStr, ",\n")
+	if isHaveID {
+		fieldStr = "    `id` varchar(24),\n" + fieldStr + ",\n    PRIMARY KEY (id)"
+	}
 
 	if len(objectStrs) > 0 {
 		srcMongoTypeMap[SubStructKey] = strings.Join(objectStrs, "\n") + "\n"
@@ -288,7 +289,7 @@ func convertMongoToMysqlType(goType string) string {
 	case goTypeTime:
 		return "timestamp" //nolint
 	case goTypeBool:
-		return "tinyint(1)"
+		return "bit(1)"
 	case goTypeOID, goTypeNil, goTypeBytes, goTypeInterface, goTypeSliceInterface, goTypeInts, goTypeStrings:
 		return "json"
 	}
@@ -313,7 +314,7 @@ func convertToProtoFieldType(name string, goType string) string {
 	case "[]int32":
 		return "repeated int32"
 	case "[]byte":
-		return "string"
+		return "bytes"
 	case goTypeStrings:
 		return "repeated string"
 	}

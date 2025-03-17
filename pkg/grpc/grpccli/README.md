@@ -1,11 +1,11 @@
 ## grpccli
 
-grpc client with support for service discovery, logging, load balancing, trace, metrics, retries, circuit breaker.
+`grpccli` is Go's gRPC client library that supports for service discovery, logging, load balancing, trace, metrics, retries, circuit breaker.
 
 ### Example of use
 
 ```go
-    import "github.com/zhufuyi/sponge/pkg/grpc/grpccli"
+    import "github.com/go-dev-frame/sponge/pkg/grpc/grpccli"
 
 func grpcClientExample() serverNameV1.UserExampleServiceClient {
 	err := config.Init(third_party.Path("../config/conf.yml"))

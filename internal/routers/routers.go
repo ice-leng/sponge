@@ -3,7 +3,6 @@
 package routers
 
 import (
-	"github.com/zhufuyi/sponge/pkg/errcode"
 	"net/http"
 	"time"
 
@@ -12,16 +11,17 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	"github.com/zhufuyi/sponge/pkg/gin/handlerfunc"
-	"github.com/zhufuyi/sponge/pkg/gin/middleware"
-	"github.com/zhufuyi/sponge/pkg/gin/middleware/metrics"
-	"github.com/zhufuyi/sponge/pkg/gin/prof"
-	"github.com/zhufuyi/sponge/pkg/gin/validator"
-	"github.com/zhufuyi/sponge/pkg/jwt"
-	"github.com/zhufuyi/sponge/pkg/logger"
+	"github.com/go-dev-frame/sponge/pkg/errcode"
+	"github.com/go-dev-frame/sponge/pkg/gin/handlerfunc"
+	"github.com/go-dev-frame/sponge/pkg/gin/middleware"
+	"github.com/go-dev-frame/sponge/pkg/gin/middleware/metrics"
+	"github.com/go-dev-frame/sponge/pkg/gin/prof"
+	"github.com/go-dev-frame/sponge/pkg/gin/validator"
+	"github.com/go-dev-frame/sponge/pkg/jwt"
+	"github.com/go-dev-frame/sponge/pkg/logger"
 
-	"github.com/zhufuyi/sponge/docs"
-	"github.com/zhufuyi/sponge/internal/config"
+	"github.com/go-dev-frame/sponge/docs"
+	"github.com/go-dev-frame/sponge/internal/config"
 )
 
 var (
@@ -94,9 +94,9 @@ func NewRouter() *gin.Engine {
 	r.GET("/health", handlerfunc.CheckHealth)
 	r.GET("/ping", handlerfunc.Ping)
 	r.GET("/codes", handlerfunc.ListCodes)
-	r.GET("/config", gin.WrapF(errcode.ShowConfig([]byte(config.Show()))))
 
 	if config.Get().App.Env != "prod" {
+		r.GET("/config", gin.WrapF(errcode.ShowConfig([]byte(config.Show()))))
 		// register swagger routes, generate code via swag init
 		docs.SwaggerInfo.BasePath = ""
 		// access path /swagger/index.html

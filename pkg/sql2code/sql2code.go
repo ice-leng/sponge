@@ -1,6 +1,6 @@
-// Package sql2code provides for generating code for different purposes according to sql,
-// support generating json, gorm model, update parameter, request parameter code,
-// sql can be obtained from parameter, file, db three ways, priority from high to low.
+// Package sql2code is a code generation engine that generates CRUD code for model,
+// dao, handler, service, protobuf based on sql and supports database types mysql,
+// mongodb, postgresql, sqlite3.
 package sql2code
 
 import (
@@ -9,9 +9,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/zhufuyi/sponge/pkg/gofile"
-	"github.com/zhufuyi/sponge/pkg/sql2code/parser"
-	"github.com/zhufuyi/sponge/pkg/utils"
+	"github.com/go-dev-frame/sponge/pkg/gofile"
+	"github.com/go-dev-frame/sponge/pkg/sql2code/parser"
+	"github.com/go-dev-frame/sponge/pkg/utils"
 )
 
 // Args generate code arguments
@@ -20,7 +20,7 @@ type Args struct {
 
 	DDLFile string // DDL file
 
-	DBDriver   string            // db driver name, such as mysql, mongodb, postgresql, tidb, sqlite, default is mysql
+	DBDriver   string            // db driver name, such as mysql, mongodb, postgresql, sqlite, default is mysql
 	DBDsn      string            // connecting to mysql's dsn, if DBDriver is sqlite, DBDsn is local db file
 	DBTable    string            // table name
 	fieldTypes map[string]string // field name:type
@@ -40,6 +40,8 @@ type Args struct {
 	NoNullType     bool
 	NullStyle      string
 	IsExtendedAPI  bool // true: generate extended api (9 api), false: generate basic api (5 api)
+
+	IsCustomTemplate bool // whether to use custom template, default is false
 }
 
 func (a *Args) checkValid() error {
@@ -114,7 +116,7 @@ func getSQL(args *Args) (string, map[string]string, error) {
 			sqlStr, mongoTypeMap := parser.ConvertToSQLByMgoFields(args.DBTable, fields)
 			return sqlStr, mongoTypeMap, nil
 		default:
-			return "", nil, fmt.Errorf("getsql error, unsupported database driver: " + dbDriverName)
+			return "", nil, errors.New("get sql error, unsupported database driver: " + dbDriverName)
 		}
 	}
 
@@ -180,6 +182,9 @@ func setOptions(args *Args) []parser.Option {
 	}
 	if args.IsExtendedAPI {
 		opts = append(opts, parser.WithExtendedAPI())
+	}
+	if args.IsCustomTemplate {
+		opts = append(opts, parser.WithCustomTemplate())
 	}
 
 	return opts

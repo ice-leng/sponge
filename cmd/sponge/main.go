@@ -6,17 +6,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/zhufuyi/sponge/cmd/sponge/global"
-	"github.com/zhufuyi/sponge/pkg/gofile"
+	"github.com/go-dev-frame/sponge/cmd/sponge/global"
 	"os"
 	"path/filepath"
 
-	"github.com/zhufuyi/sponge/cmd/sponge/commands"
-	"github.com/zhufuyi/sponge/cmd/sponge/commands/generate"
+	"github.com/go-dev-frame/sponge/cmd/sponge/commands"
+	"github.com/go-dev-frame/sponge/cmd/sponge/commands/generate"
 )
 
 func main() {
-	err := generate.Init(generate.TplNameSponge, commands.GetSpongeDir()+gofile.GetPathDelimiter()+".sponge")
+	err := generate.Init()
 	if err != nil {
 		fmt.Printf("\n    %v\n\n", err)
 		return

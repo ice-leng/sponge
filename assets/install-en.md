@@ -1,5 +1,5 @@
 
-Recommended to use go version 1.20 or above, [https://go.dev/doc/install](https://go.dev/doc/install)
+Recommended to use go version 1.22 or above, [https://go.dev/doc/install](https://go.dev/doc/install)
 
 <br>
 
@@ -24,7 +24,7 @@ Make sure the go locale is installed before installing sponge, and add `GOBIN` t
 
 > Because sponge depends on some linux commands, git bash and make need to be installed in windows to support the linux command environment.
 
-For installation convenience, sponge and its dependent programs have been packaged together, download address: [sponge-install.zip](https://drive.google.com/drive/folders/1T55lLXDBIQCnL5IQ-i1hWJovgLI2l0k1?usp=sharing)
+For installation convenience, sponge and its dependent programs have been packaged together, download address: [**sponge-install.zip**](https://drive.google.com/drive/folders/1T55lLXDBIQCnL5IQ-i1hWJovgLI2l0k1?usp=sharing)
 
 After downloading the file:
 
@@ -35,15 +35,13 @@ After downloading the file:
 ```bash
 # Initialize sponge, automatically install sponge's dependency plugins
 sponge init
-
-# Check sponge version
-sponge -v
 ```
 
 Note: 
 
 - When using sponge development, please use git bash terminal, do not use the system default cmd, otherwise there will be an error that cannot find the command.
 - Do not open a terminal in the `GOBIN` directory (the directory where the sponge executable is located) to execute the command `sponge run`.
+- If you are using a version of Sponge earlier than `v1.11.1` and need to upgrade, execute the command to update to the latest version of Sponge: `go install github.com/go-dev-frame/sponge/cmd/sponge@latest && sponge init`.
 
 In addition to the above installation of sponge in windows, it also provides native installation, click to view **Installing Sponge** --> **Windows Environment** [installation documentation](https://go-sponge.com/quick-start?id=installing-sponge).
 
@@ -86,7 +84,7 @@ Download the corresponding **protoc** executable file according to the system ty
 
 ```bash
 # Install Sponge
-go install github.com/zhufuyi/sponge/cmd/sponge@latest
+go install github.com/go-dev-frame/sponge/cmd/sponge@latest
 
 # Initialize Sponge, automatically install Sponge's dependency plugins
 sponge init

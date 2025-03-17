@@ -5,18 +5,19 @@ package parser
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"go/format"
 	"sort"
 	"strings"
 	"text/template"
 
-	"github.com/blastrain/vitess-sqlparser/tidbparser/ast"
-	"github.com/blastrain/vitess-sqlparser/tidbparser/dependency/mysql"
-	"github.com/blastrain/vitess-sqlparser/tidbparser/dependency/types"
-	"github.com/blastrain/vitess-sqlparser/tidbparser/parser"
 	"github.com/huandu/xstrings"
 	"github.com/jinzhu/inflection"
+	"github.com/zhufuyi/sqlparser/ast"
+	"github.com/zhufuyi/sqlparser/dependency/mysql"
+	"github.com/zhufuyi/sqlparser/dependency/types"
+	"github.com/zhufuyi/sqlparser/parser"
 )
 
 const (
@@ -34,6 +35,10 @@ const (
 	CodeTypeProto = "proto"
 	// CodeTypeService grpc service code
 	CodeTypeService = "service"
+	// CodeTypeCrudInfo crud info json data
+	CodeTypeCrudInfo = "crud_info"
+	// CodeTypeTableInfo table info json data
+	CodeTypeTableInfo = "table_info"
 
 	// DBDriverMysql mysql driver
 	DBDriverMysql = "mysql"
@@ -46,8 +51,14 @@ const (
 	// DBDriverMongodb mongodb driver
 	DBDriverMongodb = "mongodb"
 
-	jsonTypeName = "datatypes.JSON"
-	jsonPkgPath  = "gorm.io/datatypes"
+	jsonTypeName    = "datatypes.JSON"
+	jsonPkgPath     = "gorm.io/datatypes"
+	boolTypeName    = "sgorm.Bool"
+	boolPkgPath     = "github.com/go-dev-frame/sponge/pkg/sgorm"
+	decimalTypeName = "decimal.Decimal"
+	decimalPkgPath  = "github.com/shopspring/decimal"
+
+	unknownCustomType = "UnknownCustomType"
 )
 
 // Codes content
@@ -68,6 +79,7 @@ type modelCodes struct {
 // ParseSQL generate different usage codes based on sql
 func ParseSQL(sql string, options ...Option) (map[string]string, error) {
 	initTemplate()
+	initCommonTemplate()
 	opt := parseOption(options)
 
 	stmts, err := parser.New().Parse(sql, opt.Charset, opt.Collation)
@@ -82,6 +94,8 @@ func ParseSQL(sql string, options ...Option) (map[string]string, error) {
 	modelJSONCodes := make([]string, 0, len(stmts))
 	importPath := make(map[string]struct{})
 	tableNames := make([]string, 0, len(stmts))
+	primaryKeysCodes := make([]string, 0, len(stmts))
+	tableInfoCodes := make([]string, 0, len(stmts))
 	for _, stmt := range stmts {
 		if ct, ok := stmt.(*ast.CreateTableStmt); ok {
 			code, err2 := makeCode(ct, opt)
@@ -94,14 +108,14 @@ func ParseSQL(sql string, options ...Option) (map[string]string, error) {
 			protoFileCodes = append(protoFileCodes, code.protoFile)
 			serviceStructCodes = append(serviceStructCodes, code.serviceStruct)
 			modelJSONCodes = append(modelJSONCodes, code.modelJSON)
-
 			tableName := ct.Table.Name.String()
 			tablePrefix := opt.TablePrefix
 			if tablePrefix != "" && strings.HasPrefix(tableName, tablePrefix) {
 				tableName = tableName[len(tablePrefix):]
 			}
-
 			tableNames = append(tableNames, toCamel(tableName))
+			primaryKeysCodes = append(primaryKeysCodes, code.crudInfo)
+			tableInfoCodes = append(tableInfoCodes, string(code.tableInfo))
 			for _, s := range code.importPaths {
 				importPath[s] = struct{}{}
 			}
@@ -125,38 +139,45 @@ func ParseSQL(sql string, options ...Option) (map[string]string, error) {
 	}
 
 	var codesMap = map[string]string{
-		CodeTypeModel:   modelCode,
-		CodeTypeJSON:    strings.Join(modelJSONCodes, "\n\n"),
-		CodeTypeDAO:     strings.Join(updateFieldsCodes, "\n\n"),
-		CodeTypeHandler: strings.Join(handlerStructCodes, "\n\n"),
-		CodeTypeProto:   strings.Join(protoFileCodes, "\n\n"),
-		CodeTypeService: strings.Join(serviceStructCodes, "\n\n"),
-		TableName:       strings.Join(tableNames, ", "),
+		CodeTypeModel:     modelCode,
+		CodeTypeJSON:      strings.Join(modelJSONCodes, "\n\n"),
+		CodeTypeDAO:       strings.Join(updateFieldsCodes, "\n\n"),
+		CodeTypeHandler:   strings.Join(handlerStructCodes, "\n\n"),
+		CodeTypeProto:     strings.Join(protoFileCodes, "\n\n"),
+		CodeTypeService:   strings.Join(serviceStructCodes, "\n\n"),
+		TableName:         strings.Join(tableNames, ", "),
+		CodeTypeCrudInfo:  strings.Join(primaryKeysCodes, " |||| "),
+		CodeTypeTableInfo: strings.Join(tableInfoCodes, " |||| "),
 	}
 
 	return codesMap, nil
 }
 
 type tmplData struct {
-	TableName       string
-	TName           string
+	TableNamePrefix string
+
+	RawTableName    string // raw table name, example: foo_bar
+	TableName       string // table name in camel case, example: FooBar
+	TName           string // table name first letter in lower case, example: fooBar
 	NameFunc        bool
-	RawTableName    string
 	Fields          []tmplField
 	Comment         string
 	SubStructs      string // sub structs for model
 	ProtoSubStructs string // sub structs for protobuf
 	DBDriver        string
+
+	CrudInfo *CrudInfo
 }
 
 type tmplField struct {
-	Name     string
-	ColName  string
-	GoType   string
-	Tag      string
-	Comment  string
-	JSONName string
-	DBDriver string
+	IsPrimaryKey bool   // is primary key
+	ColName      string // table column name
+	Name         string // convert to camel case
+	GoType       string // convert to go type
+	Tag          string
+	Comment      string
+	JSONName     string
+	DBDriver     string
 
 	rewriterField *rewriterField
 }
@@ -166,39 +187,74 @@ type rewriterField struct {
 	path   string
 }
 
+func (d tmplData) isCommonStyle(isEmbed bool) bool {
+	if d.DBDriver != DBDriverMongodb && !isEmbed && !d.CrudInfo.isIDPrimaryKey() {
+		return true
+	}
+	return false
+}
+
 // ConditionZero type of condition 0, used in dao template code
 func (t tmplField) ConditionZero() string {
+	if t.DBDriver == DBDriverMysql || t.DBDriver == DBDriverPostgresql || t.DBDriver == DBDriverTidb {
+		if t.rewriterField != nil {
+			switch t.rewriterField.goType {
+			case boolTypeName:
+				return ` != nil` //nolint
+			case jsonTypeName:
+				return `.String() != ""`
+			case decimalTypeName:
+				return `.IsZero() == false`
+			}
+		}
+	}
+
 	switch t.GoType {
 	case "int8", "int16", "int32", "int64", "int", "uint8", "uint16", "uint32", "uint64", "uint", "float64", "float32", //nolint
 		"sql.NullInt32", "sql.NullInt64", "sql.NullFloat64": //nolint
-		return `!= 0`
+		return ` != 0`
 	case "string", "sql.NullString": //nolint
-		return `!= ""`
+		return ` != ""`
 	case "time.Time", "*time.Time", "sql.NullTime": //nolint
 		return `.IsZero() == false`
 	case "[]byte", "[]string", "[]int", "interface{}": //nolint
-		return `!= nil` //nolint
+		return ` != nil` //nolint
 	case "bool": //nolint
-		return `!= false /*Warning: if the value itself is false, can't be updated*/`
+		return ` != false`
 	}
 
 	if t.DBDriver == DBDriverMongodb {
 		if t.GoType == goTypeOID {
-			return `!= primitive.NilObjectID`
+			return ` != primitive.NilObjectID`
 		}
 		if t.GoType == "*"+t.Name {
-			return `!= nil`
+			return ` != nil` //nolint
 		}
 		if strings.Contains(t.GoType, "[]") {
-			return `!= nil`
+			return ` != nil` //nolint
 		}
 	}
 
-	return `!= ` + t.GoType
+	if t.GoType == "" {
+		return ` != "unknown_zero_value"`
+	}
+
+	return ` != ` + t.GoType
 }
 
 // GoZero type of 0, used in model to json template code
 func (t tmplField) GoZero() string {
+	if t.DBDriver == DBDriverMysql || t.DBDriver == DBDriverPostgresql || t.DBDriver == DBDriverTidb {
+		if t.rewriterField != nil {
+			switch t.rewriterField.goType {
+			case jsonTypeName, decimalTypeName:
+				return ` = "string"`
+			case boolTypeName:
+				return `= false`
+			}
+		}
+	}
+
 	switch t.GoType {
 	case "int8", "int16", "int32", "int64", "int", "uint8", "uint16", "uint32", "uint64", "uint", "float64", "float32",
 		"sql.NullInt32", "sql.NullInt64", "sql.NullFloat64":
@@ -225,11 +281,28 @@ func (t tmplField) GoZero() string {
 		}
 	}
 
+	if t.GoType == "" {
+		return `!= "unknown_zero_value"`
+	}
+
 	return `= ` + t.GoType
 }
 
-// GoTypeZero type of 0, used in service template code
+// GoTypeZero type of 0, used in service template code, corresponding protobuf type
 func (t tmplField) GoTypeZero() string {
+	if t.DBDriver == DBDriverMysql || t.DBDriver == DBDriverPostgresql || t.DBDriver == DBDriverTidb {
+		if t.rewriterField != nil {
+			switch t.rewriterField.goType {
+			case jsonTypeName:
+				return `""` //nolint
+			case decimalTypeName:
+				return `""`
+			case boolTypeName:
+				return `false`
+			}
+		}
+	}
+
 	switch t.GoType {
 	case "int8", "int16", "int32", "int64", "int", "uint8", "uint16", "uint32", "uint64", "uint", "float64", "float32",
 		"sql.NullInt32", "sql.NullInt64", "sql.NullFloat64":
@@ -237,7 +310,7 @@ func (t tmplField) GoTypeZero() string {
 	case "string", "sql.NullString", jsonTypeName:
 		return `""`
 	case "time.Time", "*time.Time", "sql.NullTime":
-		return `0 /*time.Now().Second()*/`
+		return `""`
 	case "[]byte", "[]string", "[]int", "interface{}": //nolint
 		return `nil` //nolint
 	case "bool": //nolint
@@ -256,6 +329,10 @@ func (t tmplField) GoTypeZero() string {
 		}
 	}
 
+	if t.GoType == "" {
+		return `"unknown_zero_value"`
+	}
+
 	return t.GoType
 }
 
@@ -267,10 +344,31 @@ func (t tmplField) AddOne(i int) int {
 // AddOneWithTag counter and add id tag
 func (t tmplField) AddOneWithTag(i int) string {
 	if t.ColName == "id" {
-		return fmt.Sprintf(`%d [(tagger.tags) = "uri:\"id\"" ]`, i+1)
+		if t.DBDriver == DBDriverMongodb {
+			return fmt.Sprintf(`%d [(validate.rules).string.min_len = 6, (tagger.tags) = "uri:\"id\""]`, i+1)
+		}
+		return fmt.Sprintf(`%d [(validate.rules).%s.gt = 0, (tagger.tags) = "uri:\"id\""]`, i+1, t.GoType)
 	}
-
 	return fmt.Sprintf("%d", i+1)
+}
+
+func (t tmplField) AddOneWithTag2(i int) string {
+	if t.IsPrimaryKey || t.ColName == "id" {
+		if t.GoType == "string" {
+			return fmt.Sprintf(`%d [(validate.rules).string.min_len = 1, (tagger.tags) = "uri:\"%s\""]`, i+1, t.JSONName)
+		}
+		return fmt.Sprintf(`%d [(validate.rules).%s.gt = 0, (tagger.tags) = "uri:\"%s\""]`, i+1, t.GoType, t.JSONName)
+	}
+	return fmt.Sprintf("%d", i+1)
+}
+
+func getProtoFieldName(fields []tmplField) string {
+	for _, field := range fields {
+		if field.IsPrimaryKey || field.ColName == "id" {
+			return field.JSONName
+		}
+	}
+	return ""
 }
 
 const (
@@ -279,7 +377,7 @@ const (
 )
 
 var replaceFields = map[string]string{
-	__mysqlModel__: "ggorm.Model",
+	__mysqlModel__: "sgorm.Model",
 	__type__:       "",
 }
 
@@ -319,24 +417,32 @@ type codeText struct {
 	handlerStruct string
 	protoFile     string
 	serviceStruct string
+	crudInfo      string
+	tableInfo     []byte
 }
 
 // nolint
 func makeCode(stmt *ast.CreateTableStmt, opt options) (*codeText, error) {
 	importPath := make([]string, 0, 1)
 	data := tmplData{
-		TableName:    stmt.Table.Name.String(),
-		RawTableName: stmt.Table.Name.String(),
-		Fields:       make([]tmplField, 0, 1),
+		TableNamePrefix: opt.TablePrefix,
+		RawTableName:    stmt.Table.Name.String(),
+		DBDriver:        opt.DBDriver,
 	}
-	tablePrefix := opt.TablePrefix
-	if tablePrefix != "" && strings.HasPrefix(data.TableName, tablePrefix) {
+
+	tablePrefix := data.TableNamePrefix
+	if tablePrefix != "" && strings.HasPrefix(data.RawTableName, tablePrefix) {
 		data.NameFunc = true
-		data.TableName = data.TableName[len(tablePrefix):]
+		data.TableName = toCamel(data.RawTableName[len(tablePrefix):])
+	} else {
+		data.TableName = toCamel(data.RawTableName)
 	}
+	data.TName = firstLetterToLower(data.TableName)
+
 	if opt.ForceTableName || data.RawTableName != inflection.Plural(data.RawTableName) {
 		data.NameFunc = true
 	}
+
 	switch opt.DBDriver {
 	case DBDriverMongodb:
 		if opt.JSONNamedType != 0 {
@@ -345,9 +451,6 @@ func makeCode(stmt *ast.CreateTableStmt, opt options) (*codeText, error) {
 			SetJSONTagSnakeCase()
 		}
 	}
-
-	data.TableName = toCamel(data.TableName)
-	data.TName = firstLetterToLow(data.TableName)
 
 	// find table comment
 	for _, o := range stmt.Options {
@@ -361,6 +464,9 @@ func makeCode(stmt *ast.CreateTableStmt, opt options) (*codeText, error) {
 	for _, con := range stmt.Constraints {
 		if con.Tp == ast.ConstraintPrimaryKey {
 			isPrimaryKey[con.Keys[0].Column.String()] = true
+		}
+		if con.Tp == ast.ConstraintForeignKey {
+			// TODO: foreign key support
 		}
 	}
 
@@ -398,6 +504,7 @@ func makeCode(stmt *ast.CreateTableStmt, opt options) (*codeText, error) {
 			}
 		}
 		if isPrimaryKey[colName] {
+			field.IsPrimaryKey = true
 			gormTag.WriteString(";primary_key")
 		}
 		isNotNull := false
@@ -451,7 +558,7 @@ func makeCode(stmt *ast.CreateTableStmt, opt options) (*codeText, error) {
 
 		default: // gorm
 			if !isPrimaryKey[colName] && isNotNull {
-				gormTag.WriteString(";NOT NULL")
+				gormTag.WriteString(";not null")
 			}
 			tags = append(tags, "gorm", gormTag.String())
 
@@ -480,25 +587,32 @@ func makeCode(stmt *ast.CreateTableStmt, opt options) (*codeText, error) {
 
 		data.Fields = append(data.Fields, field)
 	}
+
 	if v, ok := opt.FieldTypes[SubStructKey]; ok {
 		data.SubStructs = v
 	}
 	if v, ok := opt.FieldTypes[ProtoSubStructKey]; ok {
 		data.ProtoSubStructs = v
 	}
-	data.DBDriver = opt.DBDriver
 
-	updateFieldsCode, err := getUpdateFieldsCode(data, opt.IsEmbed)
-	if err != nil {
-		return nil, err
+	if len(data.Fields) == 0 {
+		return nil, errors.New("no columns found in table " + data.TableName)
 	}
 
-	handlerStructCode, err := getHandlerStructCodes(data, opt.JSONNamedType)
-	if err != nil {
-		return nil, err
+	data.CrudInfo = newCrudInfo(data)
+	data.CrudInfo.IsCommonType = data.isCommonStyle(opt.IsEmbed)
+
+	if opt.IsCustomTemplate {
+		tableInfo := newTableInfo(data)
+		return &codeText{tableInfo: tableInfo.getCode()}, nil
 	}
 
 	modelStructCode, importPaths, err := getModelStructCode(data, importPath, opt.IsEmbed, opt.JSONNamedType)
+	if err != nil {
+		return nil, err
+	}
+
+	updateFieldsCode, err := getUpdateFieldsCode(data, opt.IsEmbed)
 	if err != nil {
 		return nil, err
 	}
@@ -508,14 +622,35 @@ func makeCode(stmt *ast.CreateTableStmt, opt options) (*codeText, error) {
 		return nil, err
 	}
 
-	protoFileCode, err := getProtoFileCode(data, opt.JSONNamedType, opt.IsWebProto, opt.IsExtendedAPI)
-	if err != nil {
-		return nil, err
-	}
-
-	serviceStructCode, err := getServiceStructCode(data)
-	if err != nil {
-		return nil, err
+	handlerStructCode := ""
+	serviceStructCode := ""
+	protoFileCode := ""
+	if data.isCommonStyle(opt.IsEmbed) {
+		handlerStructCode, err = getCommonHandlerStructCodes(data, opt.JSONNamedType)
+		if err != nil {
+			return nil, err
+		}
+		serviceStructCode, err = getCommonServiceStructCode(data)
+		if err != nil {
+			return nil, err
+		}
+		protoFileCode, err = getCommonProtoFileCode(data, opt.JSONNamedType, opt.IsWebProto, opt.IsExtendedAPI)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		handlerStructCode, err = getHandlerStructCodes(data, opt.JSONNamedType)
+		if err != nil {
+			return nil, err
+		}
+		serviceStructCode, err = getServiceStructCode(data)
+		if err != nil {
+			return nil, err
+		}
+		protoFileCode, err = getProtoFileCode(data, opt.JSONNamedType, opt.IsWebProto, opt.IsExtendedAPI)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &codeText{
@@ -526,6 +661,7 @@ func makeCode(stmt *ast.CreateTableStmt, opt options) (*codeText, error) {
 		handlerStruct: handlerStructCode,
 		protoFile:     protoFileCode,
 		serviceStruct: serviceStructCode,
+		crudInfo:      data.CrudInfo.getCode(),
 	}, nil
 }
 
@@ -551,9 +687,13 @@ func getModelStructCode(data tmplData, importPaths []string, isEmbed bool, jsonN
 			switch field.DBDriver {
 			case DBDriverMysql, DBDriverTidb, DBDriverPostgresql:
 				if field.rewriterField != nil {
-					if field.rewriterField.goType == jsonTypeName {
-						field.GoType = jsonTypeName
-						importPaths = append(importPaths, jsonPkgPath)
+					switch field.rewriterField.goType {
+					//case jsonTypeName, decimalTypeName:
+					//	field.GoType = field.rewriterField.goType
+					//	importPaths = append(importPaths, field.rewriterField.path)
+					case jsonTypeName, decimalTypeName, boolTypeName:
+						field.GoType = "*" + field.rewriterField.goType
+						importPaths = append(importPaths, field.rewriterField.path)
 					}
 				}
 			}
@@ -575,36 +715,43 @@ func getModelStructCode(data tmplData, importPaths []string, isEmbed bool, jsonN
 				newImportPaths = append(newImportPaths, path)
 			}
 		}
-		newImportPaths = append(newImportPaths, "github.com/zhufuyi/sponge/pkg/ggorm")
+		newImportPaths = append(newImportPaths, "github.com/go-dev-frame/sponge/pkg/sgorm")
 	} else {
-		for i, field := range data.Fields {
+		for _, field := range data.Fields {
 			switch field.DBDriver {
 			case DBDriverMongodb:
 				if field.Name == "ID" {
-					data.Fields[i].GoType = goTypeOID
+					field.GoType = goTypeOID
 					importPaths = append(importPaths, "go.mongodb.org/mongo-driver/bson/primitive")
 				}
 
 			default:
 				if strings.Contains(field.GoType, "time.Time") {
-					data.Fields[i].GoType = "*time.Time"
-					continue
+					field.GoType = "*time.Time"
 				}
 				// force conversion of ID field to uint64 type
 				if field.Name == "ID" {
-					data.Fields[i].GoType = "uint64"
+					field.GoType = "uint64"
+					if data.isCommonStyle(isEmbed) {
+						field.GoType = data.CrudInfo.GoType
+					}
 				}
-				switch field.DBDriver {
-				case DBDriverMysql, DBDriverTidb, DBDriverPostgresql:
+				if field.DBDriver == DBDriverMysql || field.DBDriver == DBDriverPostgresql || field.DBDriver == DBDriverTidb {
 					if field.rewriterField != nil {
-						if field.rewriterField.goType == jsonTypeName {
-							data.Fields[i].GoType = jsonTypeName
-							importPaths = append(importPaths, jsonPkgPath)
+						switch field.rewriterField.goType {
+						//case jsonTypeName, decimalTypeName:
+						//	field.GoType = field.rewriterField.goType
+						//	importPaths = append(importPaths, field.rewriterField.path)
+						case jsonTypeName, decimalTypeName, boolTypeName:
+							field.GoType = "*" + field.rewriterField.goType
+							importPaths = append(importPaths, field.rewriterField.path)
 						}
 					}
 				}
 			}
+			newFields = append(newFields, field)
 		}
+		data.Fields = newFields
 		newImportPaths = importPaths
 	}
 
@@ -622,7 +769,7 @@ func getModelStructCode(data tmplData, importPaths []string, isEmbed bool, jsonN
 	if isEmbed {
 		gormEmbed := replaceFields[__mysqlModel__]
 		if jsonNamedType == 0 { // snake case
-			gormEmbed += "2" // ggorm.Model2
+			gormEmbed += "2" // sgorm.Model2
 		}
 		structCode = strings.ReplaceAll(structCode, __mysqlModel__, gormEmbed)
 		structCode = strings.ReplaceAll(structCode, __type__, replaceFields[__type__])
@@ -650,7 +797,7 @@ func getModelCode(data modelCodes) (string, error) {
 
 	code, err := format.Source([]byte(builder.String()))
 	if err != nil {
-		return "", fmt.Errorf("format.Source error: %v", err)
+		return "", fmt.Errorf("getModelCode format.Source error: %v", err)
 	}
 
 	return string(code), nil
@@ -705,6 +852,7 @@ func getHandlerStructCodes(data tmplData, jsonNamedType int) (string, error) {
 		} else {
 			field.JSONName = customToCamel(field.ColName) // camel case (default)
 		}
+		field.GoType = getHandlerGoType(&field)
 		newFields = append(newFields, field)
 	}
 	data.Fields = newFields
@@ -760,7 +908,7 @@ func getModelJSONCode(data tmplData) (string, error) {
 
 	code, err := format.Source([]byte(builder.String()))
 	if err != nil {
-		return "", fmt.Errorf("format.Source error: %v", err)
+		return "", fmt.Errorf("getModelJSONCode format.Source error: %v", err)
 	}
 
 	modelJSONCode := strings.ReplaceAll(string(code), " =", ":")
@@ -770,7 +918,7 @@ func getModelJSONCode(data tmplData) (string, error) {
 }
 
 func getProtoFileCode(data tmplData, jsonNamedType int, isWebProto bool, isExtendedAPI bool) (string, error) {
-	data.Fields = goTypeToProto(data.Fields, jsonNamedType)
+	data.Fields = goTypeToProto(data.Fields, jsonNamedType, false)
 
 	var err error
 	builder := strings.Builder{}
@@ -797,20 +945,20 @@ func getProtoFileCode(data tmplData, jsonNamedType int, isWebProto bool, isExten
 
 	protoMessageCreateCode, err := tmplExecuteWithFilter(data, protoMessageCreateTmpl)
 	if err != nil {
-		return "", fmt.Errorf("handlerCreateStructTmpl error: %v", err)
+		return "", fmt.Errorf("handle protoMessageCreateTmpl error: %v", err)
 	}
 
 	protoMessageUpdateCode, err := tmplExecuteWithFilter(data, protoMessageUpdateTmpl, columnID)
 	if err != nil {
-		return "", fmt.Errorf("handlerCreateStructTmpl error: %v", err)
+		return "", fmt.Errorf("handle protoMessageUpdateTmpl error: %v", err)
 	}
 	if !isWebProto {
-		protoMessageUpdateCode = strings.ReplaceAll(protoMessageUpdateCode, ` [(tagger.tags) = "uri:\"id\"" ]`, "")
+		protoMessageUpdateCode = strings.ReplaceAll(protoMessageUpdateCode, `, (tagger.tags) = "uri:\"id\""`, "")
 	}
 
 	protoMessageDetailCode, err := tmplExecuteWithFilter(data, protoMessageDetailTmpl, columnID, columnCreatedAt, columnUpdatedAt)
 	if err != nil {
-		return "", fmt.Errorf("handlerCreateStructTmpl error: %v", err)
+		return "", fmt.Errorf("handle protoMessageDetailTmpl error: %v", err)
 	}
 
 	code = strings.ReplaceAll(code, "// protoMessageCreateCode", protoMessageCreateCode)
@@ -908,13 +1056,13 @@ func getServiceStructCode(data tmplData) (string, error) {
 
 	serviceCreateStructCode, err := tmplExecuteWithFilter(data, serviceCreateStructTmpl)
 	if err != nil {
-		return "", fmt.Errorf("handlerCreateStructTmpl error: %v", err)
+		return "", fmt.Errorf("handle serviceCreateStructTmpl error: %v", err)
 	}
 	serviceCreateStructCode = strings.ReplaceAll(serviceCreateStructCode, "ID:", "Id:")
 
 	serviceUpdateStructCode, err := tmplExecuteWithFilter(data, serviceUpdateStructTmpl, columnID)
 	if err != nil {
-		return "", fmt.Errorf("handlerCreateStructTmpl error: %v", err)
+		return "", fmt.Errorf("handle serviceUpdateStructTmpl error: %v", err)
 	}
 	serviceUpdateStructCode = strings.ReplaceAll(serviceUpdateStructCode, "ID:", "Id:")
 
@@ -963,33 +1111,51 @@ func mysqlToGoType(colTp *types.FieldType, style NullStyle) (name string, path s
 	if style == NullInSql {
 		path = "database/sql"
 		switch colTp.Tp {
-		case mysql.TypeTiny, mysql.TypeShort, mysql.TypeInt24, mysql.TypeLong:
+		case mysql.TypeTiny:
+			name = "sql.NullInt8"
+		case mysql.TypeShort, mysql.TypeInt24, mysql.TypeLong, mysql.TypeYear:
 			name = "sql.NullInt32"
-		case mysql.TypeLonglong:
+		case mysql.TypeLonglong, mysql.TypeDuration:
 			name = "sql.NullInt64"
 		case mysql.TypeFloat, mysql.TypeDouble:
 			name = "sql.NullFloat64"
 		case mysql.TypeString, mysql.TypeVarchar, mysql.TypeVarString,
 			mysql.TypeBlob, mysql.TypeTinyBlob, mysql.TypeMediumBlob, mysql.TypeLongBlob:
 			name = "sql.NullString"
-		case mysql.TypeTimestamp, mysql.TypeDatetime, mysql.TypeDate:
+		case mysql.TypeTimestamp, mysql.TypeDatetime, mysql.TypeDate, mysql.TypeNewDate:
 			name = "sql.NullTime"
 		case mysql.TypeDecimal, mysql.TypeNewDecimal:
 			name = "sql.NullString"
-		case mysql.TypeJSON, mysql.TypeEnum:
+		case mysql.TypeJSON, mysql.TypeEnum, mysql.TypeSet, mysql.TypeGeometry:
 			name = "sql.NullString"
+		case mysql.TypeBit:
+			name = "sql.NullBool"
 		default:
-			return "UnSupport", "", nil
+			return unknownCustomType, "", nil
 		}
 	} else {
 		switch colTp.Tp {
-		case mysql.TypeTiny, mysql.TypeShort, mysql.TypeInt24, mysql.TypeLong:
+		case mysql.TypeTiny:
+			if strings.ToLower(colTp.String()) == "tinyint(1)" {
+				name = "bool"
+				rrField = &rewriterField{
+					goType: boolTypeName,
+					path:   boolPkgPath,
+				}
+			} else {
+				if mysql.HasUnsignedFlag(colTp.Flag) {
+					name = "uint"
+				} else {
+					name = "int"
+				}
+			}
+		case mysql.TypeShort, mysql.TypeInt24, mysql.TypeLong, mysql.TypeYear:
 			if mysql.HasUnsignedFlag(colTp.Flag) {
 				name = "uint"
 			} else {
 				name = "int"
 			}
-		case mysql.TypeLonglong:
+		case mysql.TypeLonglong, mysql.TypeDuration:
 			if mysql.HasUnsignedFlag(colTp.Flag) {
 				name = "uint64"
 			} else {
@@ -1000,12 +1166,10 @@ func mysqlToGoType(colTp *types.FieldType, style NullStyle) (name string, path s
 		case mysql.TypeString, mysql.TypeVarchar, mysql.TypeVarString,
 			mysql.TypeBlob, mysql.TypeTinyBlob, mysql.TypeMediumBlob, mysql.TypeLongBlob:
 			name = "string"
-		case mysql.TypeTimestamp, mysql.TypeDatetime, mysql.TypeDate:
+		case mysql.TypeTimestamp, mysql.TypeDatetime, mysql.TypeDate, mysql.TypeNewDate:
 			path = "time" //nolint
 			name = "time.Time"
-		case mysql.TypeDecimal, mysql.TypeNewDecimal:
-			name = "string"
-		case mysql.TypeEnum:
+		case mysql.TypeEnum, mysql.TypeSet, mysql.TypeGeometry:
 			name = "string"
 		case mysql.TypeJSON:
 			name = "string"
@@ -1013,8 +1177,24 @@ func mysqlToGoType(colTp *types.FieldType, style NullStyle) (name string, path s
 				goType: jsonTypeName,
 				path:   jsonPkgPath,
 			}
+		case mysql.TypeBit:
+			if strings.ToLower(colTp.String()) == "bit(1)" {
+				name = "bool"
+				rrField = &rewriterField{
+					goType: boolTypeName,
+					path:   boolPkgPath,
+				}
+			} else {
+				name = "[]byte"
+			}
+		case mysql.TypeDecimal, mysql.TypeNewDecimal:
+			name = "string"
+			rrField = &rewriterField{
+				goType: decimalTypeName,
+				path:   decimalPkgPath,
+			}
 		default:
-			return "UnSupport", "", nil
+			return unknownCustomType, "", nil
 		}
 		if style == NullInPointer {
 			name = "*" + name
@@ -1024,7 +1204,7 @@ func mysqlToGoType(colTp *types.FieldType, style NullStyle) (name string, path s
 }
 
 // nolint
-func goTypeToProto(fields []tmplField, jsonNameType int) []tmplField {
+func goTypeToProto(fields []tmplField, jsonNameType int, isCommonStyle bool) []tmplField {
 	var newFields []tmplField
 	for _, field := range fields {
 		switch field.GoType {
@@ -1060,7 +1240,7 @@ func goTypeToProto(fields []tmplField, jsonNameType int) []tmplField {
 				field.GoType = "repeated string"
 			}
 		} else {
-			if strings.ToLower(field.Name) == "id" {
+			if strings.ToLower(field.Name) == "id" && !isCommonStyle {
 				field.GoType = "uint64"
 			}
 		}
@@ -1069,6 +1249,15 @@ func goTypeToProto(fields []tmplField, jsonNameType int) []tmplField {
 			field.JSONName = customToSnake(field.ColName)
 		} else {
 			field.JSONName = customToCamel(field.ColName) // camel case (default)
+		}
+
+		if field.rewriterField != nil {
+			switch field.rewriterField.goType {
+			case jsonTypeName, decimalTypeName:
+				field.GoType = "string"
+			case boolTypeName:
+				field.GoType = "bool"
+			}
 		}
 
 		newFields = append(newFields, field)
@@ -1161,7 +1350,7 @@ func toCamel(s string) string {
 	return str
 }
 
-func firstLetterToLow(str string) string {
+func firstLetterToLower(str string) string {
 	if len(str) == 0 {
 		return str
 	}
@@ -1174,7 +1363,7 @@ func firstLetterToLow(str string) string {
 }
 
 func customToCamel(str string) string {
-	str = firstLetterToLow(toCamel(str))
+	str = firstLetterToLower(toCamel(str))
 
 	if len(str) == 2 {
 		if str == "iD" {

@@ -9,7 +9,7 @@
 **grpc server example**
 
 ```go
-import "github.com/zhufuyi/sponge/pkg/grpc/gtls"
+import "github.com/go-dev-frame/sponge/pkg/grpc/gtls"
 
 func main() {
     // one-way connection
@@ -28,7 +28,7 @@ func main() {
 **grpc client example**
 
 ```go
-import "github.com/zhufuyi/sponge/pkg/grpc/gtls"
+import "github.com/go-dev-frame/sponge/pkg/grpc/gtls"
 
 func main() {
     // one-way connection
@@ -38,7 +38,7 @@ func main() {
 	)
     // check err
 
-    conn, err := grpc.Dial("127.0.0.1:8080", grpc.WithTransportCredentials(credentials))
+    conn, err := grpc.NewClient("127.0.0.1:8080", grpc.WithTransportCredentials(credentials))
     // check err
 }
 ```
@@ -50,7 +50,7 @@ func main() {
 **grpc server example**
 
 ```go
-import "github.com/zhufuyi/sponge/pkg/grpc/gtls"
+import "github.com/go-dev-frame/sponge/pkg/grpc/gtls"
 
 func main() {
     // two-way secure connection
@@ -70,7 +70,7 @@ func main() {
 **grpc client example**
 
 ```go
-import "github.com/zhufuyi/sponge/pkg/grpc/gtls"
+import "github.com/go-dev-frame/sponge/pkg/grpc/gtls"
 
 func main() {
     // two-way secure connection
@@ -82,7 +82,7 @@ func main() {
     )
     // check err
 
-    conn, err := grpc.Dial("127.0.0.1:8080", grpc.WithTransportCredentials(credentials))
+    conn, err := grpc.NewClient("127.0.0.1:8080", grpc.WithTransportCredentials(credentials))
     // check err
 }
 ```

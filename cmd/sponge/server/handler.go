@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/zhufuyi/sponge/cmd/sponge/global"
+	"github.com/go-dev-frame/sponge/cmd/sponge/global"
 	"io"
 	"net/url"
 	"os"
@@ -18,14 +18,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 
-	"github.com/zhufuyi/sponge/pkg/errcode"
-	"github.com/zhufuyi/sponge/pkg/ggorm"
-	"github.com/zhufuyi/sponge/pkg/gin/response"
-	"github.com/zhufuyi/sponge/pkg/gobash"
-	"github.com/zhufuyi/sponge/pkg/gofile"
-	"github.com/zhufuyi/sponge/pkg/krand"
-	"github.com/zhufuyi/sponge/pkg/mgo"
-	"github.com/zhufuyi/sponge/pkg/utils"
+	"github.com/go-dev-frame/sponge/pkg/errcode"
+	"github.com/go-dev-frame/sponge/pkg/gin/response"
+	"github.com/go-dev-frame/sponge/pkg/gobash"
+	"github.com/go-dev-frame/sponge/pkg/gofile"
+	"github.com/go-dev-frame/sponge/pkg/krand"
+	"github.com/go-dev-frame/sponge/pkg/mgo"
+	"github.com/go-dev-frame/sponge/pkg/sgorm"
+	"github.com/go-dev-frame/sponge/pkg/sgorm/mysql"
+	"github.com/go-dev-frame/sponge/pkg/sgorm/postgresql"
+	"github.com/go-dev-frame/sponge/pkg/sgorm/sqlite"
+	"github.com/go-dev-frame/sponge/pkg/utils"
 )
 
 var (
@@ -46,11 +49,11 @@ type kv struct {
 // ListDbDrivers list db drivers
 func ListDbDrivers(c *gin.Context) {
 	dbDrivers := []string{
-		ggorm.DBDriverMysql,
+		sgorm.DBDriverMysql,
 		mgo.DBDriverName,
-		ggorm.DBDriverPostgresql,
-		ggorm.DBDriverTidb,
-		ggorm.DBDriverSqlite,
+		sgorm.DBDriverPostgresql,
+		sgorm.DBDriverTidb,
+		sgorm.DBDriverSqlite,
 	}
 
 	data := []kv{}
@@ -76,11 +79,11 @@ func ListTables(c *gin.Context) {
 	form.Dsn = dbParams[0]
 	var tables []string
 	switch strings.ToLower(form.DbDriver) {
-	case ggorm.DBDriverMysql, ggorm.DBDriverTidb:
+	case sgorm.DBDriverMysql, sgorm.DBDriverTidb:
 		tables, err = getMysqlTables(form.Dsn)
-	case ggorm.DBDriverPostgresql:
+	case sgorm.DBDriverPostgresql:
 		tables, err = getPostgresqlTables(form.Dsn)
-	case ggorm.DBDriverSqlite:
+	case sgorm.DBDriverSqlite:
 		tables, err = getSqliteTables(form.Dsn)
 	case mgo.DBDriverName:
 		tables, err = getMongodbTables(form.Dsn)
@@ -118,6 +121,18 @@ func GenerateCode(c *gin.Context) {
 	// Allow getting the value of the request header when crossing domains
 	c.Writer.Header().Set("Access-Control-Expose-Headers", "content-disposition, err-msg")
 
+	form := &GenerateCodeForm{}
+	err := c.ShouldBindJSON(form)
+	if err != nil {
+		responseErr(c, err, errcode.InvalidParams)
+		return
+	}
+
+	handleGenerateCode(c, form.Path, form.Arg)
+}
+
+// GetTemplateInfo get template info
+func GetTemplateInfo(c *gin.Context) {
 	form := &GenerateCodeForm{}
 	err := c.ShouldBindJSON(form)
 	if err != nil {
@@ -170,15 +185,32 @@ func handleGenerateCode(c *gin.Context, outPath string, arg string) {
 	if params.SuitedMonoRepo {
 		out += "-mono-repo"
 	}
+
 	out = os.TempDir() + gofile.GetPathDelimiter() + "sponge-generate-code" + gofile.GetPathDelimiter() + out
 	args = append(args, fmt.Sprintf("--out=%s", out))
 
+	//ctx, _ := context.WithTimeout(context.Background(), time.Minute*2) // nolint
 	result := gobash.Run(ctx, "sponge", args...)
+	resultInfo := ""
+	count := 0
 	for v := range result.StdOut {
-		_ = v
+		count++
+		if count == 1 { // first line is the command
+			continue
+		}
+		resultInfo += v
 	}
 	if result.Err != nil {
-		responseErr(c, result.Err, errcode.InternalServerError)
+		if params.OnlyPrint {
+			response.Out(c, errcode.InternalServerError.RewriteMsg(result.Err.Error()))
+		} else {
+			responseErr(c, result.Err, errcode.InternalServerError)
+		}
+		return
+	}
+
+	if params.OnlyPrint {
+		response.Success(c, resultInfo)
 		return
 	}
 
@@ -195,13 +227,14 @@ func handleGenerateCode(c *gin.Context, outPath string, arg string) {
 		return
 	}
 
-	c.Writer.Header().Set("content-disposition", gofile.GetFilename(zipFile))
+	c.Writer.Header().Set("Content-Type", "application/zip")
+	c.Writer.Header().Set("Content-Disposition", gofile.GetFilename(zipFile))
 	c.File(zipFile)
 
 	recordObj().set(c.ClientIP(), outPath, params)
 
 	go func() {
-		ctx, _ = context.WithTimeout(context.Background(), time.Minute*10)
+		ctx, _ := context.WithTimeout(context.Background(), time.Minute*10)
 
 		for {
 			select {
@@ -216,14 +249,15 @@ func handleGenerateCode(c *gin.Context, outPath string, arg string) {
 				if err != nil {
 					continue
 				}
+
 				if params.ProtobufFile != "" && strings.Contains(params.ProtobufFile, recordDirName) {
-					err := os.RemoveAll(gofile.GetFileDir(params.ProtobufFile))
+					err = os.RemoveAll(gofile.GetFileDir(params.ProtobufFile))
 					if err != nil {
 						continue
 					}
 				}
 				if params.YamlFile != "" && strings.Contains(params.YamlFile, recordDirName) {
-					err := os.RemoveAll(gofile.GetFileDir(params.YamlFile))
+					err = os.RemoveAll(gofile.GetFileDir(params.YamlFile))
 					if err != nil {
 						continue
 					}
@@ -284,10 +318,10 @@ func UploadFiles(c *gin.Context) {
 		for _, file := range files {
 			filename := filepath.Base(file.Filename)
 			fileType = path.Ext(filename)
-			if !checkFileType(fileType) {
-				response.Error(c, errcode.InvalidParams.RewriteMsg("only .proto or yaml files are allowed to be uploaded"))
-				return
-			}
+			//if !checkFileType(fileType) {
+			//	response.Error(c, errcode.InvalidParams.RewriteMsg("only .proto or yaml files are allowed to be uploaded"))
+			//	return
+			//}
 
 			filePath = savePath + "/" + filename
 			if checkSameFile(hadSaveFiles, filePath) {
@@ -318,14 +352,14 @@ func UploadFiles(c *gin.Context) {
 //	return valueSlice[0], nil
 //}
 
-func checkFileType(typeName string) bool {
-	switch typeName {
-	case ".proto", ".yml", ".yaml":
-		return true
-	}
-
-	return false
-}
+//func checkFileType(typeName string) bool {
+//	switch typeName {
+//	case ".proto", ".yml", ".yaml", "json":
+//		return true
+//	}
+//
+//	return false
+//}
 
 func checkSameFile(files []string, file string) bool {
 	for _, v := range files {
@@ -341,7 +375,7 @@ func getSavePath() string {
 	if gofile.IsWindows() {
 		dir = strings.ReplaceAll(saveDir, "\\", "/")
 	}
-	dir += "/" + krand.String(krand.R_All, 8)
+	dir += "/" + "s_" + krand.String(krand.R_NUM|krand.R_LOWER, 10)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		_ = os.MkdirAll(dir, 0766)
 	}
@@ -424,11 +458,11 @@ func getSpongeDir() string {
 
 func getMysqlTables(dsn string) ([]string, error) {
 	dsn = utils.AdaptiveMysqlDsn(dsn)
-	db, err := ggorm.InitMysql(dsn)
+	db, err := mysql.Init(dsn)
 	if err != nil {
 		return nil, err
 	}
-	defer ggorm.CloseSQLDB(db)
+	defer mysql.Close(db) //nolint
 
 	var tables []string
 	err = db.Raw("show tables").Scan(&tables).Error
@@ -441,11 +475,11 @@ func getMysqlTables(dsn string) ([]string, error) {
 
 func getPostgresqlTables(dsn string) ([]string, error) {
 	dsn = utils.AdaptivePostgresqlDsn(dsn)
-	db, err := ggorm.InitPostgresql(dsn)
+	db, err := postgresql.Init(dsn)
 	if err != nil {
 		return nil, err
 	}
-	defer ggorm.CloseSQLDB(db)
+	defer mysql.Close(db) //nolint
 
 	schemas, err := getSchemas(db, dsn)
 	if err != nil {
@@ -463,7 +497,7 @@ type pgTable struct {
 	TableName string
 }
 
-func getSchemas(db *ggorm.DB, dsn string) ([]pgSchema, error) {
+func getSchemas(db *sgorm.DB, dsn string) ([]pgSchema, error) {
 	var schemas []pgSchema
 
 	if strings.Contains(dsn, "search_path=") {
@@ -489,7 +523,7 @@ func getSchemas(db *ggorm.DB, dsn string) ([]pgSchema, error) {
 	return schemas, nil
 }
 
-func getSchemaTables(db *ggorm.DB, schemas []pgSchema) ([]string, error) {
+func getSchemaTables(db *sgorm.DB, schemas []pgSchema) ([]string, error) {
 	var schemaTables []string
 	for _, schema := range schemas {
 		if schema.SchemaName == "information_schema" || schema.SchemaName == "pg_catalog" || schema.SchemaName == "pg_toast" {
@@ -514,11 +548,11 @@ func getSqliteTables(dbFile string) ([]string, error) {
 		return nil, fmt.Errorf("sqlite db file %s not found in local host", dbFile)
 	}
 
-	db, err := ggorm.InitSqlite(dbFile)
+	db, err := sqlite.Init(dbFile)
 	if err != nil {
 		return nil, err
 	}
-	defer ggorm.CloseSQLDB(db)
+	defer sqlite.Close(db) //nolint
 
 	var tables []string
 	err = db.Raw("select name from sqlite_master where type = ?", "table").Scan(&tables).Error

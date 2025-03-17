@@ -7,20 +7,21 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
+	"github.com/go-dev-frame/sponge/api/types"
 	"github.com/jinzhu/copier"
 	"github.com/stretchr/testify/assert"
-	"github.com/zhufuyi/sponge/api/types"
 
-	"github.com/zhufuyi/sponge/pkg/gin/response"
-	"github.com/zhufuyi/sponge/pkg/gotest"
-	"github.com/zhufuyi/sponge/pkg/httpcli"
-	"github.com/zhufuyi/sponge/pkg/utils"
+	"github.com/go-dev-frame/sponge/pkg/gin/response"
+	"github.com/go-dev-frame/sponge/pkg/gotest"
+	"github.com/go-dev-frame/sponge/pkg/httpcli"
+	"github.com/go-dev-frame/sponge/pkg/utils"
 
-	serverNameExampleV1 "github.com/zhufuyi/sponge/api/serverNameExample/v1"
-	"github.com/zhufuyi/sponge/internal/cache"
-	"github.com/zhufuyi/sponge/internal/dao"
-	"github.com/zhufuyi/sponge/internal/ecode"
-	"github.com/zhufuyi/sponge/internal/model"
+	serverNameExampleV1 "github.com/go-dev-frame/sponge/api/serverNameExample/v1"
+	"github.com/go-dev-frame/sponge/internal/cache"
+	"github.com/go-dev-frame/sponge/internal/dao"
+	"github.com/go-dev-frame/sponge/internal/database"
+	"github.com/go-dev-frame/sponge/internal/ecode"
+	"github.com/go-dev-frame/sponge/internal/model"
 )
 
 func newUserExamplePbHandler() *gotest.Handler {
@@ -32,7 +33,7 @@ func newUserExamplePbHandler() *gotest.Handler {
 
 	// init mock cache
 	c := gotest.NewCache(map[string]interface{}{utils.Uint64ToStr(testData.ID): testData})
-	c.ICache = cache.NewUserExampleCache(&model.CacheType{
+	c.ICache = cache.NewUserExampleCache(&database.CacheType{
 		CType: "redis",
 		Rdb:   c.RedisClient,
 	})

@@ -8,7 +8,7 @@ import (
 	"github.com/huandu/xstrings"
 	"github.com/spf13/cobra"
 
-	"github.com/zhufuyi/sponge/pkg/replacer"
+	"github.com/go-dev-frame/sponge/pkg/replacer"
 )
 
 // HTTPPbCommand generate web service code based on protobuf file
@@ -128,7 +128,7 @@ func (g *httpPbGenerator) generateCode() (string, error) {
 			"apis.go", "apis.swagger.json",
 		},
 		"internal/config": {
-			"serverNameExample.go", "serverNameExample_test.go", "serverNameExample_cc.go",
+			"serverNameExample.go",
 		},
 		"internal/ecode": {
 			"systemCode_http.go",
@@ -137,7 +137,7 @@ func (g *httpPbGenerator) generateCode() (string, error) {
 			"routers_pbExample.go",
 		},
 		"internal/server": {
-			"http.go", "http_test.go", "http_option.go",
+			"http.go.noregistry", "http_option.go.noregistry",
 		},
 	}
 
@@ -149,11 +149,13 @@ func (g *httpPbGenerator) generateCode() (string, error) {
 	replaceFiles := make(map[string][]string)
 	subFiles = append(subFiles, getSubFiles(selectFiles, replaceFiles)...)
 
-	// ignore some directories
+	// ignore some directories and files
 	ignoreDirs := []string{"cmd/sponge"}
+	ignoreFiles := []string{"configs/serverNameExample_cc.yml"}
 
 	r.SetSubDirsAndFiles(subDirs, subFiles...)
 	r.SetIgnoreSubDirs(ignoreDirs...)
+	r.SetIgnoreSubFiles(ignoreFiles...)
 	_ = r.SetOutputDir(g.outPath, g.serverName+"_"+subTplName)
 	fields := g.addFields(r)
 	r.SetReplacementFields(fields)
@@ -186,6 +188,7 @@ func (g *httpPbGenerator) addFields(r replacer.Replacer) []replacer.Field {
 	repoHost, _ := parseImageRepoAddr(g.repoAddr)
 
 	fields = append(fields, deleteFieldsMark(r, httpFile, startMark, endMark)...)
+	fields = append(fields, deleteFieldsMark(r, httpFile+".noregistry", startMark, endMark)...)
 	fields = append(fields, deleteFieldsMark(r, dockerFile, wellStartMark, wellEndMark)...)
 	fields = append(fields, deleteFieldsMark(r, dockerFileBuild, wellStartMark, wellEndMark)...)
 	fields = append(fields, deleteFieldsMark(r, dockerComposeFile, wellStartMark, wellEndMark)...)
@@ -254,12 +257,12 @@ func (g *httpPbGenerator) addFields(r replacer.Replacer) []replacer.Field {
 			New: protoShellHandlerCode,
 		},
 		{
-			Old: "github.com/zhufuyi/sponge",
+			Old: "github.com/go-dev-frame/sponge",
 			New: g.moduleName,
 		},
 		{
 			Old: g.moduleName + pkgPathSuffix,
-			New: "github.com/zhufuyi/sponge/pkg",
+			New: "github.com/go-dev-frame/sponge/pkg",
 		},
 		{ // replace the sponge version of the go.mod file
 			Old: spongeTemplateVersionMark,
@@ -312,6 +315,8 @@ func (g *httpPbGenerator) addFields(r replacer.Replacer) []replacer.Field {
 			New: "",
 		},
 	}...)
+
+	fields = append(fields, getHTTPServiceFields()...)
 
 	if g.suitedMonoRepo {
 		fs := serverCodeFields(codeNameHTTPPb, g.moduleName, g.serverName)

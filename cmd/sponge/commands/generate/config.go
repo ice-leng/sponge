@@ -11,8 +11,8 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
-	"github.com/zhufuyi/sponge/pkg/gofile"
-	"github.com/zhufuyi/sponge/pkg/jy2struct"
+	"github.com/go-dev-frame/sponge/pkg/gofile"
+	"github.com/go-dev-frame/sponge/pkg/jy2struct"
 )
 
 // ConfigCommand convert yaml to struct command
@@ -68,6 +68,10 @@ func ConfigCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&serverDir, "server-dir", "d", "", "server directory")
 	cmd.Flags().StringVarP(&ysArgs.InputFile, "yaml-file", "f", "", "yaml file")
 	cmd.Flags().StringVarP(&outPath, "out", "o", "", "output directory, default is ./config_<time>")
+
+	cmd.AddCommand(
+		ConfigmapCommand(), // k8s configmap command
+	)
 
 	return cmd
 }

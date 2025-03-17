@@ -1,25 +1,25 @@
 ## interceptor
 
-Commonly used grpc client-side and server-side interceptors.
+Common interceptors for client-side and server-side gRPC.
 
 <br>
 
 ### Example of use
 
 ```go
-import "github.com/zhufuyi/sponge/pkg/grpc/interceptor"
+import "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
 ```
 
 #### logging
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 // set unary server logging
 func getServerOptions() []grpc.ServerOption {
 	var options []grpc.ServerOption
 	
-	options = append(options, grpc_middleware.WithUnaryServerChain(
+	option := grpc.ChainUnaryInterceptor(
 		// if you don't want to log reply data, you can use interceptor.StreamServerSimpleLog instead of interceptor.UnaryServerLog,
 		interceptor.UnaryServerLog(
 			logger.Get(),
@@ -28,7 +28,8 @@ func getServerOptions() []grpc.ServerOption {
 			//interceptor.WithLogIgnoreMethods(fullMethodNames), // ignore methods logging
 			//interceptor.WithMaxLen(400), // logging max length, default 300
 		),
-	))
+	)
+	options = append(options, option)
 
 	return options
 }
@@ -37,16 +38,16 @@ func getServerOptions() []grpc.ServerOption {
 // you can also set stream server logging
 ```
 
-**grpc client-side**
+**client-side gRPC**
 
 ```go
 // set unary client logging
 func getDialOptions() []grpc.DialOption {
 	var options []grpc.DialOption
 
-	option := grpc.WithUnaryInterceptor(
-		grpc_middleware.ChainUnaryClient(
-			interceptor.UnaryClientLog(logger.Get()),
+	option := grpc.WithChainUnaryInterceptor(
+		interceptor.UnaryClientLog(
+			logger.Get(),
 			interceptor.WithReplaceGRPCLogger(),
 		),
 	)
@@ -62,31 +63,29 @@ func getDialOptions() []grpc.DialOption {
 
 #### recovery
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 func getServerOptions() []grpc.ServerOption {
 	var options []grpc.ServerOption
 
-	recoveryOption := grpc_middleware.WithUnaryServerChain(
+	option := grpc.ChainUnaryInterceptor(
 		interceptor.UnaryServerRecovery(),
 	)
-	options = append(options, recoveryOption)
+	options = append(options, option)
 
 	return options
 }
 ```
 
-**grpc client-side**
+**client-side gRPC**
 
 ```go
 func getDialOptions() []grpc.DialOption {
 	var options []grpc.DialOption
 
-	option := grpc.WithUnaryInterceptor(
-		grpc_middleware.ChainUnaryClient(
-			interceptor.UnaryClientRecovery(),
-		),
+	option := grpc.WithChainUnaryInterceptor(
+		interceptor.UnaryClientRecovery(),
 	)
 	options = append(options, option)
 
@@ -98,7 +97,7 @@ func getDialOptions() []grpc.DialOption {
 
 #### retry
 
-**grpc client-side**
+**client-side gRPC**
 
 ```go
 func getDialOptions() []grpc.DialOption {
@@ -108,13 +107,11 @@ func getDialOptions() []grpc.DialOption {
 	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	// retry
-	option := grpc.WithUnaryInterceptor(
-		grpc_middleware.ChainUnaryClient(
-			interceptor.UnaryClientRetry(
-				//middleware.WithRetryTimes(5), // modify the default number of retries to 3 by default
-				//middleware.WithRetryInterval(100*time.Millisecond), // modify the default retry interval, default 50 milliseconds
-				//middleware.WithRetryErrCodes(), // add trigger retry error code, default is codes.Internal, codes.DeadlineExceeded, codes.Unavailable
-			),
+	option := grpc.WithChainUnaryInterceptor(
+		interceptor.UnaryClientRetry(
+			//middleware.WithRetryTimes(5), // modify the default number of retries to 3 by default
+			//middleware.WithRetryInterval(100*time.Millisecond), // modify the default retry interval, default 50 milliseconds
+			//middleware.WithRetryErrCodes(), // add trigger retry error code, default is codes.Internal, codes.DeadlineExceeded, codes.Unavailable
 		),
 	)
 	options = append(options, option)
@@ -127,7 +124,7 @@ func getDialOptions() []grpc.DialOption {
 
 #### rate limiter
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 func getDialOptions() []grpc.DialOption {
@@ -137,14 +134,12 @@ func getDialOptions() []grpc.DialOption {
 	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	// rate limiter
-	option := grpc.WithUnaryInterceptor(
-		grpc_middleware.ChainUnaryClient(
-			interceptor.UnaryRateLimit(
-				//interceptor.WithWindow(time.Second*5),
-				//interceptor.WithBucket(200),
-				//interceptor.WithCPUThreshold(600),
-				//interceptor.WithCPUQuota(0), 
-			),
+	option := grpc.ChainUnaryInterceptor(
+		interceptor.UnaryServerRateLimit(
+			//interceptor.WithWindow(time.Second*5),
+			//interceptor.WithBucket(200),
+			//interceptor.WithCPUThreshold(600),
+			//interceptor.WithCPUQuota(0),
 		),
 	)
 	options = append(options, option)
@@ -157,7 +152,7 @@ func getDialOptions() []grpc.DialOption {
 
 #### Circuit Breaker
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 func getDialOptions() []grpc.DialOption {
@@ -167,12 +162,10 @@ func getDialOptions() []grpc.DialOption {
 	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	// circuit breaker
-	option := grpc.WithUnaryInterceptor(
-		grpc_middleware.ChainUnaryClient(
-			interceptor.UnaryClientCircuitBreaker(
-				//interceptor.WithValidCode(codes.DeadlineExceeded), // add error code 4 for circuit breaker
-				//interceptor.WithUnaryServerDegradeHandler(handler), // add custom degrade handler
-			),
+	option := grpc.ChainUnaryInterceptor(
+		interceptor.UnaryServerCircuitBreaker(
+			//interceptor.WithValidCode(codes.DeadlineExceeded), // add error code 4 for circuit breaker
+			//interceptor.WithUnaryServerDegradeHandler(handler), // add custom degrade handler
 		),
 	)
 	options = append(options, option)
@@ -185,7 +178,7 @@ func getDialOptions() []grpc.DialOption {
 
 #### timeout
 
-**grpc client-side**
+**client-side gRPC**
 
 ```go
 func getDialOptions() []grpc.DialOption {
@@ -195,10 +188,8 @@ func getDialOptions() []grpc.DialOption {
 	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	// timeout
-	option := grpc.WithUnaryInterceptor(
-		grpc_middleware.ChainUnaryClient(
-			middleware.ContextTimeout(time.Second), // set timeout
-		),
+	option := grpc.WithChainUnaryInterceptor(
+		interceptor.UnaryClientTimeout(time.Second), // set timeout
 	)
 	options = append(options, option)
 
@@ -210,7 +201,7 @@ func getDialOptions() []grpc.DialOption {
 
 #### tracing
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 // initialize tracing
@@ -237,9 +228,10 @@ func getDialOptions() []grpc.DialOption {
 	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	// use tracing
-	options = append(options, grpc.WithUnaryInterceptor(
+	option := grpc.WithUnaryInterceptor(
 		interceptor.UnaryClientTracing(),
-	))
+	)
+	options = append(options, option)
 
 	return options
 }
@@ -249,9 +241,10 @@ func getServerOptions() []grpc.ServerOption {
 	var options []grpc.ServerOption
 
 	// use tracing
-	options = append(options, grpc.UnaryInterceptor(
+	option := grpc.UnaryInterceptor(
 		interceptor.UnaryServerTracing(),
-	))
+	)
+	options = append(options, option)
 
 	return options
 }
@@ -278,16 +271,16 @@ example [metrics](../metrics/README.md).
 
 #### Request id
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 func getServerOptions() []grpc.ServerOption {
 	var options []grpc.ServerOption
 
-	recoveryOption := grpc_middleware.WithUnaryServerChain(
+	option := grpc.ChainUnaryInterceptor(
 		interceptor.UnaryServerRequestID(),
 	)
-	options = append(options, recoveryOption)
+	options = append(options, option)
 
 	return options
 }
@@ -295,7 +288,7 @@ func getServerOptions() []grpc.ServerOption {
 
 <br>
 
-**grpc client-side**
+**client-side gRPC**
 
 ```go
 func getDialOptions() []grpc.DialOption {
@@ -304,10 +297,8 @@ func getDialOptions() []grpc.DialOption {
 	// use insecure transfer
 	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-	option := grpc.WithUnaryInterceptor(
-		grpc_middleware.ChainUnaryClient(
-			interceptor.UnaryClientRequestID(),
-		),
+	option := grpc.WithChainUnaryInterceptor(
+		interceptor.UnaryClientRequestID(),
 	)
 	options = append(options, option)
 
@@ -319,25 +310,30 @@ func getDialOptions() []grpc.DialOption {
 
 #### jwt authentication
 
-**grpc client-side**
+JWT supports two verification methods:
+
+- The default verification method includes fixed fields `uid` and `name` in the claim, and supports additional custom verification functions.
+- The custom verification method allows users to define the claim themselves and also supports additional custom verification functions.
+
+**client-side gRPC**
 
 ```go
 package main
 
 import (
 	"context"
-	"github.com/zhufuyi/sponge/pkg/jwt"
-	"github.com/zhufuyi/sponge/pkg/grpc/interceptor"
-	"github.com/zhufuyi/sponge/pkg/grpc/grpccli"
+	"github.com/go-dev-frame/sponge/pkg/jwt"
+	"github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+	"github.com/go-dev-frame/sponge/pkg/grpc/grpccli"
 	userV1 "user/api/user/v1"
 )
 
 func main() {
 	ctx := context.Background()
-	conn, _ := grpccli.Dial(ctx, "127.0.0.1:8282")
+	conn, _ := grpccli.NewClient("127.0.0.1:8282")
 	cli := userV1.NewUserClient(conn)
 
-	token := "xxxxxx"
+	token := "xxxxxx" // no Bearer prefix
 	ctx = interceptor.SetJwtTokenToCtx(ctx, token)
 
 	req := &userV1.GetUserByIDRequest{Id: 100}
@@ -345,7 +341,7 @@ func main() {
 }
 ```
 
-**grpc server-side**
+**server-side gRPC**
 
 ```go
 package main
@@ -353,24 +349,18 @@ package main
 import (
 	"context"
 	"net"
-	"github.com/zhufuyi/sponge/pkg/jwt"
-	"github.com/zhufuyi/sponge/pkg/grpc/interceptor"
+	"github.com/go-dev-frame/sponge/pkg/jwt"
+	"github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
 	"google.golang.org/grpc"
 	userV1 "user/api/user/v1"
 )
 
-func standardVerifyFn(claims *jwt.Claims, tokenTail32 string) error {
-	// you can check the claims and tokenTail32, and return an error if necessary
-	// see example in jwtAuth_test.go line 23
-
-	return nil
-}
-
-func customVerifyFn(claims *jwt.CustomClaims, tokenTail32 string) error {
-	// you can check the claims and tokenTail32, and return an error if necessary
-	// see example in jwtAuth_test.go line 34
-
-	return nil
+func main()  {
+	list, err := net.Listen("tcp", ":8282")
+	server := grpc.NewServer(getUnaryServerOptions()...)
+	userV1.RegisterUserServer(server, &user{})
+	server.Serve(list)
+	select{}
 }
 
 func getUnaryServerOptions() []grpc.ServerOption {
@@ -379,13 +369,20 @@ func getUnaryServerOptions() []grpc.ServerOption {
 	// other interceptors ...
 
 	options = append(options, grpc.UnaryInterceptor(
-	    // jwt authorization interceptor
 	    interceptor.UnaryServerJwtAuth(
-			// // choose a verification method as needed
-			//interceptor.WithStandardVerify(standardVerifyFn), // standard verify (default), standardVerifyFn is not mandatory, you can set nil if you don't need it
-			//interceptor.WithCustomVerify(customVerifyFn), // custom verify
+	        // Choose to use one of the following 4 authorization
+			
+	        // Case 1: default authorization
+	        // interceptor.WithDefaultVerify(), // can be ignored
+	        // default authorization with extra verification
+	        // interceptor.WithDefaultVerify(extraDefaultVerifyFn),
 
-	        // specify the grpc API to ignore token verification(full path)
+	        // Case 2: custom authorization
+	        // interceptor.WithCustomVerify(),
+	        // custom authorization with extra verification
+	        // interceptor.WithCustomVerify(extraCustomVerifyFn),
+
+	        // specify the gRPC API to ignore token verification(full path)
 	        interceptor.WithAuthIgnoreMethods(
 	            "/api.user.v1.User/Register",
 	            "/api.user.v1.User/Login",
@@ -405,9 +402,12 @@ type user struct {
 func (s *user) Login(ctx context.Context, req *userV1.LoginRequest) (*userV1.LoginReply, error) {
 	// check user and password success
 
-	uid := 100
-	name := "tom"
-	token, err := jwt.GenerateToken(uid, name)
+	// Case 1: default authorization
+	token, err := jwt.GenerateToken("123", "admin")
+	
+	// Case 2: custom authorization
+	fields := jwt.KV{"id": uint64(100), "name": "tom", "age": 10}
+	token, err := jwt.GenerateCustomToken(fields)
 
 	return &userV1.LoginReply{Token: token},nil
 }
@@ -417,17 +417,47 @@ func (s *user) GetByID(ctx context.Context, req *userV1.GetUserByIDRequest) (*us
 	// if token is valid, won't get here, because the interceptor has returned an error message 
 
 	// if you want get jwt claims, you can use the following code
+	// Case 1: default authorization
 	claims, err := interceptor.GetJwtClaims(ctx)
+	
+	// Case 2: custom authorization
+	customClaims, err := interceptor.GetJwtCustomClaims(ctx)
+	
+	// ......
 
 	return &userV1.GetUserByIDReply{},nil
 }
 
-func main()  {
-	list, err := net.Listen("tcp", ":8282")
-	server := grpc.NewServer(getUnaryServerOptions()...)
-	userV1.RegisterUserServer(server, &user{})
-	server.Serve(list)
-	select{}
+func extraDefaultVerifyFn(claims *jwt.Claims, tokenTail10 string) error {
+	// In addition to jwt certification, additional checks can be customized here.
+
+	// err := errors.New("verify failed")
+	// if claims.Name != "admin" {
+	//     return err
+	// }
+	// token := getToken(claims.UID) // from cache or database
+	// if tokenTail10 != token[len(token)-10:] { return err }
+
+	return nil
+}
+
+func extraCustomVerifyFn(claims *jwt.CustomClaims, tokenTail10 string) error {
+	// In addition to jwt certification, additional checks can be customized here.
+
+	// err := errors.New("verify failed")
+	// token, fields := getToken(id) // from cache or database
+	// if tokenTail10 != token[len(token)-10:] { return err }
+
+	// id, exist := claims.GetUint64("id")
+	// if !exist || id != fields["id"].(uint64) { return err }
+
+	// name, exist := claims.GetString("name")
+	// if !exist || name != fields["name"].(string) { return err }
+
+	// age, exist := claims.GetInt("age")
+	// if !exist || age != fields["age"].(int) { return err }
+
+	return nil
 }
 ```
 

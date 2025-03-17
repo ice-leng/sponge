@@ -1,6 +1,11 @@
 package utils
 
-import "strconv"
+import (
+	"strconv"
+)
+
+// MaxStringID is the maximum string ID
+const MaxStringID = "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
 
 // StrToInt string to int
 func StrToInt(str string) int {
@@ -40,6 +45,17 @@ func StrToUint64E(str string) (uint64, error) {
 	return strconv.ParseUint(str, 10, 64)
 }
 
+// StrToUint string to uint
+func StrToUint(str string) uint {
+	return uint(StrToUint64(str))
+}
+
+// StrToUintE string to uint
+func StrToUintE(str string) (uint, error) {
+	v, err := StrToUint64E(str)
+	return uint(v), err
+}
+
 // StrToFloat32 string to float32
 func StrToFloat32(str string) float32 {
 	v, _ := strconv.ParseFloat(str, 32)
@@ -71,6 +87,11 @@ func IntToStr(v int) string {
 	return strconv.Itoa(v)
 }
 
+// UintToStr uint to string
+func UintToStr(v uint) string {
+	return Uint64ToStr(uint64(v))
+}
+
 // Uint64ToStr uint64 to string
 func Uint64ToStr(v uint64) string {
 	return strconv.FormatUint(v, 10)
@@ -79,4 +100,24 @@ func Uint64ToStr(v uint64) string {
 // Int64ToStr int64 to string
 func Int64ToStr(v int64) string {
 	return strconv.FormatInt(v, 10)
+}
+
+// ProtoInt32ToInt convert proto int32 to int
+func ProtoInt32ToInt(v int32) int {
+	return int(v)
+}
+
+// IntToProtoInt32 convert int to proto int32
+func IntToProtoInt32(v int) int32 {
+	return int32(v)
+}
+
+// ProtoInt64ToUint64 convert proto int64 to uint64
+func ProtoInt64ToUint64(v int64) uint64 {
+	return uint64(v)
+}
+
+// Uint64ToProtoInt64 convert uint64 to proto int64
+func Uint64ToProtoInt64(v uint64) int64 {
+	return int64(v)
 }
