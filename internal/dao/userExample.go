@@ -3,7 +3,6 @@ package dao
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
@@ -12,10 +11,10 @@ import (
 	"github.com/go-dev-frame/sponge/pkg/sgorm/query"
 	"github.com/go-dev-frame/sponge/pkg/utils"
 
-	"github.com/go-dev-frame/sponge/internal/types"
 	"github.com/go-dev-frame/sponge/internal/cache"
 	"github.com/go-dev-frame/sponge/internal/database"
 	"github.com/go-dev-frame/sponge/internal/model"
+	"github.com/go-dev-frame/sponge/internal/types"
 )
 
 var _ UserExampleDao = (*userExampleDao)(nil)
