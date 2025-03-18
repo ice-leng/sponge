@@ -77,6 +77,33 @@ func NewRegistry(nacosIPAddr string, nacosPort int, nacosNamespaceID string,
 	return New(cli), serviceInstance, nil
 }
 
+// NewRegistryWithOptions instantiating the nacos registry, opts can be set by nacoscli.WithXXX and nacos.WithXXX functions.
+func NewRegistryWithOptions(nacosIPAddr string, nacosPort int, nacosNamespaceID string,
+	id string, instanceName string, instanceEndpoints []string,
+	opts ...interface{}) (registry.Registry, *registry.ServiceInstance, error) {
+	serviceInstance := registry.NewServiceInstance(id, instanceName, instanceEndpoints)
+
+	var nacosOptions []nacoscli.Option
+	var registryOptions []Option
+	for _, opt := range opts {
+		switch v := opt.(type) {
+		case nacoscli.Option:
+			nacosOptions = append(nacosOptions, v)
+		case Option:
+			registryOptions = append(registryOptions, v)
+		default:
+			return nil, nil, fmt.Errorf("unknown option type: %T", v)
+		}
+	}
+
+	cli, err := nacoscli.NewNamingClient(nacosIPAddr, nacosPort, nacosNamespaceID, nacosOptions...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return New(cli, registryOptions...), serviceInstance, nil
+}
+
 // New new a nacos registry.
 func New(cli naming_client.INamingClient, opts ...Option) (r *Registry) {
 	op := options{
