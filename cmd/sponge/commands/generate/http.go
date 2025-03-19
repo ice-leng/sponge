@@ -6,6 +6,7 @@ import (
 	"github.com/go-dev-frame/sponge/cmd/sponge/global"
 	"math/rand"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/fatih/color"
@@ -320,7 +321,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 	ignoreFiles := []string{"scripts/image-rpc-test.sh", "scripts/patch.sh", "scripts/protoc.sh",
 		"scripts/proto-doc.sh", "configs/serverNameExample_cc.yml"}
 
-	if g.isInit() {
+	if runtime.GOOS == "darwin" && g.isInit() {
 		// todo rpc
 		ignoreDirs = append(ignoreDirs, []string{
 			"cmd",
