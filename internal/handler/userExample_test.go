@@ -11,7 +11,6 @@ import (
 
 	"github.com/go-dev-frame/sponge/pkg/gotest"
 	"github.com/go-dev-frame/sponge/pkg/httpcli"
-	"github.com/go-dev-frame/sponge/pkg/sgorm/query"
 	"github.com/go-dev-frame/sponge/pkg/utils"
 
 	"github.com/go-dev-frame/sponge/internal/cache"
