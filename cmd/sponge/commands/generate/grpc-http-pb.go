@@ -8,7 +8,7 @@ import (
 	"github.com/huandu/xstrings"
 	"github.com/spf13/cobra"
 
-	"github.com/zhufuyi/sponge/pkg/replacer"
+	"github.com/go-dev-frame/sponge/pkg/replacer"
 )
 
 // GRPCAndHTTPPbCommand generate grpc+http service code bash on protobuf file
@@ -128,7 +128,7 @@ func (g *httpAndGRPCPbGenerator) generateCode() error {
 			"apis.go", "apis.swagger.json",
 		},
 		"internal/config": {
-			"serverNameExample.go", "serverNameExample_test.go", "serverNameExample_cc.go",
+			"serverNameExample.go",
 		},
 		"internal/ecode": {
 			"systemCode_http.go", "systemCode_rpc.go",
@@ -152,11 +152,13 @@ func (g *httpAndGRPCPbGenerator) generateCode() error {
 	replaceFiles := make(map[string][]string)
 	subFiles = append(subFiles, getSubFiles(selectFiles, replaceFiles)...)
 
-	// ignore some directories
+	// ignore some directories and files
 	ignoreDirs := []string{"cmd/sponge"}
+	ignoreFiles := []string{"configs/serverNameExample_cc.yml"}
 
 	r.SetSubDirsAndFiles(subDirs, subFiles...)
 	r.SetIgnoreSubDirs(ignoreDirs...)
+	r.SetIgnoreSubFiles(ignoreFiles...)
 	_ = r.SetOutputDir(g.outPath, g.serverName+"_"+subTplName)
 	fields := g.addFields(r)
 	r.SetReplacementFields(fields)
@@ -256,12 +258,12 @@ func (g *httpAndGRPCPbGenerator) addFields(r replacer.Replacer) []replacer.Field
 			New: protoShellServiceAndHandlerCode,
 		},
 		{
-			Old: "github.com/zhufuyi/sponge",
+			Old: "github.com/go-dev-frame/sponge",
 			New: g.moduleName,
 		},
 		{
 			Old: g.moduleName + pkgPathSuffix,
-			New: "github.com/zhufuyi/sponge/pkg",
+			New: "github.com/go-dev-frame/sponge/pkg",
 		},
 		{ // replace the sponge version of the go.mod file
 			Old: spongeTemplateVersionMark,
@@ -326,14 +328,16 @@ func (g *httpAndGRPCPbGenerator) addFields(r replacer.Replacer) []replacer.Field
 			New: "// implemented on port 8283",
 		},
 		{
-			Old: `"github.com/zhufuyi/sponge/pkg/gin/prof"`,
+			Old: `"github.com/go-dev-frame/sponge/pkg/gin/prof"`,
 			New: "",
 		},
 		{
 			Old: "reference-db-config-url",
-			New: "Reference: https://github.com/zhufuyi/sponge/blob/main/configs/serverNameExample.yml#L87",
+			New: "Reference: https://github.com/go-dev-frame/sponge/blob/main/configs/serverNameExample.yml#L87",
 		},
 	}...)
+
+	fields = append(fields, getGRPCServiceFields()...)
 
 	if g.suitedMonoRepo {
 		fs := serverCodeFields(codeNameGRPCHTTP, g.moduleName, g.serverName)

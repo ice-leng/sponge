@@ -6,7 +6,7 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/zhufuyi/sponge/pkg/utils"
+	"github.com/go-dev-frame/sponge/pkg/utils"
 )
 
 // Cache redis cache
@@ -52,6 +52,15 @@ func (c *Cache) GetIDs() []uint64 {
 		ids = append(ids, utils.StrToUint64(idStr))
 	}
 	return ids
+}
+
+// GetFields get test data fields
+func (c *Cache) GetFields() []string {
+	var fields []string
+	for idStr := range c.TestDataMap {
+		fields = append(fields, idStr)
+	}
+	return fields
 }
 
 // GetTestData get test data

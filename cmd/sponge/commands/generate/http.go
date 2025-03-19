@@ -3,6 +3,7 @@ package generate
 import (
 	"errors"
 	"fmt"
+	"github.com/go-dev-frame/sponge/cmd/sponge/global"
 	"math/rand"
 	"os"
 	"runtime"
@@ -12,9 +13,9 @@ import (
 	"github.com/huandu/xstrings"
 	"github.com/spf13/cobra"
 
-	"github.com/zhufuyi/sponge/pkg/replacer"
-	"github.com/zhufuyi/sponge/pkg/sql2code"
-	"github.com/zhufuyi/sponge/pkg/sql2code/parser"
+	"github.com/go-dev-frame/sponge/pkg/replacer"
+	"github.com/go-dev-frame/sponge/pkg/sql2code"
+	"github.com/go-dev-frame/sponge/pkg/sql2code/parser"
 )
 
 // HTTPCommand generate web service code
@@ -154,7 +155,7 @@ using help:
 	_ = cmd.MarkFlagRequired("server-name")
 	cmd.Flags().StringVarP(&projectName, "project-name", "p", "", "project name")
 	_ = cmd.MarkFlagRequired("project-name")
-	cmd.Flags().StringVarP(&sqlArgs.DBDriver, "db-driver", "k", "mysql", "database driver, support mysql, mongodb, postgresql, tidb, sqlite")
+	cmd.Flags().StringVarP(&sqlArgs.DBDriver, "db-driver", "k", "mysql", "database driver, support mysql, mongodb, postgresql, sqlite")
 	cmd.Flags().StringVarP(&sqlArgs.DBDsn, "db-dsn", "d", "", "database content address, e.g. user:password@(host:port)/database. Note: if db-driver=sqlite, db-dsn must be a local sqlite db file, e.g. --db-dsn=/tmp/sponge_sqlite.db") //nolint
 	_ = cmd.MarkFlagRequired("db-dsn")
 	cmd.Flags().StringVarP(&dbTables, "db-table", "t", "", "table name, multiple names separated by commas")
@@ -183,12 +184,13 @@ type httpGenerator struct {
 	isExtendedAPI  bool
 	suitedMonoRepo bool
 
-	fields []replacer.Field
+	fields        []replacer.Field
+	isCommonStyle bool
 }
 
 func (g *httpGenerator) generateCode() (string, error) {
 	subTplName := codeNameHTTP
-	r := Replacers[TplNameSponge]
+	r, _ := replacer.New(SpongeDir)
 	if r == nil {
 		return "", errors.New("replacer is nil")
 	}
@@ -218,10 +220,13 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"userExample.go", "userExample_test.go",
 		},
 		"internal/config": {
-			"serverNameExample.go", "serverNameExample_test.go", "serverNameExample_cc.go",
+			"serverNameExample.go",
 		},
 		"internal/dao": {
 			"userExample.go", "userExample_test.go",
+		},
+		"internal/database": {
+			"init.go",
 		},
 		"internal/ecode": {
 			"systemCode_http.go", "userExample_http.go",
@@ -230,26 +235,61 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"userExample.go", "userExample_test.go",
 		},
 		"internal/model": {
-			"init.go", "userExample.go",
+			"userExample.go",
 		},
 		"internal/routers": {
 			"routers.go", "userExample.go",
 		},
 		"internal/server": {
-			"http.go", "http_test.go", "http_option.go",
+			"http.go.noregistry", "http_option.go.noregistry",
 		},
 		"internal/types": {
 			"swagger_types.go", "userExample_types.go",
 		},
 	}
-	replaceFiles := make(map[string][]string)
+	err := SetSelectFiles(g.dbDriver, selectFiles)
+	if err != nil {
+		return "", err
+	}
 
+	info := g.codes[parser.CodeTypeCrudInfo]
+	crudInfo, _ := unmarshalCrudInfo(info)
+	if crudInfo.CheckCommonType() {
+		g.isCommonStyle = true
+		selectFiles["internal/cache"] = []string{"userExample.go.tpl"}
+		selectFiles["internal/dao"] = []string{"userExample.go.tpl"}
+		selectFiles["internal/ecode"] = []string{"systemCode_http.go", "userExample_http.go.tpl"}
+		selectFiles["internal/handler"] = []string{"userExample.go.tpl"}
+		selectFiles["internal/routers"] = []string{"routers.go", "userExample.go.tpl"}
+		selectFiles["internal/types"] = []string{"swagger_types.go", "userExample_types.go.tpl"}
+		var fields []replacer.Field
+		if g.isExtendedAPI {
+			selectFiles["internal/dao"] = []string{"userExample.go.exp.tpl"}
+			selectFiles["internal/ecode"] = []string{"systemCode_http.go", "userExample_http.go.exp.tpl"}
+			selectFiles["internal/handler"] = []string{"userExample.go.exp.tpl"}
+			selectFiles["internal/routers"] = []string{"routers.go", "userExample.go.exp.tpl"}
+			selectFiles["internal/types"] = []string{"swagger_types.go", "userExample_types.go.exp.tpl"}
+			fields = commonHTTPExtendedFields(r)
+		} else {
+			fields = commonHTTPFields(r)
+		}
+		contentFields, err := replaceFilesContent(r, getTemplateFiles(selectFiles), crudInfo)
+		if err != nil {
+			return "", err
+		}
+		g.fields = append(g.fields, contentFields...)
+		g.fields = append(g.fields, fields...)
+	}
+
+	replaceFiles := make(map[string][]string)
 	switch strings.ToLower(g.dbDriver) {
 	case DBDriverMysql, DBDriverPostgresql, DBDriverTidb, DBDriverSqlite:
 		g.fields = append(g.fields, getExpectedSQLForDeletionField(g.isEmbed)...)
 		if g.isExtendedAPI {
 			var fields []replacer.Field
-			replaceFiles, fields = handlerExtendedAPI(r, codeNameHTTP)
+			if !crudInfo.CheckCommonType() {
+				replaceFiles, fields = handlerExtendedAPI(r, codeNameHTTP)
+			}
 			g.fields = append(g.fields, fields...)
 		}
 
@@ -269,9 +309,6 @@ func (g *httpGenerator) generateCode() (string, error) {
 				"internal/handler": {
 					"userExample.go.mgo",
 				},
-				"internal/model": {
-					"init.go.mgo", "userExample.go",
-				},
 				"internal/types": {
 					"swagger_types.go", "userExample_types.go.mgo",
 				},
@@ -287,7 +324,8 @@ func (g *httpGenerator) generateCode() (string, error) {
 
 	// ignore some directories and files
 	ignoreDirs := []string{"cmd/sponge"}
-	ignoreFiles := []string{"scripts/image-rpc-test.sh", "scripts/patch.sh", "scripts/protoc.sh", "scripts/proto-doc.sh"}
+	ignoreFiles := []string{"scripts/image-rpc-test.sh", "scripts/patch.sh", "scripts/protoc.sh",
+		"scripts/proto-doc.sh", "configs/serverNameExample_cc.yml"}
 
 	if runtime.GOOS == "darwin" && g.isInit() {
 		// todo rpc
@@ -300,6 +338,8 @@ func (g *httpGenerator) generateCode() (string, error) {
 			//"internal/service",
 			//"internal/rpcclient",
 			"internal/config",
+			"internal/server",
+			"internal/database",
 		}...)
 		ignoreFiles = append(ignoreFiles, []string{
 			".gitignore",
@@ -311,11 +351,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"go.mod",
 			"go.sum",
 			"internal/ecode/systemCode_http.go",
-			"internal/model/init.go",
 			"internal/routers/routers.go",
-			"internal/server/http.go",
-			"internal/server/http_option.go",
-			"internal/server/http_test.go",
 			"internal/types/swagger_types.go",
 		}...)
 	}
@@ -330,7 +366,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 	if err := r.SaveFiles(); err != nil {
 		return "", err
 	}
-	_ = saveGenInfo(g.moduleName, g.serverName, g.suitedMonoRepo, r.GetOutputDir()+"/server")
+	_ = saveGenInfo(g.moduleName, g.serverName, g.suitedMonoRepo, r.GetOutputDir())
 
 	return r.GetOutputDir(), nil
 }
@@ -341,14 +377,15 @@ func (g *httpGenerator) addFields(r replacer.Replacer) []replacer.Field {
 	var fields []replacer.Field
 	fields = append(fields, g.fields...)
 	fields = append(fields, deleteFieldsMark(r, modelFile, startMark, endMark)...)
-	fields = append(fields, deleteFieldsMark(r, modelInitDBFile, startMark, endMark)...)
+	fields = append(fields, deleteFieldsMark(r, databaseInitDBFile, startMark, endMark)...)
 	fields = append(fields, deleteFieldsMark(r, daoFile, startMark, endMark)...)
 	fields = append(fields, deleteFieldsMark(r, daoMgoFile, startMark, endMark)...)
 	fields = append(fields, deleteFieldsMark(r, daoTestFile, startMark, endMark)...)
-	fields = append(fields, deleteFieldsMark(r, handlerFile, startMark, endMark)...)
-	fields = append(fields, deleteFieldsMark(r, handlerMgoFile, startMark, endMark)...)
+	fields = append(fields, deleteFieldsMark(r, typesFile, startMark, endMark)...)
+	fields = append(fields, deleteFieldsMark(r, typesMgoFile, startMark, endMark)...)
 	fields = append(fields, deleteFieldsMark(r, handlerTestFile, startMark, endMark)...)
 	fields = append(fields, deleteFieldsMark(r, httpFile, startMark, endMark)...)
+	fields = append(fields, deleteFieldsMark(r, httpFile+".noregistry", startMark, endMark)...)
 	fields = append(fields, deleteFieldsMark(r, dockerFile, wellStartMark, wellEndMark)...)
 	fields = append(fields, deleteFieldsMark(r, dockerFileBuild, wellStartMark, wellEndMark)...)
 	fields = append(fields, deleteFieldsMark(r, dockerComposeFile, wellStartMark, wellEndMark)...)
@@ -379,8 +416,8 @@ func (g *httpGenerator) addFields(r replacer.Replacer) []replacer.Field {
 			Old: modelFileMark,
 			New: g.codes[parser.CodeTypeModel],
 		},
-		{ // replace the contents of the model/init.go file
-			Old: modelInitDBFileMark,
+		{ // replace the contents of the database/init.go file
+			Old: databaseInitDBFileMark,
 			New: getInitDBCode(g.dbDriver),
 		},
 		{ // replace the contents of the dao/userExample.go file
@@ -389,7 +426,7 @@ func (g *httpGenerator) addFields(r replacer.Replacer) []replacer.Field {
 		},
 		{ // replace the contents of the handler/userExample.go file
 			Old: handlerFileMark,
-			New: adjustmentOfIDType(g.codes[parser.CodeTypeHandler], g.dbDriver),
+			New: adjustmentOfIDType(g.codes[parser.CodeTypeHandler], g.dbDriver, g.isCommonStyle),
 		},
 		{ // replace the contents of the Dockerfile file
 			Old: dockerFileMark,
@@ -423,7 +460,7 @@ func (g *httpGenerator) addFields(r replacer.Replacer) []replacer.Field {
 			Old: k8sServiceFileMark,
 			New: k8sServiceFileHTTPCode,
 		},
-		{ // replace github.com/zhufuyi/sponge/templates/sponge
+		{ // replace github.com/go-dev-frame/sponge/templates/sponge
 			Old: selfPackageName + "/" + r.GetSourcePath(),
 			New: g.moduleName,
 		},
@@ -436,12 +473,12 @@ func (g *httpGenerator) addFields(r replacer.Replacer) []replacer.Field {
 			New: "",
 		},
 		{
-			Old: "github.com/zhufuyi/sponge",
+			Old: "github.com/go-dev-frame/sponge",
 			New: g.moduleName,
 		},
 		{
 			Old: g.moduleName + pkgPathSuffix,
-			New: "github.com/zhufuyi/sponge/pkg",
+			New: "github.com/go-dev-frame/sponge/pkg",
 		},
 		{ // replace the sponge version of the go.mod file
 			Old: spongeTemplateVersionMark,
@@ -514,12 +551,20 @@ func (g *httpGenerator) addFields(r replacer.Replacer) []replacer.Field {
 			New: sqliteDSNAdaptation(g.dbDriver, g.dbDSN),
 		},
 		{
+			Old: showDbNameMark,
+			New: CurrentDbDriver(g.dbDriver),
+		},
+		{
 			Old: "Makefile-for-http",
 			New: "Makefile",
 		},
 		{
 			Old: "init.go.mgo",
 			New: "init.go",
+		},
+		{
+			Old: "mongodb.go.mgo",
+			New: "mongodb.go",
 		},
 		{
 			Old: "userExample_types.go.mgo",
@@ -568,6 +613,8 @@ func (g *httpGenerator) addFields(r replacer.Replacer) []replacer.Field {
 		},
 	}...)
 
+	fields = append(fields, getHTTPServiceFields()...)
+
 	if g.suitedMonoRepo {
 		fs := serverCodeFields(codeNameHTTP, g.moduleName, g.serverName)
 		fields = append(fields, fs...)
@@ -576,8 +623,16 @@ func (g *httpGenerator) addFields(r replacer.Replacer) []replacer.Field {
 	return fields
 }
 
+func commonHTTPFields(r replacer.Replacer) []replacer.Field {
+	return commonHandlerFields(r)
+}
+
+func commonHTTPExtendedFields(r replacer.Replacer) []replacer.Field {
+	return commonHandlerExtendedFields(r)
+}
+
 func (g *httpGenerator) isInit() bool {
-	path := g.outPath + "/server/go.mod"
+	path := global.Path + "/go.mod"
 	_, err := os.Stat(path)
 	if err == nil {
 		return true // File exists

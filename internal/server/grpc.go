@@ -8,23 +8,22 @@ import (
 	"net/http"
 	"time"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/zhufuyi/sponge/pkg/app"
-	"github.com/zhufuyi/sponge/pkg/errcode"
-	"github.com/zhufuyi/sponge/pkg/grpc/gtls"
-	"github.com/zhufuyi/sponge/pkg/grpc/interceptor"
-	"github.com/zhufuyi/sponge/pkg/grpc/metrics"
-	"github.com/zhufuyi/sponge/pkg/logger"
-	"github.com/zhufuyi/sponge/pkg/prof"
-	"github.com/zhufuyi/sponge/pkg/servicerd/registry"
+	"github.com/go-dev-frame/sponge/pkg/app"
+	"github.com/go-dev-frame/sponge/pkg/errcode"
+	"github.com/go-dev-frame/sponge/pkg/grpc/gtls"
+	"github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+	"github.com/go-dev-frame/sponge/pkg/grpc/metrics"
+	"github.com/go-dev-frame/sponge/pkg/logger"
+	"github.com/go-dev-frame/sponge/pkg/prof"
+	"github.com/go-dev-frame/sponge/pkg/servicerd/registry"
 
-	"github.com/zhufuyi/sponge/internal/config"
-	"github.com/zhufuyi/sponge/internal/ecode"
-	"github.com/zhufuyi/sponge/internal/service"
+	"github.com/go-dev-frame/sponge/internal/config"
+	"github.com/go-dev-frame/sponge/internal/ecode"
+	"github.com/go-dev-frame/sponge/internal/service"
 )
 
 var _ app.IServer = (*grpcServer)(nil)
@@ -204,7 +203,7 @@ func (s *grpcServer) unaryServerOptions() grpc.ServerOption {
 		unaryServerInterceptors = append(unaryServerInterceptors, interceptor.UnaryServerTracing())
 	}
 
-	return grpc_middleware.WithUnaryServerChain(unaryServerInterceptors...)
+	return grpc.ChainUnaryInterceptor(unaryServerInterceptors...)
 }
 
 // setting up stream server interceptors
@@ -265,7 +264,7 @@ func (s *grpcServer) streamServerOptions() grpc.ServerOption {
 		streamServerInterceptors = append(streamServerInterceptors, interceptor.StreamServerTracing())
 	}
 
-	return grpc_middleware.WithStreamServerChain(streamServerInterceptors...)
+	return grpc.ChainStreamInterceptor(streamServerInterceptors...)
 }
 
 func (s *grpcServer) getOptions() []grpc.ServerOption {

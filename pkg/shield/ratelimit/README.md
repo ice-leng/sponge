@@ -6,11 +6,11 @@ Adaptive rate limit, only available for linux systems.
 
 ### Example of use
 
-#### gin ratelimit middleware
+#### Gin ratelimit middleware
 
 ```go
 import (
-	rl "github.com/zhufuyi/sponge/pkg/shield/ratelimit"
+	rl "github.com/go-dev-frame/sponge/pkg/shield/ratelimit"
 )
 
 func RateLimit(opts ...RateLimitOption) gin.HandlerFunc {
@@ -40,11 +40,11 @@ func RateLimit(opts ...RateLimitOption) gin.HandlerFunc {
 
 <br>
 
-#### grpc ratelimit interceptor
+#### gRPC ratelimit interceptor
 
 ```go
 import (
-	rl "github.com/zhufuyi/sponge/pkg/shield/ratelimit"
+	rl "github.com/go-dev-frame/sponge/pkg/shield/ratelimit"
 )
 
 

@@ -1,8 +1,8 @@
 SHELL := /bin/bash
 
-PROJECT_NAME := "github.com/zhufuyi/sponge"
+PROJECT_NAME := "github.com/go-dev-frame/sponge"
 PKG := "$(PROJECT_NAME)"
-PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/ | grep -v /api/)
+PKG_LIST := $(shell go list ${PKG}/... | grep -v /vendor/ | grep -v /api/ | grep -v /cmd/)
 
 # delete the templates code start
 .PHONY: install
@@ -12,8 +12,8 @@ install:
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 	go install github.com/envoyproxy/protoc-gen-validate@latest
 	go install github.com/srikrsna/protoc-gen-gotag@latest
-	go install github.com/zhufuyi/sponge/cmd/protoc-gen-go-gin@latest
-	go install github.com/zhufuyi/sponge/cmd/protoc-gen-go-rpc-tmpl@latest
+	go install github.com/go-dev-frame/sponge/cmd/protoc-gen-go-gin@latest
+	go install github.com/go-dev-frame/sponge/cmd/protoc-gen-go-rpc-tmpl@latest
 	go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@latest
 	go install github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
@@ -48,7 +48,7 @@ cover:
 graph:
 	@echo "generating graph ......"
 	@cp -f cmd/serverNameExample_mixExample/main.go .
-	go-callvis -skipbrowser -format=svg -nostd -file=serverNameExample_mixExample github.com/zhufuyi/sponge
+	go-callvis -skipbrowser -format=svg -nostd -file=serverNameExample_mixExample github.com/go-dev-frame/sponge
 	@rm -f main.go serverNameExample_mixExample.gv
 
 # delete the templates code start
@@ -161,7 +161,7 @@ image-build-rpc-test:
 
 
 .PHONY: patch
-# Patch some dependent code, e.g. make patch TYPE=types-pb , make patch TYPE=init-<your_db_driver>, your_db_driver is mysql, mongodb, postgresql, tidb, sqlite, for example: make patch TYPE=init-mysql
+# Patch some dependent code. 1. Add database initialization code, e.g. make patch TYPE=mysql, also supports mongodb, postgresql, sqlite. 2. Add dependent types.proto file, e.g. make patch TYPE=types-pb
 patch:
 	@bash scripts/patch.sh $(TYPE)
 

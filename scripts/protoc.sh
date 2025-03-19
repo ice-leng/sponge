@@ -93,6 +93,23 @@ function handlePbGoFiles(){
     cd ..
 }
 
+function patchTypesPbFile() {
+  for file in $allProtoFiles; do
+    if [  "$file" = "api/types/types.proto"  ]; then
+      return
+    fi
+    if grep -q "api/types/types.proto" "$file"; then
+      allProtoFiles=$allProtoFiles" api/types/types.proto"
+      bash scripts/patch.sh types-pb
+      return
+    fi
+  done
+}
+
+function autoDetectInitDbFile() {
+  sponge patch gen-db-init --out=. > /dev/null 2>&1
+}
+
 function generateByAllProto(){
   getSpecifiedProtoFiles
   if [ $? -eq 0 ]; then
@@ -100,6 +117,9 @@ function generateByAllProto(){
   else
     allProtoFiles=$specifiedProtoFilePaths
   fi
+
+  patchTypesPbFile
+  autoDetectInitDbFile
 
   if [ "$allProtoFiles"x = x ];then
     echo "Error: not found proto file in path $protoBasePath"
@@ -183,7 +203,7 @@ function generateBySpecifiedProto(){
   # return error code template file *_http.go (default path in internal/ecode)
   protoc --proto_path=. --proto_path=./third_party \
     --go-gin_out=. --go-gin_opt=paths=source_relative --go-gin_opt=plugin=service \
-    --go-gin_opt=moduleName=github.com/zhufuyi/sponge --go-gin_opt=serverName=serverNameExample \
+    --go-gin_opt=moduleName=github.com/go-dev-frame/sponge --go-gin_opt=serverName=serverNameExample \
     $specifiedProtoFiles
 
   sponge merge rpc-gw-pb

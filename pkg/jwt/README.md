@@ -1,15 +1,15 @@
 ## jwt
 
-Generate and parse token based on [jwt](https://github.com/golang-jwt/jwt) library.
+`jwt` is a library for generating and parsing token based on [jwt](https://github.com/golang-jwt/jwt).
 
 <br>
 
 ## Example of use
 
-Example 1: common fields jwt
+### Default jwt
 
 ```go
-    import "github.com/zhufuyi/sponge/pkg/jwt"
+    import "github.com/go-dev-frame/sponge/pkg/jwt"
 
 	jwt.Init(
 		// jwt.WithSigningKey("123456"),   // key
@@ -37,10 +37,10 @@ Example 1: common fields jwt
 
 <br>
 
-Example 2: custom fields jwt
+### Custom jwt
 
 ```go
-    import "github.com/zhufuyi/sponge/pkg/jwt"
+    import "github.com/go-dev-frame/sponge/pkg/jwt"
 
 	jwt.Init(
 		// jwt.WithSigningKey("123456"),   // key

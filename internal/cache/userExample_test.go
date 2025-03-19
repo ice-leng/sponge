@@ -6,10 +6,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/zhufuyi/sponge/pkg/gotest"
-	"github.com/zhufuyi/sponge/pkg/utils"
+	"github.com/go-dev-frame/sponge/pkg/gotest"
+	"github.com/go-dev-frame/sponge/pkg/utils"
 
-	"github.com/zhufuyi/sponge/internal/model"
+	"github.com/go-dev-frame/sponge/internal/database"
+	"github.com/go-dev-frame/sponge/internal/model"
 )
 
 func newUserExampleCache() *gotest.Cache {
@@ -23,7 +24,7 @@ func newUserExampleCache() *gotest.Cache {
 	}
 
 	c := gotest.NewCache(testData)
-	c.ICache = NewUserExampleCache(&model.CacheType{
+	c.ICache = NewUserExampleCache(&database.CacheType{
 		CType: "redis",
 		Rdb:   c.RedisClient,
 	})
@@ -122,22 +123,24 @@ func Test_userExampleCache_SetCacheWithNotFound(t *testing.T) {
 	defer c.Close()
 
 	record := c.TestDataSlice[0].(*model.UserExample)
-	err := c.ICache.(UserExampleCache).SetCacheWithNotFound(c.Ctx, record.ID)
+	err := c.ICache.(UserExampleCache).SetPlaceholder(c.Ctx, record.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
+	b := c.ICache.(UserExampleCache).IsPlaceholderErr(err)
+	t.Log(b)
 }
 
 func TestNewUserExampleCache(t *testing.T) {
-	c := NewUserExampleCache(&model.CacheType{
+	c := NewUserExampleCache(&database.CacheType{
 		CType: "",
 	})
 	assert.Nil(t, c)
-	c = NewUserExampleCache(&model.CacheType{
+	c = NewUserExampleCache(&database.CacheType{
 		CType: "memory",
 	})
 	assert.NotNil(t, c)
-	c = NewUserExampleCache(&model.CacheType{
+	c = NewUserExampleCache(&database.CacheType{
 		CType: "redis",
 	})
 	assert.NotNil(t, c)

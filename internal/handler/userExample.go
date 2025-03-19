@@ -7,16 +7,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
 
-	"github.com/zhufuyi/sponge/pkg/gin/middleware"
-	"github.com/zhufuyi/sponge/pkg/gin/response"
-	"github.com/zhufuyi/sponge/pkg/logger"
-	"github.com/zhufuyi/sponge/pkg/utils"
+	"github.com/go-dev-frame/sponge/pkg/gin/middleware"
+	"github.com/go-dev-frame/sponge/pkg/gin/response"
+	"github.com/go-dev-frame/sponge/pkg/logger"
+	"github.com/go-dev-frame/sponge/pkg/utils"
 
-	"github.com/zhufuyi/sponge/internal/cache"
-	"github.com/zhufuyi/sponge/internal/dao"
-	"github.com/zhufuyi/sponge/internal/ecode"
-	"github.com/zhufuyi/sponge/internal/model"
-	"github.com/zhufuyi/sponge/internal/types"
+	"github.com/go-dev-frame/sponge/internal/cache"
+	"github.com/go-dev-frame/sponge/internal/dao"
+	"github.com/go-dev-frame/sponge/internal/database"
+	"github.com/go-dev-frame/sponge/internal/ecode"
+	"github.com/go-dev-frame/sponge/internal/model"
+	"github.com/go-dev-frame/sponge/internal/types"
 )
 
 var _ UserExampleHandler = (*userExampleHandler)(nil)
@@ -38,8 +39,8 @@ type userExampleHandler struct {
 func NewUserExampleHandler() UserExampleHandler {
 	return &userExampleHandler{
 		iDao: dao.NewUserExampleDao(
-			model.GetDB(),
-			cache.NewUserExampleCache(model.GetCacheType()),
+			database.GetDB(), // todo show db driver name here
+			cache.NewUserExampleCache(database.GetCacheType()),
 		),
 	}
 }
@@ -181,7 +182,7 @@ func (h *userExampleHandler) GetByID(c *gin.Context) {
 	ctx := middleware.WrapCtx(c)
 	userExample, err := h.iDao.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, model.ErrRecordNotFound) {
+		if errors.Is(err, database.ErrRecordNotFound) {
 			logger.Warn("GetByID not found", logger.Err(err), logger.Any("id", id), middleware.GCtxRequestIDField(c))
 			response.Error(c, ecode.NotFound)
 		} else {
@@ -199,7 +200,7 @@ func (h *userExampleHandler) GetByID(c *gin.Context) {
 	}
 	// Note: if copier.Copy cannot assign a value to a field, add it here
 
-	response.Success(c, data)
+	response.Success(c, gin.H{"userExample": data})
 }
 
 // List of records by query parameters
@@ -210,7 +211,7 @@ func (h *userExampleHandler) GetByID(c *gin.Context) {
 // @Produce json
 // @Param request query types.ListUserExamplesRequest true "query parameters"
 // @Success 200 {object} types.ListUserExamplesReply{}
-// @Router /api/v1/userExample/list [get]
+// @Router /api/v1/userExample [get]
 // @Security BearerAuth
 func (h *userExampleHandler) List(c *gin.Context) {
 	request := &types.ListUserExamplesRequest{}

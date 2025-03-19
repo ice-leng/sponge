@@ -1,6 +1,6 @@
 ## WebSocket
 
-`ws` is based on the [github.com/gorilla/websocket](https://github.com/gorilla/websocket) library, support automatic client reconnection.
+`ws` is a websocket library based on [gorilla/websocket](https://github.com/gorilla/websocket), support automatic client reconnection.
 
 <br>
 
@@ -16,7 +16,7 @@ package main
 import (
     "context"
     "log"
-    "github.com/zhufuyi/sponge/pkg/ws"
+    "github.com/go-dev-frame/sponge/pkg/ws"
     "github.com/gin-gonic/gin"
 )
 
@@ -61,7 +61,7 @@ import (
     "strconv"
     "log"
     "time"
-    "github.com/zhufuyi/sponge/pkg/ws"
+    "github.com/go-dev-frame/sponge/pkg/ws"
     "github.com/gorilla/websocket"
 )
 
@@ -113,8 +113,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/zhufuyi/sponge/pkg/logger"
-	"github.com/zhufuyi/sponge/pkg/ws"
+	"github.com/go-dev-frame/sponge/pkg/logger"
+	"github.com/go-dev-frame/sponge/pkg/ws"
 )
 
 func main() {
@@ -184,8 +184,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/zhufuyi/sponge/pkg/logger"
-	"github.com/zhufuyi/sponge/pkg/ws"
+	"github.com/go-dev-frame/sponge/pkg/logger"
+	"github.com/go-dev-frame/sponge/pkg/ws"
 )
 
 var wsURL = "ws://localhost:8080/ws"

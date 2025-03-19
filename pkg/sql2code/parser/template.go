@@ -92,7 +92,7 @@ package api.serverNameExample.v1;
 import "api/types/types.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/zhufuyi/sponge/api/serverNameExample/v1;v1";
+option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
 service {{.TName}} {
   // create {{.TName}}
@@ -215,7 +215,7 @@ package api.serverNameExample.v1;
 import "api/types/types.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/zhufuyi/sponge/api/serverNameExample/v1;v1";
+option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
 service {{.TName}} {
   // create {{.TName}}
@@ -295,11 +295,24 @@ import "protoc-gen-openapiv2/options/annotations.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/zhufuyi/sponge/api/serverNameExample/v1;v1";
+option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
-// Default settings for generating swagger documents
-// NOTE: because json does not support 64 bits, the int64 and uint64 types under *.swagger.json are automatically converted to string types
-// Reference https://github.com/grpc-ecosystem/grpc-gateway/blob/db7fbefff7c04877cdb32e16d4a248a024428207/examples/internal/proto/examplepb/a_bit_of_everything.proto  
+/*
+Reference https://github.com/grpc-ecosystem/grpc-gateway/blob/db7fbefff7c04877cdb32e16d4a248a024428207/examples/internal/proto/examplepb/a_bit_of_everything.proto
+Default settings for generating swagger documents
+NOTE: because json does not support 64 bits, the int64 and uint64 types under *.swagger.json are automatically converted to string types
+Tips: add swagger option to rpc method, example:
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "get user by id",
+      description: "get user by id",
+      security: {
+        security_requirement: {
+          key: "BearerAuth";
+          value: {}
+        }
+      }
+    };
+*/
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   host: "localhost:8080"
   base_path: ""
@@ -331,32 +344,12 @@ service {{.TName}} {
       post: "/api/v1/{{.TName}}"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "create {{.TName}}",
-      description: "submit information to create {{.TName}}",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
-    };
   }
 
   // delete {{.TName}} by id
   rpc DeleteByID(Delete{{.TableName}}ByIDRequest) returns (Delete{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       delete: "/api/v1/{{.TName}}/{id}"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "delete {{.TName}}",
-      description: "delete {{.TName}} by id",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
     };
   }
 
@@ -366,32 +359,12 @@ service {{.TName}} {
       put: "/api/v1/{{.TName}}/{id}"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "update {{.TName}}",
-      description: "update {{.TName}} by id",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
-    };
   }
 
   // get {{.TName}} by id
   rpc GetByID(Get{{.TableName}}ByIDRequest) returns (Get{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/{id}"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "get {{.TName}} detail",
-      description: "get {{.TName}} detail by id",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
     };
   }
 
@@ -401,16 +374,6 @@ service {{.TName}} {
       post: "/api/v1/{{.TName}}/list"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "list of {{.TName}}s by parameters",
-      description: "list of {{.TName}}s by paging and conditions",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
-    };
   }
 
   // delete {{.TName}} by batch id
@@ -418,16 +381,6 @@ service {{.TName}} {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/delete/ids"
       body: "*"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "delete {{.TName}}s by batch id",
-      description: "delete {{.TName}}s by batch id",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
     };
   }
 
@@ -437,16 +390,6 @@ service {{.TName}} {
       post: "/api/v1/{{.TName}}/condition"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "get {{.TName}} detail by condition",
-      description: "get {{.TName}} detail by condition",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
-    };
   }
 
   // list of {{.TName}} by batch id
@@ -455,32 +398,12 @@ service {{.TName}} {
       post: "/api/v1/{{.TName}}/list/ids"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "list of {{.TName}}s by batch id",
-      description: "list of {{.TName}}s by batch id",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
-    };
   }
 
   // list {{.TName}} by last id
   rpc ListByLastID(List{{.TableName}}ByLastIDRequest) returns (List{{.TableName}}ByLastIDReply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/list"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "list of {{.TName}} by last id",
-      description: "list of {{.TName}} by last id",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
     };
   }
 }
@@ -593,11 +516,24 @@ import "protoc-gen-openapiv2/options/annotations.proto";
 import "tagger/tagger.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/zhufuyi/sponge/api/serverNameExample/v1;v1";
+option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
-// Default settings for generating swagger documents
-// NOTE: because json does not support 64 bits, the int64 and uint64 types under *.swagger.json are automatically converted to string types
-// Reference https://github.com/grpc-ecosystem/grpc-gateway/blob/db7fbefff7c04877cdb32e16d4a248a024428207/examples/internal/proto/examplepb/a_bit_of_everything.proto  
+/*
+Reference https://github.com/grpc-ecosystem/grpc-gateway/blob/db7fbefff7c04877cdb32e16d4a248a024428207/examples/internal/proto/examplepb/a_bit_of_everything.proto
+Default settings for generating swagger documents
+NOTE: because json does not support 64 bits, the int64 and uint64 types under *.swagger.json are automatically converted to string types
+Tips: add swagger option to rpc method, example:
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "get user by id",
+      description: "get user by id",
+      security: {
+        security_requirement: {
+          key: "BearerAuth";
+          value: {}
+        }
+      }
+    };
+*/
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   host: "localhost:8080"
   base_path: ""
@@ -629,32 +565,12 @@ service {{.TName}} {
       post: "/api/v1/{{.TName}}"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "create {{.TName}}",
-      description: "submit information to create {{.TName}}",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
-    };
   }
 
   // delete {{.TName}} by id
   rpc DeleteByID(Delete{{.TableName}}ByIDRequest) returns (Delete{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       delete: "/api/v1/{{.TName}}/{id}"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "delete {{.TName}}",
-      description: "delete {{.TName}} by id",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
     };
   }
 
@@ -664,32 +580,12 @@ service {{.TName}} {
       put: "/api/v1/{{.TName}}/{id}"
       body: "*"
     };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "update {{.TName}}",
-      description: "update {{.TName}} by id",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
-    };
   }
 
   // get {{.TName}} by id
   rpc GetByID(Get{{.TableName}}ByIDRequest) returns (Get{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/{id}"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "get {{.TName}} detail",
-      description: "get {{.TName}} detail by id",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
     };
   }
 
@@ -698,16 +594,6 @@ service {{.TName}} {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/list"
       body: "*"
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "list of {{.TName}}s by parameters",
-      description: "list of {{.TName}}s by paging and conditions",
-      //security: {
-      //  security_requirement: {
-      //    key: "BearerAuth";
-      //    value: {}
-      //  }
-      //}
     };
   }
 }

@@ -33,6 +33,8 @@ const (
 	Like = "like"
 	// In include
 	In = "in"
+	// NotIn exclude
+	NotIn = "nin"
 
 	// AND logic and
 	AND        string = "and" //nolint
@@ -62,6 +64,9 @@ var expMap = map[string]string{
 	lteSymbol: lteSymbol,
 	Like:      Like,
 	In:        In,
+	NotIn:     NotIn,
+	"notin":   NotIn,
+	"not in":  NotIn,
 }
 
 var logicMap = map[string]string{
@@ -88,7 +93,7 @@ type Params struct {
 // Column query info
 type Column struct {
 	Name  string      `json:"name" form:"name"`   // column name
-	Exp   string      `json:"exp" form:"exp"`     // expressions, which default to = when the value is null, have =, !=, >, >=, <, <=, like, in
+	Exp   string      `json:"exp" form:"exp"`     // expressions, default value is "=", support =, !=, >, >=, <, <=, like, in
 	Value interface{} `json:"value" form:"value"` // column value
 	Logic string      `json:"logic" form:"logic"` // logical type, defaults to and when the value is null, with &(and), ||(or)
 }
@@ -152,9 +157,9 @@ func (c *Column) convert() error {
 		case Like:
 			escapedValue := regexp.QuoteMeta(fmt.Sprintf("%v", c.Value))
 			c.Value = bson.M{"$regex": escapedValue, "$options": "i"}
-		case In:
-			val, ok := c.Value.(string)
-			if !ok {
+		case In, NotIn:
+			val, ok2 := c.Value.(string)
+			if !ok2 {
 				return fmt.Errorf("invalid value type '%s'", c.Value)
 			}
 			values := []interface{}{}
@@ -162,10 +167,10 @@ func (c *Column) convert() error {
 			for _, s := range ss {
 				values = append(values, s)
 			}
-			c.Value = bson.M{"$in": values}
+			c.Value = bson.M{"$" + c.Exp: values}
 		}
 	} else {
-		return fmt.Errorf("unknown exp type '%s'", c.Exp)
+		return fmt.Errorf("unsported exp type '%s'", c.Exp)
 	}
 
 	return c.convertLogic()
