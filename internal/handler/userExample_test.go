@@ -71,7 +71,7 @@ func newUserExampleHandler() *gotest.Handler {
 		{
 			FuncName:    "List",
 			Method:      http.MethodGet,
-			Path:        "/userExample/list",
+			Path:        "/userExample",
 			HandlerFunc: iHandler.List,
 		},
 	}

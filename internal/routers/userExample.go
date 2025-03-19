@@ -25,5 +25,5 @@ func userExampleRouter(group *gin.RouterGroup, h handler.UserExampleHandler) {
 	g.DELETE("/:id", h.DeleteByID) // [delete] /api/v1/userExample/:id
 	g.PUT("/:id", h.UpdateByID)    // [put] /api/v1/userExample/:id
 	g.GET("/:id", h.GetByID)       // [get] /api/v1/userExample/:id
-	g.GET("/list", h.List)         // [get] /api/v1/userExample/list
+	g.GET("", h.List)              // [get] /api/v1/userExample
 }

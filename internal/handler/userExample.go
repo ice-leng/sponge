@@ -211,7 +211,7 @@ func (h *userExampleHandler) GetByID(c *gin.Context) {
 // @Produce json
 // @Param request query types.ListUserExamplesRequest true "query parameters"
 // @Success 200 {object} types.ListUserExamplesReply{}
-// @Router /api/v1/userExample/list [get]
+// @Router /api/v1/userExample [get]
 // @Security BearerAuth
 func (h *userExampleHandler) List(c *gin.Context) {
 	request := &types.ListUserExamplesRequest{}
