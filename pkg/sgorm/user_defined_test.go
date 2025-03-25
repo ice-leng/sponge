@@ -7,32 +7,55 @@ import (
 )
 
 func TestBool(t *testing.T) {
-	v1 := false
-	assert.Equal(t, NewBool(v1).String(), "false")
-	assert.Equal(t, NewBool(&v1).String(), "false")
+	var v1 Bool
+	assert.NoError(t, v1.Scan(nil))
+	assert.Equal(t, false, bool(v1))
 
-	v2 := true
-	assert.Equal(t, NewBool(v2).String(), "true")
-	assert.Equal(t, NewBool(&v2).String(), "true")
+	// mysql
+	assert.NoError(t, v1.Scan([]byte{0}))
+	assert.Equal(t, false, bool(v1))
+	assert.NoError(t, v1.Scan([]byte{1}))
+	assert.Equal(t, true, bool(v1))
 
-	assert.Nil(t, NewBool(nil))
-	assert.Equal(t, NewBool(nil).String(), "false")
+	// postgres
+	assert.NoError(t, v1.Scan(false))
+	assert.Equal(t, false, bool(v1))
+	assert.NoError(t, v1.Scan(true))
+	assert.Equal(t, true, bool(v1))
 
-	assert.NoError(t, NewBool(v2).Scan(nil))
-	assert.NoError(t, NewBool(v2).Scan([]byte{0}))
-	assert.NoError(t, NewBool(v2).Scan([]byte{1}))
-	assert.NoError(t, NewBool(v2).Scan("true"))
-	assert.NoError(t, NewBool(v2).Scan("1"))
-	assert.NoError(t, NewBool(v2).Scan("t"))
-	assert.Error(t, NewBool(v2).Scan(3.14))
-
-	_, err := NewBool(v1).Value()
+	// mysql
+	v2, err := Bool(true).Value()
 	assert.NoError(t, err)
-	_, err = NewBool(v2).Value()
+	assert.Equal(t, []byte{1}, v2)
+	v2, err = Bool(false).Value()
 	assert.NoError(t, err)
+	assert.Equal(t, []byte{0}, v2)
 
 	SetDriver("postgres")
-	value, err := NewBool(v2).Value()
+
+	// postgres
+	v3, err := Bool(true).Value()
 	assert.NoError(t, err)
-	assert.Equal(t, true, value)
+	assert.Equal(t, true, v3)
+	v3, err = Bool(false).Value()
+	assert.NoError(t, err)
+	assert.Equal(t, false, v3)
+}
+
+func TestTinyBool(t *testing.T) {
+	var v1 TinyBool
+	assert.NoError(t, v1.Scan(nil))
+	assert.Equal(t, false, bool(v1))
+	assert.NoError(t, v1.Scan(0))
+	assert.Equal(t, false, bool(v1))
+	assert.NoError(t, v1.Scan(1))
+	assert.Equal(t, true, bool(v1))
+
+	v2, err := TinyBool(true).Value()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), v2)
+
+	v2, err = TinyBool(false).Value()
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), v2)
 }

@@ -38,5 +38,7 @@ func InitPostgresql() *sgorm.DB {
 	if err != nil {
 		panic("init postgresql error: " + err.Error())
 	}
+
+	sgorm.SetDriver("postgresql")
 	return db
 }
