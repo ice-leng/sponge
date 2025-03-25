@@ -5,54 +5,61 @@ import (
 	"fmt"
 )
 
-// Bool is a custom type for bit fields in MySQL.
+// Bool is a custom Boolean type,compatible with MySQL bit(1), tinyint(1) and PostgreSQL bool types
 type Bool bool
 
-// NewBool creates a new *Bool from a bool or *bool.
+// NewBool create a new *Bool from bool or *bool
 func NewBool(b interface{}) *Bool {
 	if b == nil {
 		return nil
 	}
-	var val Bool
-	if v, ok := b.(bool); ok {
-		val = Bool(v)
+	switch v := b.(type) {
+	case bool:
+		val := Bool(v)
 		return &val
-	}
-	if v, ok := b.(*bool); ok {
+	case *bool:
 		if v == nil {
 			return nil
 		}
-		val = Bool(*v)
+		val := Bool(*v)
 		return &val
+	default:
+		return nil
 	}
-	return nil
 }
 
-// Value implements the driver Valuer interface.
+// Value implementing the driver.Valuer interface
 func (b Bool) Value() (driver.Value, error) {
-	if b {
-		return []byte{1}, nil
+	switch currentDriver {
+	case "postgres", "postgresql":
+		return bool(b), nil
+	default: // default MySQL processing
+		if b {
+			return []byte{1}, nil
+		}
+		return []byte{0}, nil
 	}
-	return []byte{0}, nil
 }
 
-// Scan implements the Scanner interface.
+// Scan implementing the Scanner interface
 func (b *Bool) Scan(value interface{}) error {
 	if value == nil {
 		*b = false
 		return nil
 	}
 
-	v, ok := value.([]byte)
-	if !ok {
+	switch v := value.(type) {
+	case bool:
+		*b = Bool(v)
+	case []byte:
+		*b = len(v) == 1 && v[0] == 1
+	case int64:
+		*b = v != 0
+	case string:
+		*b = v == "t" || v == "true" || v == "1"
+	default:
 		return fmt.Errorf("unsupported type: %T", value)
 	}
-	if len(v) == 1 && v[0] == 1 {
-		*b = true
-	} else {
-		*b = false
-	}
-
 	return nil
 }
 
@@ -64,4 +71,11 @@ func (b *Bool) String() string {
 		return "true"
 	}
 	return "false"
+}
+
+var currentDriver string
+
+// SetDriver sets the name of the current database driver, such as "mysql" or "postgres"
+func SetDriver(driver string) {
+	currentDriver = driver
 }
