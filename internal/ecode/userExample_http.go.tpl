@@ -5,7 +5,7 @@ import (
 )
 
 // {{.TableNameCamelFCL}} business-level http error codes.
-// the {{.TableNameCamelFCL}}NO value range is 1~100, if the same error code is used, it will cause panic.
+// the {{.TableNameCamelFCL}}NO value range is 1~999, if the same error code is used, it will cause panic.
 var (
 	{{.TableNameCamelFCL}}NO       = 1
 	{{.TableNameCamelFCL}}Name     = "{{.TableNameCamelFCL}}"

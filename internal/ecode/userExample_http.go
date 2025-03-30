@@ -5,7 +5,7 @@ import (
 )
 
 // userExample business-level http error codes.
-// the userExampleNO value range is 1~100, if the same error code is used, it will cause panic.
+// the userExampleNO value range is 1~999, if the same error code is used, it will cause panic.
 var (
 	userExampleNO       = 1
 	userExampleName     = "userExample"

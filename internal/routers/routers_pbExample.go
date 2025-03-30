@@ -15,7 +15,6 @@ import (
 	"github.com/go-dev-frame/sponge/pkg/gin/prof"
 	"github.com/go-dev-frame/sponge/pkg/gin/swagger"
 	"github.com/go-dev-frame/sponge/pkg/gin/validator"
-	"github.com/go-dev-frame/sponge/pkg/jwt"
 	"github.com/go-dev-frame/sponge/pkg/logger"
 
 	"github.com/go-dev-frame/sponge/docs"
@@ -52,13 +51,6 @@ func NewRouter_pbExample() *gin.Engine { //nolint
 		middleware.WithRequestIDFromContext(),
 		middleware.WithIgnoreRoutes("/metrics"), // ignore path
 	))
-
-	// init jwt middleware, you can replace it with your own jwt middleware
-	jwt.Init(
-	//jwt.WithExpire(time.Hour*24),
-	//jwt.WithSigningKey("123456"),
-	//jwt.WithSigningMethod(jwt.HS384),
-	)
 
 	// metrics middleware
 	if config.Get().App.EnableMetrics {
