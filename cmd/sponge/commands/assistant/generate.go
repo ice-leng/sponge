@@ -1,108 +1,103 @@
 package assistant
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
-	chatgpt "github.com/go-dev-frame/sponge/pkg/aicli/chatgpt"
-	"github.com/go-dev-frame/sponge/pkg/aicli/deepseek"
+	"github.com/go-dev-frame/sponge/pkg/aicli"
+	"github.com/go-dev-frame/sponge/pkg/goast"
 	"github.com/go-dev-frame/sponge/pkg/gofile"
-	"github.com/go-dev-frame/sponge/pkg/utils"
 )
 
 // GenerateCommand  command
 func GenerateCommand() *cobra.Command {
 	var (
-		assistantType  string
-		apiKey         string
-		model          string
-		role           string
-		maxToken       int
-		temperature    float32
-		useContext     bool
-		intervalSecond int
+		assistantType string
+		apiKey        string
+		model         string
+		roleDesc      string
+		maxToken      int
+		temperature   float32
+		enableContext bool
 
-		dir  string
-		file string
+		onlyPrintPrompt bool // for test only
+		maxAssistantNum int
+		dir             string
+		files           []string // specified Go files
 	)
 
 	//nolint
 	cmd := &cobra.Command{
 		Use:   "generate",
-		Short: "Generate code for project",
-		Long:  "Generate code for project using assistant.",
-		Example: color.HiBlackString(`  # Generate code using deepseek, default model is deepseek-reasoner
+		Short: "Generate code using AI assistant",
+		Long:  "Generate code using AI assistant. Automatically locate the positions in Go files that require code implementation, and let the AI assistant generate the corresponding business logic based on the context.",
+		Example: color.HiBlackString(`  # Generate code using deepseek, default model is deepseek-v3, you can specify deepseek-reasoner by --model.
   sponge assistant generate --type=deepseek --api-key=your-api-key --dir=your-project-dir
   
-  # Generate code using deepseek, specify model is deepseek-chat
-  sponge assistant generate --type=deepseek --model=deepseek-chat --api-key=your-api-key --dir=your-project-dir
+  # Generate code using gemini, default model is gemini-2.5-pro-exp-03-25
+  sponge assistant generate --type=gemini --api-key=your-api-key --dir=your-project-dir
 
-  # Generate code using chatgpt, default model is o1-mini
+  # Generate code using chatgpt, default model is gpt-4o
   sponge assistant generate --type=chatgpt --api-key=your-api-key --dir=your-project-dir`),
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if dir == "" && file == "" {
-				return fmt.Errorf("please specify flag --dir or --file")
+			err := checkDirAndFile(dir, files)
+			if err != nil {
+				return err
 			}
 
-			var opts []chatgpt.ClientOption
-			var aModel string
-			if model != "" {
-				aModel = model
-				opts = append(opts, chatgpt.WithModel(model))
-			} else {
-				if strings.ToLower(assistantType) == typeDeepSeek {
-					aModel = deepseek.ModelDeepSeekReasoner
-					opts = append(opts, deepseek.WithModel(deepseek.ModelDeepSeekReasoner))
-				} else if strings.ToLower(assistantType) == typeChatGPT {
-					aModel = chatgpt.DefaultModel
+			isUseChinese, fileCodeMap, err := parseFiles(dir, files)
+			if err != nil {
+				return err
+			}
+			total := len(fileCodeMap)
+			if total == 0 {
+				return ErrnoAssistantMarker
+			}
+
+			if maxAssistantNum > total {
+				maxAssistantNum = total
+			}
+
+			if roleDesc == "" {
+				if isUseChinese {
+					roleDesc = gopherRoleDescCN
 				} else {
-					return cmd.Usage()
+					roleDesc = gopherRoleDescEN
 				}
 			}
-			if maxToken > 0 {
-				opts = append(opts, chatgpt.WithMaxTokens(maxToken))
-			}
-			if temperature > 0 {
-				opts = append(opts, chatgpt.WithTemperature(temperature))
-			}
-			if role != "" {
-				opts = append(opts, chatgpt.WithRole(role))
-			}
-			opts = append(opts, chatgpt.WithUseContext(useContext))
 
-			var client *chatgpt.Client
-			var err error
-			switch strings.ToLower(assistantType) {
-			case typeChatGPT:
-				client, err = chatgpt.NewClient(apiKey, opts...)
-				if err != nil {
-					return err
-				}
-			case typeDeepSeek:
-				client, err = deepseek.NewClient(apiKey, opts...)
-				if err != nil {
-					return err
-				}
-			default:
-				return cmd.Usage()
+			assistantType = strings.ToLower(assistantType)
+			asst := &assistantParams{
+				Type:          assistantType,
+				apiKey:        apiKey,
+				model:         defaultModelMap[assistantType],
+				enableContext: true,
+				roleDesc:      roleDesc,
+				maxToken:      maxToken,
+				temperature:   temperature,
 			}
 
 			g := &assistantGenerator{
-				model:          aModel,
-				client:         client,
-				dir:            dir,
-				file:           file,
-				intervalSecond: intervalSecond,
+				maxAssistantNum: maxAssistantNum,
+				asst:            asst,
+
+				fileCodeMap: fileCodeMap,
+
+				dir:               dir,
+				files:             files,
+				isOnlyPrintPrompt: onlyPrintPrompt,
 			}
 			err = g.generateCode()
 			if err != nil {
@@ -113,140 +108,438 @@ func GenerateCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&assistantType, "type", "t", "", "assistant type, e.g. chatgpt, deepseek")
+	cmd.Flags().StringVarP(&assistantType, "type", "t", "", "assistant type, supported types: chatgpt, deepseek, gemini")
 	_ = cmd.MarkFlagRequired("type")
 	cmd.Flags().StringVarP(&apiKey, "api-key", "k", "", "assistant api key")
 	_ = cmd.MarkFlagRequired("api-key")
 	cmd.Flags().StringVarP(&model, "model", "m", "", "assistant model, corresponding assistant type.")
-	cmd.Flags().StringVarP(&role, "role", "r", "", "role of the model")
+	cmd.Flags().StringVarP(&roleDesc, "role", "r", "", "role description, for example, you are a psychologist.")
 	cmd.Flags().IntVarP(&maxToken, "max-token", "s", 0, "maximum number of tokens")
 	cmd.Flags().Float32VarP(&temperature, "temperature", "e", 0, "temperature of the model")
-	cmd.Flags().BoolVarP(&useContext, "use-context", "c", false, "whether the assistant supports context")
-
-	cmd.Flags().StringVarP(&dir, "dir", "d", "", "project directory")
-	cmd.Flags().StringVarP(&file, "file", "f", "", "specified file")
-	cmd.Flags().IntVarP(&intervalSecond, "interval-second", "i", 0, "time interval between sending requests to AI assistant")
+	cmd.Flags().BoolVarP(&enableContext, "enable-context", "c", false, "whether the assistant supports context")
+	cmd.Flags().BoolVarP(&onlyPrintPrompt, "only-print-prompt", "p", false, "skip AI assistant request, only print prompt")
+	cmd.Flags().IntVarP(&maxAssistantNum, "max-assistant-num", "n", 20, "maximum number of assistant running simultaneously")
+	cmd.Flags().StringVarP(&dir, "dir", "d", "", "Go project directory")
+	cmd.Flags().StringSliceVarP(&files, "file", "f", nil, "specified Go files")
 
 	return cmd
 }
 
 type assistantGenerator struct {
-	model          string
-	client         *chatgpt.Client
-	dir            string
-	file           string
-	intervalSecond int
+	maxAssistantNum int
+	asst            *assistantParams
+
+	fileCodeMap map[string]*codeInfo
+
+	dir   string
+	files []string
+
+	isOnlyPrintPrompt bool
 }
 
 func (g *assistantGenerator) generateCode() error {
-	files, err := getFiles(g.dir, g.file)
+	fileCount := len(g.fileCodeMap)
+
+	// initialize worker pool
+	workerPool, err := NewWorkerPool(context.Background(), g.maxAssistantNum, fileCount)
 	if err != nil {
 		return err
 	}
+	workerPool.Start()
 
-	count := 0
-	total := len(files)
-	if len(files) == 0 {
-		fmt.Println("no code needs to be generated by AI assistants.")
-		return nil
-	} else if len(files) == 1 {
-		g.intervalSecond = 0
-	}
+	fmt.Printf("\n[INFO] Detected %s files for code generation. Processing concurrently with %s AI assistants (%s).\n\n",
+		color.HiCyanString(strconv.Itoa(fileCount)), color.HiCyanString(strconv.Itoa(g.maxAssistantNum)), g.asst.model)
 
-	for file, data := range files {
-		filename := gofile.GetFilename(file)
-		filenameColor := color.HiCyanString(filename)
-		count++
+	jobID := 0
 
-		p := utils.NewWaitPrinter(time.Millisecond * 200)
-		fmt.Println()
-		tip := fmt.Sprintf("[%d/%d] %s, AI assistant %s is analyzing and generating code ", count, total, filenameColor, g.model)
-		p.LoopPrint(tip)
-
-		reply, err := g.client.Send(context.Background(), getPrompt(data))
+	// submit tasks to worker pool
+	for file, info := range g.fileCodeMap {
+		jobID++
+		dependentFile, prompt := getPrompt(file, info)
+		client, err := g.asst.newClient()
 		if err != nil {
-			p.StopPrint(filename + ", " + err.Error())
 			return err
 		}
+		task := &assistantTask{
+			jobID:         jobID,
+			file:          file,
+			dependentFile: dependentFile,
+			funcNames:     info.getFuncNames(),
+			prompt:        prompt,
+			client:        client,
+			Type:          g.asst.Type,
 
-		newFile := file + ".assistant"
-		err = os.WriteFile(newFile, []byte(reply), 0666)
+			isOnlyPrintPrompt: g.isOnlyPrintPrompt,
+		}
+		err = workerPool.Submit(Job{
+			ID:   jobID,
+			Task: task,
+		}, time.Millisecond*20)
 		if err != nil {
-			p.StopPrint(newFile + ", " + err.Error())
 			return err
 		}
-		tipEnd := fmt.Sprintf("[%d/%d] %s, AI assistant %s has generated code and saved it in %s",
-			count, total, filenameColor, g.model, color.HiGreenString(newFile))
-		p.StopPrint(tipEnd)
+	}
 
-		if g.intervalSecond > 0 {
-			time.Sleep(time.Duration(g.intervalSecond) * time.Second)
+	// wait for all tasks to complete
+	go func() {
+		workerPool.Wait()
+	}()
+
+	var (
+		outputFiles  []string
+		successCount int
+		failedCount  int
+		p            = newPrintLog(time.Millisecond * 200)
+	)
+
+	// handle results from worker pool
+	for result := range workerPool.Results() {
+		reply := result.Value.(*Reply)
+		if g.isOnlyPrintPrompt {
+			l := fmt.Sprintf("File: [%s]\nPrompt: %s\n\n%s\n\n", cutFilePath(reply.SrcFile), reply.Prompt, strings.Repeat("-", 80))
+			p.StopPrint(l)
+			p = newPrintLog()
+			continue
+		}
+		if result.Err != nil {
+			failedCount++
+			l := fmt.Sprintf("\n[ERROR] Job %s - File: [%s] | Functions: [%s] → Code generation failed! Error: [%s]\n",
+				color.HiCyanString(strconv.Itoa(reply.JobID)),
+				color.HiCyanString(cutFilePath(reply.SrcFile)),
+				color.HiCyanString(strings.Join(reply.Functions, ", ")),
+				color.HiRedString(reply.ErrMsg),
+			)
+			p.StopPrint(l)
+			p = newPrintLog()
+		} else {
+			successCount++
+			var newFiles []string
+			for newFile := range reply.Contents {
+				newFiles = append(newFiles, cutFilePath(newFile))
+				outputFiles = append(outputFiles, newFile)
+			}
+			l := fmt.Sprintf("\n[SUCCESS] Job %s - File: [%s] | Functions: [%s] | Output: [%s] | Time: %s\n",
+				color.HiCyanString(strconv.Itoa(reply.JobID)),
+				color.HiCyanString(cutFilePath(reply.SrcFile)),
+				color.HiCyanString(strings.Join(reply.Functions, ", ")),
+				color.HiGreenString(strings.Join(newFiles, ", ")),
+				color.HiCyanString("%.2fs", result.EndTime.Sub(result.StartTime).Seconds()),
+			)
+			p.StopPrint(l)
+			p = newPrintLog()
 		}
 	}
+
+	// stop worker pool
+	workerPool.Stop()
+
+	time.Sleep(time.Millisecond * 220)
+	p.StopPrint("")
+
+	total := successCount + failedCount
+	if total > 0 {
+		fmt.Printf("\nJobs Summary:\n    → Total Jobs: %d\n    → Successful Jobs: %d\n    → Failed Jobs: %d\n\n", total, successCount, failedCount)
+	}
+
+	if len(outputFiles) > 0 {
+		fmt.Println("Successful Jobs output files:")
+		for _, file := range outputFiles {
+			fmt.Printf("    %s %s\n", successSymbol, color.HiGreenString(cutFilePath(file)))
+		}
+	}
+
 	return nil
 }
 
-func getFiles(dir string, specifiedFile string) (map[string][]byte, error) {
-	var promptFiles = make(map[string][]byte)
+type assistantTask struct {
+	jobID         int
+	file          string
+	dependentFile string
+	funcNames     []string
+	prompt        string
+	client        aicli.Assistanter
+	Type          string
 
-	if data := findPrompt(specifiedFile); data != nil {
-		promptFiles[specifiedFile] = data
+	isOnlyPrintPrompt bool
+}
+
+// Reply execute assistant task result
+type Reply struct {
+	JobID     int      `json:"jobID"`
+	ErrMsg    string   `json:"errMsg"`
+	SrcFile   string   `json:"srcFile"`
+	Functions []string `json:"functions"`
+	Prompt    string   `json:"prompt"`
+
+	Contents map[string]string `json:"contents"` // reply contents
+}
+
+// Execute execute assistant task
+func (t *assistantTask) Execute(ctx context.Context) (interface{}, error) {
+	taskReply := &Reply{
+		JobID:     t.jobID,
+		SrcFile:   t.file,
+		Functions: t.funcNames,
+		Prompt:    t.prompt,
+	}
+
+	if t.isOnlyPrintPrompt {
+		return taskReply, nil
+	}
+
+	fmt.Printf("[START] Job %s - File: [%s] | Functions: [%s]\n\n",
+		color.HiCyanString(strconv.Itoa(t.jobID)),
+		color.HiCyanString(cutFilePath(t.file)),
+		color.HiCyanString(strings.Join(t.funcNames, ", ")),
+	)
+
+	streamReply := t.client.SendStream(ctx, t.prompt)
+	assistantReply := ""
+	for content := range streamReply.Content {
+		assistantReply += content
+	}
+	if streamReply.Err != nil {
+		taskReply.ErrMsg = streamReply.Err.Error()
+		return taskReply, streamReply.Err
+	}
+
+	codes := parseCode(assistantReply)
+	newFile, err := saveAssistantCode(t.file, codes[0], t.Type)
+	if err != nil {
+		taskReply.ErrMsg = err.Error()
+		return taskReply, err
+	}
+
+	contents := make(map[string]string, len(codes))
+	contents[newFile] = codes[0]
+
+	if t.dependentFile != "" && len(codes) > 1 {
+		newDependentFile, err := saveAssistantCode(t.dependentFile, codes[1], t.Type)
+		if err != nil {
+			taskReply.ErrMsg = err.Error()
+			return taskReply, err
+		}
+		contents[newDependentFile] = codes[1]
+	}
+	taskReply.Contents = contents
+
+	return taskReply, nil
+}
+
+func parseFiles(dir string, specifiedFiles []string) (bool, map[string]*codeInfo, error) {
+	var isChinese bool
+	var fileCodeMap = make(map[string]*codeInfo)
+
+	for _, file := range specifiedFiles {
+		if info := extractFuncCodeBlock(file); info != nil {
+			fileCodeMap[file] = info
+			isChinese = isChinese || info.isUseChinesePrompt()
+		}
 	}
 
 	if dir != "" {
 		files, err := gofile.ListFiles(dir, gofile.WithSuffix(".go")) //nolint
 		if err != nil {
-			return nil, err
+			return false, nil, err
 		}
 		for _, file := range files {
-			if data := findPrompt(file); data != nil {
-				promptFiles[file] = data
+			if strings.HasSuffix(file, "_test.go") ||
+				strings.HasSuffix(file, ".pb.go") ||
+				strings.HasSuffix(file, ".validate.go") {
+				continue
+			}
+			if info := extractFuncCodeBlock(file); info != nil {
+				fileCodeMap[file] = info
+				isChinese = isChinese || info.isUseChinesePrompt()
 			}
 		}
 	}
 
-	return promptFiles, nil
+	return isChinese, fileCodeMap, nil
 }
 
-func findPrompt(file string) []byte {
+func saveAssistantCode(file string, code string, asstType string) (string, error) {
+	dirPath := gofile.GetDir(file)
+	if !gofile.IsExists(dirPath) {
+		err := os.MkdirAll(dirPath, 0666)
+		if err != nil {
+			return "", fmt.Errorf("failed to create directory %s: %v", dirPath, err)
+		}
+	}
+
+	newFile := fmt.Sprintf("%s.%s.md", file, asstType)
+	err := os.WriteFile(newFile, []byte(code), 0666)
+	if err != nil {
+		return "", fmt.Errorf("failed to save assistant code to file %s: %v", newFile, err)
+	}
+	return newFile, nil
+}
+
+type codeInfo struct {
+	funcInfos []goast.FuncInfo
+	code      []byte
+}
+
+func extractFuncCodeBlock(file string) *codeInfo {
 	if file == "" {
 		return nil
 	}
 
-	data, err := os.ReadFile(file)
+	code, infos, err := goast.FilterFuncCodeByFile(file)
 	if err != nil {
 		return nil
 	}
 
-	r := bytes.NewReader(data)
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.Contains(line, `//panic("prompt:`) ||
-			strings.Contains(line, `// panic("prompt:`) {
-			continue
-		}
-		if strings.Contains(line, `panic("prompt:`) {
-			return data
-		}
+	return &codeInfo{
+		funcInfos: infos,
+		code:      code,
 	}
+}
 
-	return nil
+func isAllHaveExampleCode(info *codeInfo) bool {
+	return bytes.Count(info.code, []byte("// fill in the business logic code here")) == len(info.funcInfos)
+}
+
+func getDefaultPrompt(info *codeInfo) string {
+	format := ""
+	if info.isUseChinesePrompt() {
+		format = defaultPromptFormatCN
+	} else {
+		format = defaultPromptFormatEN
+	}
+	return fmt.Sprintf(format, info.joinFuncNames()) +
+		fmt.Sprintf("\n```go\n%s\n```", string(info.code))
 }
 
 // nolint
-func getPrompt(data []byte) string {
-	cnPrompt := `下面go语言代码中，请根据 panic("prompt: 后面的提示要求，实现该方法函数的完整业务逻辑代码。如果有多个prompt提示表示多个方法函数需要实现，请按照提示请按顺序回答。` + "\n\n```go\n"
-	enPrompt := `In the following go language code, please implement the complete business logic code of this method function according to the prompt requirements after panic("prompt: .  If there are multiple prompt prompts indicating that more than one method function needs to be implemented, please follow the prompts and answer in order.` + "\n\n```go\n"
-	var prompt string
+func getPrompt(file string, info *codeInfo) (dependentFileFullPath string, prompt string) {
+	//var prompt string
+	dirName := getLastDirName(file)
+	isChinese := info.isUseChinesePrompt()
 
-	localTime := time.Now()
-	_, offset := localTime.Zone()
-	east8Offset := 8 * 60 * 60
-	if offset == east8Offset {
-		prompt += cnPrompt + string(data) + "\n```"
-	} else {
-		prompt += enPrompt + string(data) + "\n```"
+	switch dirName {
+	case "handler", "service", "biz":
+		internalDirName := strings.TrimSuffix(gofile.GetDir(file), dirName) // end with filepath.Separator
+		if getLastDirName(internalDirName) != "internal" {
+			return "", getDefaultPrompt(info)
+		} else {
+			if !isAllHaveExampleCode(info) {
+				return "", getDefaultPrompt(info)
+			}
+			internalDirName = "internal" + string(filepath.Separator)
+		}
+
+		fileName := gofile.GetFilename(file)
+		srcFile := internalDirName + dirName + string(filepath.Separator) + fileName
+		daoFile := internalDirName + "dao" + string(filepath.Separator) + fileName
+		dbFile := internalDirName + "database" + string(filepath.Separator) + "init.go"
+		objName := strings.TrimSuffix(fileName, ".go")
+		isMongo := isMongoOrmType(dbFile)
+		daoCode := getDaoCode(isMongo, objName, isChinese)
+		funcNames := info.joinFuncNames()
+
+		format := ""
+		if isChinese {
+			format = promptFormatCN
+		} else {
+			format = promptFormatEN
+		}
+		prompt = fmt.Sprintf(format,
+			funcNames,
+			srcFile, funcNames,
+			srcFile, daoFile,
+			srcFile, daoFile,
+			srcFile, daoFile,
+			srcFile, fmt.Sprintf("\n```go\n%s\n```", string(info.code)),
+			daoFile, fmt.Sprintf("\n```go\n%s\n```", daoCode),
+		)
+		modelCode := getModelCode(file, dirName, fileName, isChinese)
+		if modelCode != "" {
+			prompt += modelCode
+		}
+		dependentFileFullPath = strings.TrimSuffix(gofile.GetDir(file), dirName) + "dao" + string(filepath.Separator) + fileName
+	default:
+		prompt = getDefaultPrompt(info)
 	}
-	return prompt
+
+	return dependentFileFullPath, prompt
+}
+
+func (c *codeInfo) isUseChinesePrompt() bool {
+	var hasChinese bool
+	for _, info := range c.funcInfos {
+		if containsChinese(info.Comment) {
+			hasChinese = true
+			break
+		}
+	}
+	return hasChinese
+}
+
+func (c *codeInfo) getFuncNames() []string {
+	var funcNames []string
+	for _, funcInfo := range c.funcInfos {
+		funcNames = append(funcNames, funcInfo.Name)
+	}
+	return funcNames
+}
+
+func (c *codeInfo) joinFuncNames() string {
+	delimiter := "、"
+	if !c.isUseChinesePrompt() {
+		delimiter = ", "
+	}
+	var funcNames []string
+	for _, funcInfo := range c.funcInfos {
+		funcNames = append(funcNames, funcInfo.Name)
+	}
+	return strings.Join(funcNames, delimiter)
+}
+
+func containsChinese(s string) bool {
+	for _, r := range s {
+		if unicode.Is(unicode.Han, r) {
+			return true
+		}
+	}
+	return false
+}
+
+func getLastDirName(path string) string {
+	info, err := os.Stat(path)
+	if err != nil {
+		return ""
+	}
+	if info.IsDir() {
+		return filepath.Base(path)
+	}
+	return filepath.Base(filepath.Dir(path))
+}
+
+func isMongoOrmType(dbFile string) bool {
+	data, err := os.ReadFile(dbFile)
+	if err != nil {
+		return false
+	}
+	if bytes.Contains(data, []byte(`"github.com/go-dev-frame/sponge/pkg/mgo"`)) {
+		return true
+	}
+	return false
+}
+
+func checkDirAndFile(dir string, files []string) error {
+	if dir == "" && len(files) == 0 {
+		return fmt.Errorf("please specify flag --dir or --file")
+	}
+	if dir != "" {
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			return fmt.Errorf("directory %s does not exist", dir)
+		}
+	}
+	for _, file := range files {
+		if _, err := os.Stat(file); os.IsNotExist(err) {
+			return fmt.Errorf("file %s does not exist", file)
+		}
+	}
+	return nil
 }

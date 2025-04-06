@@ -10,15 +10,17 @@ import (
 func AssistantCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "assistant",
-		Short:         "AI assistants, support ChatGPT and DeepSeek",
-		Long:          "AI assistant, supports ChatGPT and DeepSeek, defaults to using ChatGPT.",
+		Short:         "AI assistants, support generation and merging of Go code, chat, and more",
+		Long:          "AI assistant, support generation and merging of Go code, chat, and more.",
 		SilenceErrors: true,
 		SilenceUsage:  true,
 	}
 
 	cmd.AddCommand(
-		assistant.RunCommand(),
+		assistant.ChatCommand(),
 		assistant.GenerateCommand(),
+		assistant.MergeAssistantCode(),
+		assistant.CleanUpAssistantCode(),
 	)
 	return cmd
 }
