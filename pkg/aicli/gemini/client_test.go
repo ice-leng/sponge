@@ -1,4 +1,4 @@
-package chatgpt
+package gemini
 
 import (
 	"context"
@@ -7,12 +7,7 @@ import (
 	"time"
 )
 
-var apiKey = "sk-xxxxxx"
-
-const (
-	genericRoleDescEN = "You are a helpful assistant, able to answer user questions in a clear and friendly manner."
-	genericRoleDescZH = "你是一个有帮助的助手，能够以清晰、友好的方式回答用户的问题。"
-)
+var apiKey = "xxxxxx"
 
 func TestClient_Send(t *testing.T) {
 	client, err := NewClient(apiKey)
@@ -20,6 +15,7 @@ func TestClient_Send(t *testing.T) {
 		t.Log(err)
 		return
 	}
+	defer client.Close()
 
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 	replyContent, err := client.Send(ctx, "Who are you?")
@@ -32,16 +28,15 @@ func TestClient_Send(t *testing.T) {
 
 func TestClient_SendStream(t *testing.T) {
 	client, err := NewClient(apiKey,
-		WithModel(ModelGPT4o),
-		WithMaxTokens(8192),
+		WithModel(Model20FlashThinking),
 		WithEnableContext(),
-		WithTemperature(0.3),
-		WithInitialRole(genericRoleDescEN),
+		WithInitialContextMessages(&ContextMessage{Role: "model", Content: "Hello, I am a gopher."}),
 	)
 	if err != nil {
 		t.Log(err)
 		return
 	}
+	defer client.Close()
 
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 	reply := client.SendStream(ctx, "Which model did you use to answer the question?")
@@ -68,4 +63,26 @@ func TestClient_ListModelNames(t *testing.T) {
 		return
 	}
 	t.Log(modelNames)
+}
+
+func TestClient_ListContextsMessages(t *testing.T) {
+	client, err := NewClient(apiKey, WithInitialContextMessages([]*ContextMessage{
+		{
+			Role:    "system",
+			Content: "you are a gopher",
+		}, {
+			Role:    "user",
+			Content: "what is goroutine?",
+		}, {
+			Role:    "",
+			Content: "A goroutine is a lightweight, concurrent execution thread in Go.",
+		},
+	}...))
+	if err != nil {
+		t.Log(err)
+		return
+	}
+
+	messages := client.ListContextMessages()
+	t.Log(messages)
 }

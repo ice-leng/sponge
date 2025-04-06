@@ -1,92 +1,19 @@
-package gptclient
+// Package chatgpt provides a client for the OpenAI chat GPT API.
+package chatgpt
 
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
-	"sync"
+	"path/filepath"
 
 	"github.com/sashabaranov/go-openai"
+
+	"github.com/go-dev-frame/sponge/pkg/aicli"
 )
 
 // https://platform.openai.com/docs/api-reference
-
-const (
-	ModelGPT3Dot5Turbo = openai.GPT3Dot5Turbo
-	ModelGPT4          = openai.GPT4
-	ModelGPT4Turbo     = openai.GPT4Turbo
-	ModelGPT4o         = openai.GPT4o // default
-	ModelGPT4oMini     = openai.GPT4oMini
-	ModelO1Mini        = openai.O1Mini
-	ModelO1Preview     = openai.O1Preview
-
-	DefaultModel     = ModelO1Mini
-	defaultMaxTokens = 4096
-
-	RoleTypeGopher = "You are a Go Language Coder Assistant, an AI specialized in writing, debugging, " +
-		"and explaining Go code. You only provide solutions and explanations for Go programming " +
-		"language. Always provide clear and concise code examples, and explain your solutions step by step."
-	RoleTypeGeneral = "You are a General Assistant, an AI that can help with a wide range of tasks, including " +
-		"answering questions, writing content, generating code, translating languages, and more. " +
-		"Always provide clear, concise, and helpful responses."
-)
-
-// ClientOption is a function that sets a Client option.
-type ClientOption func(*Client)
-
-func defaultClientOptions() *Client {
-	return &Client{
-		maxTokens:   defaultMaxTokens,
-		temperature: 0.0,
-	}
-}
-
-func (c *Client) apply(opts ...ClientOption) {
-	for _, opt := range opts {
-		opt(c)
-	}
-}
-
-// WithMaxTokens sets the maximum number of tokens
-func WithMaxTokens(max int) ClientOption {
-	return func(c *Client) {
-		if max < 256 {
-			c.maxTokens = defaultMaxTokens
-		}
-		c.maxTokens = max
-	}
-}
-
-// WithModel sets the model name
-func WithModel(name string) ClientOption {
-	return func(c *Client) {
-		c.ModelName = name
-	}
-}
-
-// WithTemperature sets the temperature
-func WithTemperature(temperature float32) ClientOption {
-	return func(c *Client) {
-		c.temperature = temperature
-	}
-}
-
-// WithRole sets the role type
-func WithRole(role string) ClientOption {
-	return func(c *Client) {
-		c.role = openai.ChatCompletionMessage{
-			Role:    openai.ChatMessageRoleSystem,
-			Content: role,
-		}
-	}
-}
-
-// WithUseContext sets assistant context
-func WithUseContext(isUse bool) ClientOption {
-	return func(c *Client) {
-		c.useContext = isUse
-	}
-}
 
 // Client is a chat GPT client.
 type Client struct {
@@ -105,11 +32,10 @@ type Client struct {
 	*/
 	temperature float32
 
-	role openai.ChatCompletionMessage // default is general assistant
+	roleDesc string // initial role description
 
-	useContext               bool                           // whether to use assistant context, default is false
-	assistantContextMessages []openai.ChatCompletionMessage // assistant context
-	mutex                    sync.Mutex                     // lock for assistant context
+	enableContext   bool                           // whether to use assistant context, default is false
+	contextMessages []openai.ChatCompletionMessage // initial context messages
 }
 
 // NewClient creates a new chat client.
@@ -124,6 +50,14 @@ func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
 	if c.ModelName == "" {
 		c.ModelName = DefaultModel
 	}
+
+	if c.roleDesc != "" {
+		c.contextMessages = append(c.contextMessages, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: c.roleDesc,
+		})
+	}
+
 	c.apiKey = apiKey
 	c.Cli = openai.NewClient(apiKey)
 
@@ -131,16 +65,21 @@ func NewClient(apiKey string, opts ...ClientOption) (*Client, error) {
 }
 
 // Send sends a prompt to the chat gpt and returns the response.
-func (c *Client) Send(ctx context.Context, prompt string) (string, error) {
+func (c *Client) Send(ctx context.Context, prompt string, files ...string) (string, error) {
 	if prompt == "" {
 		return "", errors.New("prompt cannot be empty")
+	}
+
+	messages, err := c.setMessages(ctx, prompt, files...)
+	if err != nil {
+		return "", err
 	}
 
 	reply, err := c.Cli.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
 			Model:               c.ModelName,
-			Messages:            c.getMessages(prompt),
+			Messages:            messages,
 			Temperature:         c.temperature,
 			MaxCompletionTokens: c.maxTokens,
 			MaxTokens:           c.maxTokens, // Deprecated
@@ -150,32 +89,34 @@ func (c *Client) Send(ctx context.Context, prompt string) (string, error) {
 		return "", err
 	}
 
-	if len(reply.Choices) == 0 {
-		return "", errors.New("empty response")
+	replyContent := ""
+	for _, choice := range reply.Choices {
+		replyContent += choice.Message.Content
 	}
-
-	replyContent := reply.Choices[0].Message.Content
-	c.setAssistantContext(replyContent)
+	if replyContent == "" {
+		return "", errors.New("reply content is empty")
+	}
+	c.appendAssistantContext(prompt, replyContent)
 
 	return replyContent, nil
 }
 
-// StreamReply reply with stream response
-type StreamReply struct {
-	Content chan string
-	Err     error // if nil means successfully response
-}
-
 // SendStream sends a prompt to the chat gpt and returns a channel of responses.
-func (c *Client) SendStream(ctx context.Context, prompt string) *StreamReply {
-	response := &StreamReply{Content: make(chan string), Err: error(nil)}
+func (c *Client) SendStream(ctx context.Context, prompt string, files ...string) *aicli.StreamReply {
+	response := &aicli.StreamReply{Content: make(chan string), Err: error(nil)}
 
 	go func() {
 		defer func() { close(response.Content) }()
 
+		messages, err := c.setMessages(ctx, prompt, files...)
+		if err != nil {
+			response.Err = err
+			return
+		}
+
 		req := openai.ChatCompletionRequest{
 			Model:               c.ModelName,
-			Messages:            c.getMessages(prompt),
+			Messages:            messages,
 			Stream:              true,
 			Temperature:         c.temperature,
 			MaxCompletionTokens: c.maxTokens,
@@ -192,7 +133,9 @@ func (c *Client) SendStream(ctx context.Context, prompt string) *StreamReply {
 
 		var replyContent string
 		defer func() {
-			c.setAssistantContext(replyContent)
+			if response.Err == nil && replyContent != "" {
+				c.appendAssistantContext(prompt, replyContent)
+			}
 		}()
 
 		for {
@@ -235,43 +178,103 @@ func (c *Client) ListModelNames(ctx context.Context) ([]string, error) {
 	return modelNames, nil
 }
 
-func (c *Client) setAssistantContext(content string) {
-	if c.useContext && len(content) > 0 {
-		c.mutex.Lock()
-		c.assistantContextMessages = append(c.assistantContextMessages, openai.ChatCompletionMessage{
-			Role:    openai.ChatMessageRoleAssistant,
-			Content: content,
+// ListContextMessages list assistant context messages
+func (c *Client) ListContextMessages() []*ContextMessage {
+	contextMessages := make([]*ContextMessage, 0, len(c.contextMessages))
+	for _, message := range c.contextMessages {
+		contextMessages = append(contextMessages, &ContextMessage{
+			Role:    message.Role,
+			Content: message.Content,
 		})
-		c.mutex.Unlock()
 	}
+	return contextMessages
 }
 
 // RefreshContext refreshes assistant context
 func (c *Client) RefreshContext() {
-	if len(c.assistantContextMessages) > 0 {
-		c.mutex.Lock()
-		c.assistantContextMessages = nil
-		c.mutex.Unlock()
+	if len(c.contextMessages) > 0 {
+		c.contextMessages = []openai.ChatCompletionMessage{}
 	}
 }
 
-func (c *Client) getMessages(prompt string) []openai.ChatCompletionMessage {
+// ModifyInitialRole modifies the initial role description.
+func (c *Client) ModifyInitialRole(roleDesc string) {
+	if roleDesc == "" {
+		return
+	}
+	message := openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleSystem,
+		Content: roleDesc,
+	}
+
+	if len(c.contextMessages) == 0 {
+		c.contextMessages = []openai.ChatCompletionMessage{message}
+	} else {
+		if c.roleDesc == c.contextMessages[0].Content {
+			c.contextMessages[0].Content = roleDesc
+		} else {
+			c.contextMessages = append([]openai.ChatCompletionMessage{message}, c.contextMessages...)
+		}
+	}
+}
+
+func (c *Client) appendAssistantContext(prompt string, replyContent string) {
+	if c.enableContext && replyContent != "" {
+		c.contextMessages = append(c.contextMessages, []openai.ChatCompletionMessage{
+			{
+				Role:    openai.ChatMessageRoleUser,
+				Content: prompt,
+			},
+			{
+				Role:    openai.ChatMessageRoleAssistant,
+				Content: replyContent,
+			},
+		}...)
+	}
+}
+
+func (c *Client) setMessages(ctx context.Context, prompt string, files ...string) ([]openai.ChatCompletionMessage, error) {
 	var messages []openai.ChatCompletionMessage
 
-	c.mutex.Lock()
-	if len(c.assistantContextMessages) > 0 {
-		messages = append(messages, c.assistantContextMessages...)
-	}
-	c.mutex.Unlock()
-
-	if c.role.Content != "" {
-		messages = append(messages, c.role)
+	// history context
+	if len(c.contextMessages) > 0 {
+		messages = append(messages, c.contextMessages...)
 	}
 
+	// file message
+	if len(files) > 0 {
+		fileIDs, err := c.uploadFiles(ctx, files)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: fmt.Sprintf("Please refer to the content of the following document ID: %v", fileIDs),
+		})
+	}
+
+	// user message
 	messages = append(messages, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: prompt,
 	})
 
-	return messages
+	return messages, nil
+}
+
+func (c *Client) uploadFiles(ctx context.Context, files []string) ([]string, error) {
+	fileIDs := make([]string, 0, len(files))
+	for _, filePath := range files {
+		_, name := filepath.Split(filePath)
+		fileResp, err := c.Cli.CreateFile(ctx, openai.FileRequest{
+			FileName: name,
+			FilePath: filePath,
+			Purpose:  "assistants", // for assistants
+		})
+		if err != nil {
+			return nil, err
+		}
+		fileIDs = append(fileIDs, fileResp.ID)
+	}
+	return fileIDs, nil
 }
