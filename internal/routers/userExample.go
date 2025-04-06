@@ -15,7 +15,7 @@ func init() {
 func userExampleRouter(group *gin.RouterGroup, h handler.UserExampleHandler) {
 	g := group.Group("/userExample")
 
-	// All the following routes use jwt authentication, you also can use middleware.Auth(middleware.WithVerify(fn))
+	// All the following routes use jwt authentication, you also can use middleware.Auth(middleware.WithExtraVerify(fn))
 	//g.Use(middleware.Auth())
 
 	// If jwt authentication is not required for all routes, authentication middleware can be added

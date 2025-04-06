@@ -55,6 +55,9 @@ func WithExtraVerify(fn ExtraVerifyFn) AuthOption {
 	}
 }
 
+// WithVerify alias of WithExtraVerify
+var WithVerify = WithExtraVerify
+
 func responseUnauthorized(isReturnErrReason bool, errMsg string) *errcode.Error {
 	if isReturnErrReason {
 		return errcode.Unauthorized.RewriteMsg("Unauthorized, " + errMsg)
@@ -93,7 +96,17 @@ func Auth(opts ...AuthOption) gin.HandlerFunc {
 				return
 			}
 		}
-
+		c.Set("claims", claims)
 		c.Next()
 	}
+}
+
+// GetClaims get jwt claims from gin context.
+func GetClaims(c *gin.Context) (*jwt.Claims, bool) {
+	claims, exists := c.Get("claims")
+	if !exists {
+		return nil, false
+	}
+	jwtClaims, ok := claims.(*jwt.Claims)
+	return jwtClaims, ok
 }

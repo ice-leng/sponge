@@ -34,6 +34,15 @@ var (
 )
 
 func extraVerifyFn(claims *jwt.Claims, c *gin.Context) error {
+	// check if token is about to expire (less than 10 minutes remaining)
+	if time.Now().Unix()-claims.ExpiresAt.Unix() < int64(time.Minute*10) {
+		token, err := claims.NewToken(time.Hour*24, jwt.HS256, jwtSignKey) // same signature as jwt.GenerateToken
+		if err != nil {
+			return err
+		}
+		c.Header("X-Renewed-Token", token)
+	}
+
 	// judge whether the user is disabled, query whether jwt id exists from the blacklist
 	//if CheckBlackList(uid, claims.ID) {
 	//	return errors.New("user is disabled")
@@ -65,13 +74,21 @@ func runAuthHTTPServer() string {
 
 	getUserByIDHandler := func(c *gin.Context) {
 		id := c.Param("id")
+		claims, ok := GetClaims(c)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"msg": "unauthorized"})
+			return
+		}
+		fmt.Println("claims =", claims)
 		response.Success(c, id)
 	}
+
 	loginHandler := func(c *gin.Context) {
 		_, token, _ := jwt.GenerateToken(uid)
 		fmt.Println("token =", token)
 		response.Success(c, token)
 	}
+
 	loginSignKeyHandler := func(c *gin.Context) {
 		_, token, _ := jwt.GenerateToken(
 			uid,

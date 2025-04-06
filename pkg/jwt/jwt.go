@@ -81,7 +81,8 @@ func (c *Claims) GetFloat64(key string) (float64, bool) {
 	return 0, false
 }
 
-func (c *Claims) newToken(d time.Duration, signMethod jwt.SigningMethod, signKey interface{}) (string, error) {
+// NewToken create new token with claims, duration, signing method and signing key
+func (c *Claims) NewToken(d time.Duration, signMethod jwt.SigningMethod, signKey []byte) (string, error) {
 	now := time.Now()
 	c.RegisteredClaims.ExpiresAt = jwt.NewNumericDate(now.Add(d))
 	c.RegisteredClaims.IssuedAt = jwt.NewNumericDate(now)
@@ -166,7 +167,7 @@ func RefreshToken(tokenString string, opts ...RefreshTokenOption) (jwtID string,
 		return "", "", err
 	}
 
-	tokenStr, err = claims.newToken(o.expire, signMethod, o.signKey)
+	tokenStr, err = claims.NewToken(o.expire, signMethod, o.signKey)
 	return claims.ID, tokenStr, err
 }
 
@@ -233,12 +234,12 @@ func RefreshTwoTokens(refreshToken string, accessToken string, opts ...RefreshTw
 	}
 	now := time.Now()
 	if refreshTokenClaims.ExpiresAt.Sub(now) < time.Hour*3 {
-		refreshToken, err = refreshTokenClaims.newToken(o.refreshTokenExpire, signMethod, o.signKey)
+		refreshToken, err = refreshTokenClaims.NewToken(o.refreshTokenExpire, signMethod, o.signKey)
 		if err != nil {
 			return nil, err
 		}
 	}
-	accessToken, err = accessTokenClaims.newToken(o.accessTokenExpire, signMethod, o.signKey)
+	accessToken, err = accessTokenClaims.NewToken(o.accessTokenExpire, signMethod, o.signKey)
 	if err != nil {
 		return nil, err
 	}

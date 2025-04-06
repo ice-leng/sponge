@@ -205,10 +205,21 @@ func LoginCustom(c *gin.Context) {
 func GetByID(c *gin.Context) {
     uid := c.MustGet("id").(string)
 
+    claims,ok := middleware.GetClaims(c) // if necessary, claims can be got from gin context.
+
     response.Success(c, gin.H{"id": uid})
 }
 
 func extraVerifyFn(claims *jwt.Claims, c *gin.Context) error {
+    // check if token is about to expire (less than 10 minutes remaining)
+    if time.Now().Unix()-claims.ExpiresAt.Unix() < int64(time.Minute*10) {
+        token, err := claims.NewToken(time.Hour*24, jwt.HS256, jwtSignKey) // same signature as jwt.GenerateToken
+        if err != nil {
+            return err
+        }
+        c.Header("X-Renewed-Token", token)
+    }
+
     // judge whether the user is disabled, query whether jwt id exists from the blacklist
     //if CheckBlackList(uid, claims.ID) {
     //    return errors.New("user is disabled")
