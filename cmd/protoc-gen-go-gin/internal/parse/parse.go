@@ -43,7 +43,6 @@ type ServiceMethod struct {
 	Reply         string // CreateReply
 	ReplyFields   []*Field
 	Comment       string // e.g. Create a record
-	Prompt        string // from comments, used in AI assistant
 	InvokeType    int    // 0:unary, 1: client-side streaming, 2: server-side streaming, 3: bidirectional streaming
 
 	ServiceName         string // Greeter
@@ -122,8 +121,8 @@ func parsePbService(s *protogen.Service, protoFileDir string, moduleName string)
 			Reply:         m.Output.GoIdent.GoName,
 			ReplyFields:   getFields(m.Output),
 			Comment:       comment,
-			Prompt:        getPrompt(m, comment),
-			InvokeType:    getInvokeType(m.Desc.IsStreamingClient(), m.Desc.IsStreamingServer()),
+
+			InvokeType: getInvokeType(m.Desc.IsStreamingClient(), m.Desc.IsStreamingServer()),
 
 			ServiceName:         s.GoName,
 			LowerServiceName:    strings.ToLower(s.GoName[:1]) + s.GoName[1:],
@@ -220,18 +219,6 @@ func getMethodComment(m *protogen.Method) string {
 	}
 
 	return commentPrefix + "......"
-}
-
-func getPrompt(m *protogen.Method, comment string) string {
-	if strings.HasSuffix(comment, "......") {
-		return "prompt: implement me"
-	}
-	prompt := strings.TrimPrefix(comment, "// "+m.GoName)
-	prompt = strings.TrimSpace(prompt)
-	prompt = strings.ReplaceAll(prompt, "\n//", " ")
-	prompt = strings.ReplaceAll(prompt, "\r//", " ")
-	prompt = strings.ReplaceAll(prompt, "\r\n//", " ")
-	return "prompt: " + prompt
 }
 
 func getFieldComment(commentSet protogen.CommentSet) string {

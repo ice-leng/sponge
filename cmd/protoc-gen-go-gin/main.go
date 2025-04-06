@@ -16,6 +16,7 @@ import (
 	"github.com/go-dev-frame/sponge/cmd/protoc-gen-go-gin/internal/generate/handler"
 	"github.com/go-dev-frame/sponge/cmd/protoc-gen-go-gin/internal/generate/router"
 	"github.com/go-dev-frame/sponge/cmd/protoc-gen-go-gin/internal/generate/service"
+	"github.com/go-dev-frame/sponge/pkg/gofile"
 )
 
 const (
@@ -239,6 +240,7 @@ func saveFile(moduleName string, serverName string, out string, filePath string,
 	_, name := filepath.Split(filePath)
 	file := out + "/" + name
 	if !isNeedCovered && isExists(file) {
+		removeOldGenFile(file)
 		file += ".gen" + time.Now().Format("20060102T150405")
 	}
 
@@ -261,6 +263,7 @@ func saveFileSimple(out string, filePath string, content []byte, isNeedCovered b
 	_, name := filepath.Split(filePath)
 	file := out + "/" + name
 	if !isNeedCovered && isExists(file) {
+		removeOldGenFile(file)
 		file += ".gen" + time.Now().Format("20060102T150405")
 	}
 
@@ -273,6 +276,13 @@ func isExists(f string) bool {
 		return !os.IsNotExist(err)
 	}
 	return true
+}
+
+func removeOldGenFile(file string) {
+	oldGenFiles := gofile.FuzzyMatchFiles(file + ".gen*")
+	for _, oldGenFile := range oldGenFiles {
+		_ = os.Remove(oldGenFile)
+	}
 }
 
 func firstLetterToUpper(s string) []byte {
