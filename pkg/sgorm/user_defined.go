@@ -45,8 +45,8 @@ var currentDriver string
 
 // SetDriver sets the name of the current database driver, such as "postgres"
 // if you use postgres, you need to call SetDriver("postgres") after initializing gorm
-func SetDriver(driver string) {
-	currentDriver = driver
+func SetDriver(driverName string) {
+	currentDriver = driverName
 }
 
 // --------------------------------------------------------------------------------------

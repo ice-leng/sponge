@@ -105,6 +105,9 @@ func TestGetFilename(t *testing.T) {
 
 	name = GetFilenameWithoutSuffix("./README.md")
 	assert.Equal(t, "README", name)
+
+	fp := GetRelativeFilePath("/user/sponge/pkg/gofile/testDir/test.txt")
+	assert.Contains(t, fp, "testDir/test.txt")
 }
 
 func TestGetPathDelimiter(t *testing.T) {

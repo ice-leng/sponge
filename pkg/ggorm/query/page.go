@@ -5,11 +5,11 @@ import "strings"
 var defaultMaxSize = 1000
 
 // SetMaxSize change the default maximum number of pages per page
-func SetMaxSize(max int) {
-	if max < 10 {
-		max = 10
+func SetMaxSize(maxValue int) {
+	if maxValue < 10 {
+		maxValue = 10
 	}
-	defaultMaxSize = max
+	defaultMaxSize = maxValue
 }
 
 // Page info
