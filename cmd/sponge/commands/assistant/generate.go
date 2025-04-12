@@ -41,7 +41,7 @@ func GenerateCommand() *cobra.Command {
 		Use:   "generate",
 		Short: "Generate code using AI assistant",
 		Long:  "Generate code using AI assistant. Automatically locate the positions in Go files that require code implementation, and let the AI assistant generate the corresponding business logic based on the context.",
-		Example: color.HiBlackString(`  # Generate code using deepseek, default model is deepseek-v3, you can specify deepseek-reasoner by --model.
+		Example: color.HiBlackString(`  # Generate code using deepseek, default model is deepseek-chat, you can specify deepseek-reasoner by --model.
   sponge assistant generate --type=deepseek --api-key=your-api-key --dir=your-project-dir
   
   # Generate code using gemini, default model is gemini-2.5-pro-exp-03-25
@@ -63,7 +63,8 @@ func GenerateCommand() *cobra.Command {
 			}
 			total := len(fileCodeMap)
 			if total == 0 {
-				return ErrnoAssistantMarker
+				fmt.Println(ErrnoAssistantMarker)
+				return nil
 			}
 
 			if maxAssistantNum > total {

@@ -37,6 +37,13 @@ type parameters struct {
 	DepProtoDir string `json:"depProtoDir"`
 	OnlyPrint   bool   `json:"onlyPrint"`
 
+	LLMType           string `json:"llmType"`
+	LLMModel          string `json:"llmModel"`
+	APIKey            string `json:"apiKey"`
+	GoDir             string `json:"goDir"`
+	GoFile            string `json:"goFile"`
+	IsSpecifiedGoFile bool   `json:"isSpecifiedGoFile"`
+
 	SuitedMonoRepo bool `json:"suitedMonoRepo"`
 }
 
@@ -63,7 +70,7 @@ func recordObj() *record {
 }
 
 func (r *record) set(ip string, commandType string, params *parameters) {
-	utils.SafeRunWithTimeout(time.Second*3, func(cancel context.CancelFunc) {
+	utils.SafeRunWithTimeout(time.Second*5, func(cancel context.CancelFunc) {
 		r.mux.Lock()
 		defer func() {
 			r.mux.Unlock()
@@ -167,6 +174,18 @@ func parseCommandArgs(args []string) *parameters {
 				params.DepProtoDir = val
 			case "--suited-mono-repo":
 				params.SuitedMonoRepo = val == "true"
+			case "--type":
+				params.LLMType = val
+			case "--model":
+				params.LLMModel = val
+			case "--api-key":
+				params.APIKey = val
+			case "--dir":
+				params.GoDir = val
+				params.IsSpecifiedGoFile = false
+			case "--file":
+				params.GoFile = val
+				params.IsSpecifiedGoFile = true
 			}
 		}
 	}

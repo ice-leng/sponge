@@ -91,8 +91,7 @@ func PluginsCommand() *cobra.Command {
 	return cmd
 }
 
-func checkInstallPlugins() ([]string, []string) {
-	var installedNames, lackNames = []string{}, []string{}
+func checkInstallPlugins() (installedNames []string, lackNames []string) {
 	for _, name := range pluginNames {
 		_, err := gobash.Exec("which", name)
 		if err != nil {

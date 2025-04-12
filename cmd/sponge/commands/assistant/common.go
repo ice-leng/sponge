@@ -208,14 +208,15 @@ func NewUserExampleDao(collection *mongo.Collection, xCache cache.UserExampleCac
 
 // nolint
 var ErrnoAssistantMarker = fmt.Errorf("\n%s%s\n\n",
-	`No code requiring AI assistant generation has been detected. To enable the AI assistant to automatically generate code, the following two conditions must be met:  
-1. The function body must include the panic("implement me") marker.  
-2. A comment describing the function's purpose must be added above the function.  
+	`No Go code requiring AI assistant generation was detected. To trigger the AI assistant, ensure the following conditions are met:
+    1. Define a function in Go code.
+    2. Add detailed function comments (used as AI prompts).
+    3. Add panic("implement me") inside the function body.
 
 Example:`, fmt.Sprintf(`
 
     %s
-    func MyFunc() {
+    func MyFuncName() {
         %s
     }`, color.HiCyanString("// Describe the specific functionality of the function"), color.HiCyanString(`panic("implement me")`)))
 

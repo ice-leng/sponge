@@ -55,7 +55,7 @@ func MergeAssistantCode() *cobra.Command {
 				return err
 			}
 			if len(fileMap) == 0 {
-				fmt.Printf("No %s assistant generated code found, nothing to merge.\n", m.assistantType)
+				fmt.Printf("\nNo %s assistant generated code found, nothing to merge, please generate code before merging.\n", m.assistantType)
 				return nil
 			}
 
@@ -70,9 +70,9 @@ func MergeAssistantCode() *cobra.Command {
 			}
 
 			var deleteFiles []string
+			backupDir := getBackupDir()
 			if len(mergeCodes) > 0 {
-				fmt.Printf("Merge Go files:\n")
-				backupDir := getBackupDir()
+				fmt.Printf("Merged to Go files:\n")
 				for srcFile, code := range mergeCodes {
 					backupFile(srcFile, backupDir)
 					if err = os.WriteFile(srcFile, []byte(code), 0666); err != nil {
@@ -87,6 +87,10 @@ func MergeAssistantCode() *cobra.Command {
 
 			if m.isClean {
 				deleteGenFiles(deleteFiles, m.assistantType)
+			}
+
+			if len(mergeCodes) > 0 {
+				fmt.Printf("\n[Tip] You can view the pre-merge Go code files here:\n    %s\n\n", backupDir)
 			}
 
 			return nil
