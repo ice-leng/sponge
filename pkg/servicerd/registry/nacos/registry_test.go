@@ -20,14 +20,23 @@ func TestNewRegistry(t *testing.T) {
 	instanceName := "serverName"
 	instanceEndpoints := []string{"grpc://192.168.3.27:8282"}
 
-	utils.SafeRunWithTimeout(time.Second*2, func(cancel context.CancelFunc) {
-		iRegistry, instance, err := NewRegistry(nacosIPAddr, nacosPort, nacosNamespaceID, id, instanceName, instanceEndpoints)
-		if err != nil {
-			t.Log(err)
-			return
-		}
-		t.Log(iRegistry, instance)
-	})
+	// example 1
+	iRegistry, instance, err := NewRegistry(nacosIPAddr, nacosPort, nacosNamespaceID, id, instanceName, instanceEndpoints)
+	assert.NoError(t, err)
+	t.Log(iRegistry, instance)
+
+	// example 2
+	iRegistry, instance, err = NewRegistryWithOptions(nacosIPAddr, nacosPort, nacosNamespaceID, id, instanceName, instanceEndpoints,
+		WithPrefix("/sponge"),
+		WithWeight(1),
+		WithCluster("cluster"),
+		WithGroup("dev"),
+		WithDefaultKind("grpc"),
+		//nacoscli.WithClientConfig(clientConfig),
+		//nacoscli.WithServerConfigs(serverConfigs),
+	)
+	assert.NoError(t, err)
+	t.Log(iRegistry, instance)
 }
 
 func newNacosRegistry() *Registry {

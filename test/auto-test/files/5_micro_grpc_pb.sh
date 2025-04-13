@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testServerName="user"
-testServerDir="4_micro_grpc_pb_${testServerName}"
+testServerDir="auto-05-micro-grpc-pb"
 projectName="edusys"
 protobufFile="files/user_rpc.proto"
 protoServiceNameCamelFCL="userRpc"

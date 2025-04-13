@@ -24,6 +24,13 @@ var (
 		"/health": {},
 	}
 
+	// Print error by specified codes
+	printErrorBySpecifiedCodes = map[int]bool{
+		http.StatusInternalServerError: true,
+		http.StatusBadGateway:          true,
+		http.StatusServiceUnavailable:  true,
+	}
+
 	emptyBody   = []byte("")
 	contentMark = []byte(" ...... ")
 )
@@ -77,6 +84,15 @@ func WithIgnoreRoutes(routes ...string) Option {
 	return func(o *options) {
 		for _, route := range routes {
 			o.ignoreRoutes[route] = struct{}{}
+		}
+	}
+}
+
+// WithPrintErrorByCodes set print error by specified codes
+func WithPrintErrorByCodes(code ...int) Option {
+	return func(o *options) {
+		for _, c := range code {
+			printErrorBySpecifiedCodes[c] = true
 		}
 	}
 }
@@ -154,19 +170,14 @@ func Logging(opts ...Option) gin.HandlerFunc {
 			return
 		}
 
-		// print input information before processing
 		buf := bytes.Buffer{}
 		_, _ = buf.ReadFrom(c.Request.Body)
-
-		fields := []zap.Field{
-			zap.String("method", c.Request.Method),
-			zap.String("url", c.Request.URL.String()),
-		}
-		if c.Request.Method == http.MethodPost || c.Request.Method == http.MethodPut || c.Request.Method == http.MethodPatch || c.Request.Method == http.MethodDelete {
-			fields = append(fields,
-				zap.Int("size", buf.Len()),
-				zap.ByteString("body", getRequestBody(&buf, o.maxLength)),
-			)
+		sizeField := zap.Skip()
+		bodyField := zap.Skip()
+		if c.Request.Method == http.MethodPost || c.Request.Method == http.MethodPut ||
+			c.Request.Method == http.MethodPatch || c.Request.Method == http.MethodDelete {
+			sizeField = zap.Int("size", buf.Len())
+			bodyField = zap.ByteString("body", getRequestBody(&buf, o.maxLength))
 		}
 
 		reqID := ""
@@ -174,14 +185,24 @@ func Logging(opts ...Option) gin.HandlerFunc {
 			if v, isExist := c.Get(ContextRequestIDKey); isExist {
 				if requestID, ok := v.(string); ok {
 					reqID = requestID
-					fields = append(fields, zap.String(ContextRequestIDKey, reqID))
 				}
 			}
 		} else if o.requestIDFrom == 2 {
 			reqID = c.Request.Header.Get(HeaderXRequestIDKey)
-			fields = append(fields, zap.String(ContextRequestIDKey, reqID))
 		}
-		o.log.Info("<<<<", fields...)
+		reqIDField := zap.Skip()
+		if reqID != "" {
+			reqIDField = zap.String(ContextRequestIDKey, reqID)
+		}
+
+		// print input information before processing
+		o.log.Info("<<<<",
+			zap.String("method", c.Request.Method),
+			zap.String("url", c.Request.URL.String()),
+			sizeField,
+			bodyField,
+			reqIDField,
+		)
 
 		c.Request.Body = io.NopCloser(&buf)
 
@@ -192,19 +213,22 @@ func Logging(opts ...Option) gin.HandlerFunc {
 		// processing requests
 		c.Next()
 
-		// print return message after processing
-		fields = []zap.Field{
-			zap.Int("code", c.Writer.Status()),
+		// print response message after processing
+		httpCode := c.Writer.Status()
+		fields := []zap.Field{
+			zap.Int("code", httpCode),
 			zap.String("method", c.Request.Method),
 			zap.String("url", c.Request.URL.Path),
 			zap.Int64("time_us", time.Since(start).Microseconds()),
 			zap.Int("size", newWriter.body.Len()),
 			zap.ByteString("body", getResponseBody(newWriter.body, o.maxLength)),
+			reqIDField,
 		}
-		if reqID != "" {
-			fields = append(fields, zap.String(ContextRequestIDKey, reqID))
+		if printErrorBySpecifiedCodes[httpCode] {
+			o.log.WithOptions(zap.AddStacktrace(zap.PanicLevel)).Error(">>>>", fields...)
+		} else {
+			o.log.Info(">>>>", fields...)
 		}
-		o.log.Info(">>>>", fields...)
 	}
 }
 
@@ -232,21 +256,28 @@ func SimpleLog(opts ...Option) gin.HandlerFunc {
 		} else if o.requestIDFrom == 2 {
 			reqID = c.Request.Header.Get(HeaderXRequestIDKey)
 		}
+		reqIDField := zap.Skip()
+		if reqID != "" {
+			reqIDField = zap.String(ContextRequestIDKey, reqID)
+		}
 
 		// processing requests
 		c.Next()
 
 		// print return message after processing
+		httpCode := c.Writer.Status()
 		fields := []zap.Field{
-			zap.Int("code", c.Writer.Status()),
+			zap.Int("code", httpCode),
 			zap.String("method", c.Request.Method),
 			zap.String("url", c.Request.URL.String()),
 			zap.Int64("time_us", time.Since(start).Microseconds()),
 			zap.Int("size", c.Writer.Size()),
+			reqIDField,
 		}
-		if reqID != "" {
-			fields = append(fields, zap.String(ContextRequestIDKey, reqID))
+		if printErrorBySpecifiedCodes[httpCode] {
+			o.log.WithOptions(zap.AddStacktrace(zap.PanicLevel)).Error("Gin response", fields...)
+		} else {
+			o.log.Info("Gin response", fields...)
 		}
-		o.log.Info("Gin msg", fields...)
 	}
 }

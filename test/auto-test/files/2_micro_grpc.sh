@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testServerName="user"
-testServerDir="2_micro_grpc_${testServerName}"
+testServerDir="auto-02-micro-grpc"
 projectName="edusys"
 
 mysqlDSN="root:123456@(192.168.3.37:3306)/account"

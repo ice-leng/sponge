@@ -9,7 +9,6 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 
 	"github.com/go-dev-frame/sponge/pkg/servicerd/registry"
-	"github.com/go-dev-frame/sponge/pkg/utils"
 )
 
 func TestNewRegistry(t *testing.T) {
@@ -17,10 +16,21 @@ func TestNewRegistry(t *testing.T) {
 	id := "1"
 	instanceName := "serverName"
 	instanceEndpoints := []string{"grpc://127.0.0.1:8282"}
-	utils.SafeRunWithTimeout(time.Second*2, func(cancel context.CancelFunc) {
-		iRegistry, serviceInstance, err := NewRegistry(etcdEndpoints, id, instanceName, instanceEndpoints)
-		t.Log(err, iRegistry, serviceInstance)
-	})
+
+	// example 1
+	iRegistry, serviceInstance, err := NewRegistry(etcdEndpoints, id, instanceName, instanceEndpoints)
+	t.Log(err, iRegistry, serviceInstance)
+
+	// example 2
+	iRegistry, serviceInstance, err = NewRegistryWithOptions(etcdEndpoints, id, instanceName, instanceEndpoints,
+		WithContext(context.Background()),
+		WithRegisterTTL(time.Second*10),
+		WithMaxRetry(3),
+		WithNamespace("/sponge_servers"),
+		//etcdcli.WithDialTimeout(time.Second*15),
+		//etcdcli.WithAutoSyncInterval(time.Second*10),
+	)
+	t.Log(err, iRegistry, serviceInstance)
 }
 
 type lease struct{}

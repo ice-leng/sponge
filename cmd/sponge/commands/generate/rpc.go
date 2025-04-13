@@ -16,7 +16,7 @@ import (
 	"github.com/go-dev-frame/sponge/pkg/sql2code/parser"
 )
 
-// RPCCommand generate grpc service code
+// RPCCommand generate grpc server code
 func RPCCommand() *cobra.Command {
 	var (
 		moduleName  string // module name for go.mod
@@ -37,21 +37,21 @@ func RPCCommand() *cobra.Command {
 	//nolint
 	cmd := &cobra.Command{
 		Use:   "rpc",
-		Short: "Generate grpc service code based on sql",
-		Long:  "Generate grpc service code based on sql.",
-		Example: color.HiBlackString(`  # Generate grpc service code.
+		Short: "Generate grpc server code based on sql",
+		Long:  "Generate grpc server code based on sql.",
+		Example: color.HiBlackString(`  # Generate grpc server code.
   sponge micro rpc --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --db-driver=mysql --db-dsn=root:123456@(192.168.3.37:3306)/test --db-table=user
 
-  # Generate grpc service code with multiple table names.
+  # Generate grpc server code with multiple table names.
   sponge micro rpc --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --db-driver=mysql --db-dsn=root:123456@(192.168.3.37:3306)/test --db-table=t1,t2
 
-  # Generate grpc service code with extended api.
+  # Generate grpc server code with extended api.
   sponge micro rpc --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --db-driver=mysql --db-dsn=root:123456@(192.168.3.37:3306)/test --db-table=user --extended-api=true
 
-  # Generate grpc service code and specify the output directory, Note: code generation will be canceled when the latest generated file already exists.
+  # Generate grpc server code and specify the output directory, Note: code generation will be canceled when the latest generated file already exists.
   sponge micro rpc --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --db-driver=mysql --db-dsn=root:123456@(192.168.3.37:3306)/test --db-table=user --out=./yourServerDir
 
-  # Generate grpc service code and specify the docker image repository address.
+  # Generate grpc server code and specify the docker image repository address.
   sponge micro rpc --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --repo-addr=192.168.3.37:9443/user-name --db-driver=mysql --db-dsn=root:123456@(192.168.3.37:3306)/test --db-table=user
 
   # If you want the generated code to suited to mono-repo, you need to set the parameter --suited-mono-repo=true`),
@@ -135,11 +135,11 @@ func RPCCommand() *cobra.Command {
 			fmt.Printf(`
 using help:
   1. open a terminal and execute the command to generate code:  make proto
-  2. compile and run service:   make run
-  3. open the file internal/service/xxx_client_test.go using Goland or VS Code, and test the grpc CRUD api.
+  2. compile and run server: make run
+  3. open the file internal/service/xxx_client_test.go using Goland or VSCode, and test the grpc CRUD api.
 
 `)
-			fmt.Printf("generate %s's grpc service code successfully, out = %s\n", serverName, outPath)
+			fmt.Printf("generate %s's grpc server code successfully, out = %s\n", serverName, outPath)
 
 			_ = generateConfigmap(serverName, outPath)
 			return nil

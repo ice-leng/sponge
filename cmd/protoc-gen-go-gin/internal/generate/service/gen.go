@@ -10,15 +10,16 @@ import (
 )
 
 // GenerateFiles generate service logic, router, error code files.
-func GenerateFiles(file *protogen.File, moduleName string) ([]byte, []byte, []byte) {
+func GenerateFiles(file *protogen.File, moduleName string) (logicContent []byte,
+	routerFileContent []byte, errCodeFileContent []byte) {
 	if len(file.Services) == 0 {
 		return nil, nil, nil
 	}
 
 	pss := parse.GetServices(file, moduleName)
-	logicContent := genServiceLogicFile(pss)
-	routerFileContent := genRouterFile(pss)
-	errCodeFileContent := genErrCodeFile(pss)
+	logicContent = genServiceLogicFile(pss)
+	routerFileContent = genRouterFile(pss)
+	errCodeFileContent = genErrCodeFile(pss)
 
 	return logicContent, routerFileContent, errCodeFileContent
 }
@@ -47,7 +48,7 @@ func (f *serviceLogicFields) execute() []byte {
 	if err := serviceLogicTmpl.Execute(buf, f); err != nil {
 		panic(err)
 	}
-	content := handleSplitLineMark(buf.Bytes())
+	content := buf.Bytes()
 	return bytes.ReplaceAll(content, []byte(importPkgPathMark), parse.GetImportPkg(f.PbServices))
 }
 
@@ -60,7 +61,7 @@ func (f *routerFields) execute() []byte {
 	if err := routerTmpl.Execute(buf, f); err != nil {
 		panic(err)
 	}
-	content := handleSplitLineMark(buf.Bytes())
+	content := buf.Bytes()
 	return bytes.ReplaceAll(content, []byte(importPkgPathMark), parse.GetSourceImportPkg(f.PbServices))
 }
 
@@ -74,25 +75,7 @@ func (f *errCodeFields) execute() []byte {
 		panic(err)
 	}
 	data := bytes.ReplaceAll(buf.Bytes(), []byte("// --blank line--"), []byte{})
-	return handleSplitLineMark(data)
+	return data
 }
 
 const importPkgPathMark = "// import api service package here"
-
-var splitLineMark = []byte(`// ---------- Do not delete or move this split line, this is the merge code marker ----------`)
-
-func handleSplitLineMark(data []byte) []byte {
-	ss := bytes.Split(data, splitLineMark)
-	if len(ss) <= 2 {
-		return ss[0]
-	}
-
-	var out []byte
-	for i, s := range ss {
-		out = append(out, s...)
-		if i < len(ss)-2 {
-			out = append(out, splitLineMark...)
-		}
-	}
-	return out
-}

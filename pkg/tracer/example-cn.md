@@ -1,7 +1,7 @@
 
 ### 启动jaeger和elasticsearch服务
 
-链路跟踪使用jaeger，存储使用elasticsearch，在本地使用[docker-compose](https://github.com/docker/compose/releases)启动两个服务。
+链路追踪使用jaeger，存储使用elasticsearch，在本地使用[docker-compose](https://github.com/docker/compose/releases)启动两个服务。
 
 **(1) elasticsearch服务**
 
@@ -21,9 +21,9 @@
 
 <br>
 
-### 单服务链路跟踪示例
+### 单服务链路追踪示例
 
-以`⓵基于sql创建web服务`代码为例，修改配置文件`configs/user.yml`，开启链路跟踪功能(字段enableTrace)，并且填写jaeger配置信息。
+以`⓵基于sql创建web服务`代码为例，修改配置文件`configs/user.yml`，开启链路追踪功能(字段enableTrace)，并且填写jaeger配置信息。
 
 如果想跟踪redis，启用redis缓存，把yaml配置文件里的缓存类型字段**cacheType**值改为redis，并配置redis地址，同时在本地使用docker启动redis服务，这是[redis服务启动脚本](https://github.com/go-dev-frame/sponge/tree/main/test/server/redis)。
 
@@ -34,7 +34,7 @@
 make run
 ```
 
-复制 [http://localhost:8080/swagger/index.html](http://localhost:8080/apis/swagger/index.html) 到浏览器访问swagger主页，以请求get查询为例，连续请求同一个id两次，链路跟踪如下图所示。
+复制 [http://localhost:8080/swagger/index.html](http://localhost:8080/apis/swagger/index.html) 到浏览器访问swagger主页，以请求get查询为例，连续请求同一个id两次，链路追踪如下图所示。
 
 ![one-server-trace](https://raw.githubusercontent.com/go-dev-frame/sponge_examples/main/assets/one-server-trace.jpg)
 
@@ -68,13 +68,13 @@ defer span.End()
 
 <br>
 
-### 多服务链路跟踪示例
+### 多服务链路追踪示例
 
-以一个极简版的电商微服务集群为例，点击查看[源码](https://github.com/go-dev-frame/sponge_examples/tree/main/6_micro-cluster)，一个共四个服务**shopgw**、**product**、**inventory**、**comment**，分别修改4个服务yaml配置(在configs目录下)，开启链路跟踪功能，并且填写jaeger配置信息。
+以一个极简版的电商微服务集群为例，点击查看[源码](https://github.com/go-dev-frame/sponge_examples/tree/main/6_micro-cluster)，一个共四个服务**shopgw**、**product**、**inventory**、**comment**，分别修改4个服务yaml配置(在configs目录下)，开启链路追踪功能，并且填写jaeger配置信息。
 
 在 **product**、**inventory**、**comment** 三个服务的**internal/service**目录下找到模板文件，填充代码替代`panic("implement me")`，使得代码可以正常执行，并且手动添加一个**span**，添加随机延时。
 
-启动 **shopgw**、**product**、**inventory**、**comment** 四个服务，在浏览器访问 [http://localhost:8080/apis/swagger/index.html](http://localhost:8080/apis/swagger/index.html) ，执行get请求，链路跟踪界面如下图所示。
+启动 **shopgw**、**product**、**inventory**、**comment** 四个服务，在浏览器访问 [http://localhost:8080/apis/swagger/index.html](http://localhost:8080/apis/swagger/index.html) ，执行get请求，链路追踪界面如下图所示。
 
 ![multi-servers-trace](https://raw.githubusercontent.com/go-dev-frame/sponge_examples/main/assets/multi-servers-trace.jpg)
 

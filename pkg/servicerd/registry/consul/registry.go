@@ -55,6 +55,32 @@ func NewRegistry(consulAddr string, id string, instanceName string, instanceEndp
 	return New(cli, WithHealthCheck(true)), serviceInstance, nil
 }
 
+// NewRegistryWithOptions instantiating the consul registry, opts can be set by etcdcli.WithXXX and etcd.WithXXX functions.
+// Note: If the consulcli.WithConfig(*api.Config) parameter is set, the consulAddr parameter is ignored!
+func NewRegistryWithOptions(consulAddr string, id string, instanceName string, instanceEndpoints []string, opts ...interface{}) (registry.Registry, *registry.ServiceInstance, error) {
+	serviceInstance := registry.NewServiceInstance(id, instanceName, instanceEndpoints)
+
+	var consulOptions []consulcli.Option
+	var registryOptions []Option
+	for _, opt := range opts {
+		switch v := opt.(type) {
+		case consulcli.Option:
+			consulOptions = append(consulOptions, v)
+		case Option:
+			registryOptions = append(registryOptions, v)
+		default:
+			return nil, nil, fmt.Errorf("unknown option type: %T", v)
+		}
+	}
+
+	cli, err := consulcli.Init(consulAddr, consulOptions...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return New(cli, registryOptions...), serviceInstance, nil
+}
+
 // New create a consul registry
 func New(apiClient *api.Client, opts ...Option) *Registry {
 	r := &Registry{

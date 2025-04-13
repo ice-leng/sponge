@@ -25,8 +25,8 @@ func OpenUICommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "run",
-		Short: "Run code generation UI service",
-		Long:  "Run code generation UI service.",
+		Short: "Run code generation engine service, generate code in UI interface",
+		Long:  "Run code generation engine service, generate code in UI interface.",
 		Example: color.HiBlackString(`  # Running ui service, local browser access only.
   sponge run
 

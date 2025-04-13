@@ -2,14 +2,14 @@
 
 # grpc server
 grpcServiceName="user"
-grpcDir="2_micro_grpc_${grpcServiceName}"
+grpcDir="auto-02-micro-grpc"
 
 mysqlDSN="root:123456@(192.168.3.37:3306)/account"
 mysqlTable="user"
 
 # grpc gateway server
 testServerName="user_gw"
-testServerDir="5_micro_grpc_gateway_${testServerName}"
+testServerDir="auto-07-micro-grpc-gw-pb"
 projectName="edusys"
 protobufFile="files/user_gw.proto"
 

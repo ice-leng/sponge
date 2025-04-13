@@ -76,6 +76,17 @@ func GetFilenameWithoutSuffix(filePath string) string {
 	return strings.TrimSuffix(name, path.Ext(name))
 }
 
+// GetRelativeFilePath get relative file path, force to use "/" as separator
+func GetRelativeFilePath(absFilePath string) string {
+	dirPath, _ := filepath.Abs(".")
+	dirPath = filepath.ToSlash(filepath.Clean(dirPath))
+	absFilePath = filepath.ToSlash(filepath.Clean(absFilePath))
+	if !strings.HasSuffix(dirPath, "/") {
+		dirPath += "/"
+	}
+	return strings.TrimPrefix(absFilePath, dirPath)
+}
+
 // Join joins any number of path elements into a single path
 func Join(elem ...string) string {
 	dir := strings.Join(elem, "/")

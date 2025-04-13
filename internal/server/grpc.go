@@ -267,7 +267,7 @@ func (s *grpcServer) streamServerOptions() grpc.ServerOption {
 	return grpc.ChainStreamInterceptor(streamServerInterceptors...)
 }
 
-func (s *grpcServer) getOptions() []grpc.ServerOption {
+func (s *grpcServer) setOptions() []grpc.ServerOption {
 	var options []grpc.ServerOption
 
 	secureOption := s.secureServerOption()
@@ -328,7 +328,7 @@ func NewGRPCServer(addr string, opts ...GrpcOption) app.IServer {
 		panic(err)
 	}
 
-	s.server = grpc.NewServer(s.getOptions()...)
+	s.server = grpc.NewServer(s.setOptions()...)
 	service.RegisterAllService(s.server) // register for all services
 	return s
 }

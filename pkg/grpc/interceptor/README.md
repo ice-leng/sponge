@@ -1,59 +1,77 @@
 ## interceptor
 
-Common interceptors for client-side and server-side gRPC.
+Common interceptors for gRPC server and client side, including:
+
+- Logging
+- Recovery
+- Retry
+- Rate limiter
+- Circuit breaker
+- Timeout
+- Tracing
+- Request id
+- Metrics
+- JWT authentication
 
 <br>
 
 ### Example of use
 
-```go
-import "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
-```
+All import paths are "github.com/go-dev-frame/sponge/pkg/grpc/interceptor".
 
-#### logging
+#### Logging interceptor
 
-**server-side gRPC**
+**gRPC server side**
 
 ```go
-// set unary server logging
-func getServerOptions() []grpc.ServerOption {
-	var options []grpc.ServerOption
-	
-	option := grpc.ChainUnaryInterceptor(
-		// if you don't want to log reply data, you can use interceptor.StreamServerSimpleLog instead of interceptor.UnaryServerLog,
-		interceptor.UnaryServerLog(
-			logger.Get(),
-			interceptor.WithReplaceGRPCLogger(),
-			//interceptor.WithMarshalFn(fn), // customised marshal function, default is jsonpb.Marshal
-			//interceptor.WithLogIgnoreMethods(fullMethodNames), // ignore methods logging
-			//interceptor.WithMaxLen(400), // logging max length, default 300
-		),
-	)
-	options = append(options, option)
+import (
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    "github.com/go-dev-frame/sponge/pkg/logger"
+    "google.golang.org/grpc"
+)
 
-	return options
+func setServerOptions() []grpc.ServerOption {
+    var options []grpc.ServerOption
+
+    option := grpc.ChainUnaryInterceptor(
+        // if you don't want to log reply data, you can use interceptor.StreamServerSimpleLog instead of interceptor.UnaryServerLog,
+        interceptor.UnaryServerLog( // set unary server logging
+            logger.Get(),
+            interceptor.WithReplaceGRPCLogger(),
+            //interceptor.WithMarshalFn(fn), // customised marshal function, default is jsonpb.Marshal
+            //interceptor.WithLogIgnoreMethods(fullMethodNames), // ignore methods logging
+            //interceptor.WithMaxLen(400), // logging max length, default 300
+        ),
+    )
+    options = append(options, option)
+
+    return options
 }
 
 
 // you can also set stream server logging
 ```
 
-**client-side gRPC**
+**gRPC client side**
 
 ```go
-// set unary client logging
-func getDialOptions() []grpc.DialOption {
-	var options []grpc.DialOption
+import (
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    "google.golang.org/grpc"
+)
 
-	option := grpc.WithChainUnaryInterceptor(
-		interceptor.UnaryClientLog(
-			logger.Get(),
-			interceptor.WithReplaceGRPCLogger(),
-		),
-	)
-	options = append(options, option)
+func setDialOptions() []grpc.DialOption {
+    var options []grpc.DialOption
 
-	return options
+    option := grpc.WithChainUnaryInterceptor(
+        interceptor.UnaryClientLog( // set unary client logging
+            logger.Get(),
+            interceptor.WithReplaceGRPCLogger(),
+        ),
+    )
+    options = append(options, option)
+
+    return options
 }
 
 // you can also set stream client logging
@@ -61,403 +79,450 @@ func getDialOptions() []grpc.DialOption {
 
 <br>
 
-#### recovery
+#### Recovery interceptor
 
-**server-side gRPC**
+**gRPC server side**
 
 ```go
-func getServerOptions() []grpc.ServerOption {
-	var options []grpc.ServerOption
+import (
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    "google.golang.org/grpc"
+)
 
-	option := grpc.ChainUnaryInterceptor(
-		interceptor.UnaryServerRecovery(),
-	)
-	options = append(options, option)
+func setServerOptions() []grpc.ServerOption {
+    var options []grpc.ServerOption
 
-	return options
+    option := grpc.ChainUnaryInterceptor(
+        interceptor.UnaryServerRecovery(),
+    )
+    options = append(options, option)
+
+    return options
 }
 ```
 
-**client-side gRPC**
+**gRPC client side**
 
 ```go
-func getDialOptions() []grpc.DialOption {
-	var options []grpc.DialOption
+import (
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    "google.golang.org/grpc"
+)
 
-	option := grpc.WithChainUnaryInterceptor(
-		interceptor.UnaryClientRecovery(),
-	)
-	options = append(options, option)
+func setDialOptions() []grpc.DialOption {
+    var options []grpc.DialOption
 
-	return options
-}
-```
+    option := grpc.WithChainUnaryInterceptor(
+        interceptor.UnaryClientRecovery(),
+    )
+    options = append(options, option)
 
-<br>
-
-#### retry
-
-**client-side gRPC**
-
-```go
-func getDialOptions() []grpc.DialOption {
-	var options []grpc.DialOption
-
-	// use insecure transfer
-	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
-
-	// retry
-	option := grpc.WithChainUnaryInterceptor(
-		interceptor.UnaryClientRetry(
-			//middleware.WithRetryTimes(5), // modify the default number of retries to 3 by default
-			//middleware.WithRetryInterval(100*time.Millisecond), // modify the default retry interval, default 50 milliseconds
-			//middleware.WithRetryErrCodes(), // add trigger retry error code, default is codes.Internal, codes.DeadlineExceeded, codes.Unavailable
-		),
-	)
-	options = append(options, option)
-
-	return options
+    return options
 }
 ```
 
 <br>
 
-#### rate limiter
+#### Retry interceptor
 
-**server-side gRPC**
+**gRPC client side**
 
 ```go
-func getDialOptions() []grpc.DialOption {
-	var options []grpc.DialOption
+import (
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    "google.golang.org/grpc"
+)
 
-	// use insecure transfer
-	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func setDialOptions() []grpc.DialOption {
+    var options []grpc.DialOption
 
-	// rate limiter
-	option := grpc.ChainUnaryInterceptor(
-		interceptor.UnaryServerRateLimit(
-			//interceptor.WithWindow(time.Second*5),
-			//interceptor.WithBucket(200),
-			//interceptor.WithCPUThreshold(600),
-			//interceptor.WithCPUQuota(0),
-		),
-	)
-	options = append(options, option)
+    // use insecure transfer
+    options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-	return options
+    // retry
+    option := grpc.WithChainUnaryInterceptor(
+        interceptor.UnaryClientRetry(
+            //interceptor.WithRetryTimes(5), // modify the default number of retries to 3 by default
+            //interceptor.WithRetryInterval(100*time.Millisecond), // modify the default retry interval, default 50 milliseconds
+            //interceptor.WithRetryErrCodes(), // add trigger retry error code, default is codes.Internal, codes.DeadlineExceeded, codes.Unavailable
+        ),
+    )
+    options = append(options, option)
+
+    return options
 }
 ```
 
 <br>
 
-#### Circuit Breaker
+#### Rate limiter interceptor
 
-**server-side gRPC**
+Adaptive flow limitation based on hardware resources.
+
+**gRPC server side**
 
 ```go
-func getDialOptions() []grpc.DialOption {
-	var options []grpc.DialOption
+import (
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    "google.golang.org/grpc"
+)
 
-	// use insecure transfer
-	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func setDialOptions() []grpc.DialOption {
+    var options []grpc.DialOption
 
-	// circuit breaker
-	option := grpc.ChainUnaryInterceptor(
-		interceptor.UnaryServerCircuitBreaker(
-			//interceptor.WithValidCode(codes.DeadlineExceeded), // add error code 4 for circuit breaker
-			//interceptor.WithUnaryServerDegradeHandler(handler), // add custom degrade handler
-		),
-	)
-	options = append(options, option)
+    // use insecure transfer
+    options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-	return options
+    // rate limiter
+    option := grpc.ChainUnaryInterceptor(
+        interceptor.UnaryServerRateLimit(
+            //interceptor.WithWindow(time.Second*5),
+            //interceptor.WithBucket(200),
+            //interceptor.WithCPUThreshold(600),
+            //interceptor.WithCPUQuota(0),
+        ),
+    )
+    options = append(options, option)
+
+    return options
 }
 ```
 
 <br>
 
-#### timeout
+#### Circuit breaker interceptor
 
-**client-side gRPC**
+**gRPC server side**
 
 ```go
-func getDialOptions() []grpc.DialOption {
-	var options []grpc.DialOption
+import (
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    "google.golang.org/grpc"
+)
 
-	// use insecure transfer
-	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func setDialOptions() []grpc.DialOption {
+    var options []grpc.DialOption
 
-	// timeout
-	option := grpc.WithChainUnaryInterceptor(
-		interceptor.UnaryClientTimeout(time.Second), // set timeout
-	)
-	options = append(options, option)
+    // use insecure transfer
+    options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-	return options
+    // circuit breaker
+    option := grpc.ChainUnaryInterceptor(
+        interceptor.UnaryServerCircuitBreaker(
+            //interceptor.WithValidCode(codes.DeadlineExceeded), // add error code for circuit breaker
+            //interceptor.WithUnaryServerDegradeHandler(handler), // add custom degrade handler
+        ),
+    )
+    options = append(options, option)
+
+    return options
 }
 ```
 
 <br>
 
-#### tracing
+#### Timeout interceptor
 
-**server-side gRPC**
+**gRPC client side**
 
 ```go
+import (
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    "google.golang.org/grpc"
+)
+
+func setDialOptions() []grpc.DialOption {
+    var options []grpc.DialOption
+
+    // use insecure transfer
+    options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+    option := grpc.WithChainUnaryInterceptor(
+        interceptor.UnaryClientTimeout(time.Second), // set timeout
+    )
+    options = append(options, option)
+
+    return options
+}
+```
+
+<br>
+
+#### Tracing interceptor
+
+**Initialize tracing**
+
+```go
+import (
+    "github.com/go-dev-frame/sponge/pkg/tracer"
+    "go.opentelemetry.io/otel"
+)
+
 // initialize tracing
 func InitTrace(serviceName string) {
-	exporter, err := tracer.NewJaegerAgentExporter("192.168.3.37", "6831")
-	if err != nil {
-		panic(err)
-	}
+    exporter, err := tracer.NewJaegerAgentExporter("192.168.3.37", "6831")
+    if err != nil {
+        panic(err)
+    }
 
-	resource := tracer.NewResource(
-		tracer.WithServiceName(serviceName),
-		tracer.WithEnvironment("dev"),
-		tracer.WithServiceVersion("demo"),
-	)
+    resource := tracer.NewResource(
+        tracer.WithServiceName(serviceName),
+        tracer.WithEnvironment("dev"),
+        tracer.WithServiceVersion("demo"),
+    )
 
-	tracer.Init(exporter, resource) // collect all by default
-}
-
-// set up trace on the client side
-func getDialOptions() []grpc.DialOption {
-	var options []grpc.DialOption
-
-	// use insecure transfer
-	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
-
-	// use tracing
-	option := grpc.WithUnaryInterceptor(
-		interceptor.UnaryClientTracing(),
-	)
-	options = append(options, option)
-
-	return options
-}
-
-// set up trace on the server side
-func getServerOptions() []grpc.ServerOption {
-	var options []grpc.ServerOption
-
-	// use tracing
-	option := grpc.UnaryInterceptor(
-		interceptor.UnaryServerTracing(),
-	)
-	options = append(options, option)
-
-	return options
+    tracer.Init(exporter, resource) // collect all by default
 }
 
 // if necessary, you can create a span in the program
 func SpanDemo(serviceName string, spanName string, ctx context.Context) {
-	_, span := otel.Tracer(serviceName).Start(
-		ctx, spanName,
-		trace.WithAttributes(attribute.String(spanName, time.Now().String())), // customised attributes
-	)
-	defer span.End()
+_, span := otel.Tracer(serviceName).Start(
+ctx, spanName,
+trace.WithAttributes(attribute.String(spanName, time.Now().String())), // customised attributes
+)
+defer span.End()
 
-	// ......
+// ......
 }
 ```
 
-<br>
-
-#### metrics
-
-example [metrics](../metrics/README.md).
-
-<br>
-
-#### Request id
-
-**server-side gRPC**
+**gRPC server side**
 
 ```go
-func getServerOptions() []grpc.ServerOption {
-	var options []grpc.ServerOption
+import (
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    "google.golang.org/grpc"
+)
 
-	option := grpc.ChainUnaryInterceptor(
-		interceptor.UnaryServerRequestID(),
-	)
-	options = append(options, option)
+func setServerOptions() []grpc.ServerOption {
+    var options []grpc.ServerOption
 
-	return options
+    // use tracing
+    option := grpc.UnaryInterceptor(
+        interceptor.UnaryServerTracing(),
+    )
+    options = append(options, option)
+
+    return options
 }
 ```
 
-<br>
-
-**client-side gRPC**
+**gRPC client side**
 
 ```go
-func getDialOptions() []grpc.DialOption {
-	var options []grpc.DialOption
+import (
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    "google.golang.org/grpc"
+)
 
-	// use insecure transfer
-	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func setDialOptions() []grpc.DialOption {
+    var options []grpc.DialOption
 
-	option := grpc.WithChainUnaryInterceptor(
-		interceptor.UnaryClientRequestID(),
-	)
-	options = append(options, option)
+    // use insecure transfer
+    options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-	return options
+    // use tracing
+    option := grpc.WithUnaryInterceptor(
+        interceptor.UnaryClientTracing(),
+    )
+    options = append(options, option)
+
+    return options
 }
 ```
 
 <br>
 
-#### jwt authentication
+#### Metrics interceptor
 
-JWT supports two verification methods:
+Click to view [metrics examples](../metrics/README.md).
 
-- The default verification method includes fixed fields `uid` and `name` in the claim, and supports additional custom verification functions.
-- The custom verification method allows users to define the claim themselves and also supports additional custom verification functions.
+<br>
 
-**client-side gRPC**
+#### Request id interceptor
+
+**gRPC server side**
+
+```go
+import (
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    "google.golang.org/grpc"
+)
+
+func setServerOptions() []grpc.ServerOption {
+    var options []grpc.ServerOption
+
+    option := grpc.ChainUnaryInterceptor(
+        interceptor.UnaryServerRequestID(),
+    )
+    options = append(options, option)
+
+    return options
+}
+```
+
+<br>
+
+**gRPC client side**
+
+```go
+import (
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    "google.golang.org/grpc"
+)
+
+func setDialOptions() []grpc.DialOption {
+    var options []grpc.DialOption
+
+    // use insecure transfer
+    options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+    option := grpc.WithChainUnaryInterceptor(
+        interceptor.UnaryClientRequestID(),
+    )
+    options = append(options, option)
+
+    return options
+}
+```
+
+<br>
+
+#### JWT authentication interceptor
+
+**gRPC server side**
 
 ```go
 package main
 
 import (
-	"context"
-	"github.com/go-dev-frame/sponge/pkg/jwt"
-	"github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
-	"github.com/go-dev-frame/sponge/pkg/grpc/grpccli"
-	userV1 "user/api/user/v1"
+    "context"
+    "net"
+    "time"
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    "github.com/go-dev-frame/sponge/pkg/jwt"
+    "google.golang.org/grpc"
+    userV1 "user/api/user/v1"
 )
 
 func main() {
-	ctx := context.Background()
-	conn, _ := grpccli.NewClient("127.0.0.1:8282")
-	cli := userV1.NewUserClient(conn)
-
-	token := "xxxxxx" // no Bearer prefix
-	ctx = interceptor.SetJwtTokenToCtx(ctx, token)
-
-	req := &userV1.GetUserByIDRequest{Id: 100}
-	cli.GetByID(ctx, req)
-}
-```
-
-**server-side gRPC**
-
-```go
-package main
-
-import (
-	"context"
-	"net"
-	"github.com/go-dev-frame/sponge/pkg/jwt"
-	"github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
-	"google.golang.org/grpc"
-	userV1 "user/api/user/v1"
-)
-
-func main()  {
-	list, err := net.Listen("tcp", ":8282")
-	server := grpc.NewServer(getUnaryServerOptions()...)
-	userV1.RegisterUserServer(server, &user{})
-	server.Serve(list)
-	select{}
+    list, err := net.Listen("tcp", ":8282")
+    server := grpc.NewServer(getUnaryServerOptions()...)
+    userV1.RegisterUserServer(server, &user{})
+    server.Serve(list)
+    select {}
 }
 
 func getUnaryServerOptions() []grpc.ServerOption {
-	var options []grpc.ServerOption
+    var options []grpc.ServerOption
 
-	// other interceptors ...
+    // Case1: default options
+    {
+        options = append(options, grpc.UnaryInterceptor(
+            interceptor.UnaryServerJwtAuth(),
+        ))
+    }
 
-	options = append(options, grpc.UnaryInterceptor(
-	    interceptor.UnaryServerJwtAuth(
-	        // Choose to use one of the following 4 authorization
-			
-	        // Case 1: default authorization
-	        // interceptor.WithDefaultVerify(), // can be ignored
-	        // default authorization with extra verification
-	        // interceptor.WithDefaultVerify(extraDefaultVerifyFn),
+    // Case 2: custom options, signKey, extra verify function, rpc method
+    {
+        options = append(options, grpc.UnaryInterceptor(
+            interceptor.UnaryServerJwtAuth(
+                interceptor.WithSignKey([]byte("your_secret_key")),
+                interceptor.WithExtraVerify(extraVerifyFn),
+                interceptor.WithAuthIgnoreMethods(// specify the gRPC API to ignore token verification(full path)
+                    "/api.user.v1.User/Register",
+                    "/api.user.v1.User/Login",
+                ),
+            ),
+        ))
+    }
 
-	        // Case 2: custom authorization
-	        // interceptor.WithCustomVerify(),
-	        // custom authorization with extra verification
-	        // interceptor.WithCustomVerify(extraCustomVerifyFn),
-
-	        // specify the gRPC API to ignore token verification(full path)
-	        interceptor.WithAuthIgnoreMethods(
-	            "/api.user.v1.User/Register",
-	            "/api.user.v1.User/Login",
-	        ),
-	    ),
-	))
-
-	return options
+    return options
 }
 
-
 type user struct {
-	userV1.UnimplementedUserServer
+    userV1.UnimplementedUserServer
 }
 
 // Login ...
 func (s *user) Login(ctx context.Context, req *userV1.LoginRequest) (*userV1.LoginReply, error) {
-	// check user and password success
+    // check user and password success
 
-	// Case 1: default authorization
-	token, err := jwt.GenerateToken("123", "admin")
-	
-	// Case 2: custom authorization
-	fields := jwt.KV{"id": uint64(100), "name": "tom", "age": 10}
-	token, err := jwt.GenerateCustomToken(fields)
+    uid := "100"
+    fields := map[string]interface{}{"name":   "bob","age":    10,"is_vip": true}
 
-	return &userV1.LoginReply{Token: token},nil
+    // Case 1: default jwt options, signKey, signMethod(HS256), expiry time(24 hour)
+    {
+        _, token, err := jwt.GenerateToken("100")
+    }
+
+    // Case 2: custom jwt options, signKey, signMethod(HS512), expiry time(12 hour), fields, claims
+    {
+        _, token, err := jwt.GenerateToken(
+            uid,
+            jwt.WithGenerateTokenSignKey([]byte("your_secret_key")),
+            jwt.WithGenerateTokenSignMethod(jwt.HS384),
+            jwt.WithGenerateTokenFields(fields),
+            jwt.WithGenerateTokenClaims([]jwt.RegisteredClaimsOption{
+                jwt.WithExpires(time.Hour * 12),
+                // jwt.WithIssuedAt(now),
+                // jwt.WithSubject("123"),
+                // jwt.WithIssuer("https://auth.example.com"),
+                // jwt.WithAudience("https://api.example.com"),
+                // jwt.WithNotBefore(now),
+                // jwt.WithJwtID("abc1234xxx"),
+            }...),
+        )
+    }
+
+    return &userV1.LoginReply{Token: token}, nil
 }
 
-// GetByID ...
-func (s *user) GetByID(ctx context.Context, req *userV1.GetUserByIDRequest) (*userV1.GetUserByIDReply, error) {
-	// if token is valid, won't get here, because the interceptor has returned an error message 
+func extraVerifyFn(ctx context.Context, claims *jwt.Claims) error {
+    // judge whether the user is disabled, query whether jwt id exists from the blacklist
+    //if CheckBlackList(uid, claims.ID) {
+    //    return errors.New("user is disabled")
+    //}
 
-	// if you want get jwt claims, you can use the following code
-	// Case 1: default authorization
-	claims, err := interceptor.GetJwtClaims(ctx)
-	
-	// Case 2: custom authorization
-	customClaims, err := interceptor.GetJwtCustomClaims(ctx)
-	
-	// ......
+    // get fields from claims
+    //uid := claims.UID
+    //name, _ := claims.GetString("name")
+    //age, _ := claims.GetInt("age")
+    //isVip, _ := claims.GetBool("is_vip")
 
-	return &userV1.GetUserByIDReply{},nil
+    return nil
 }
+```
 
-func extraDefaultVerifyFn(claims *jwt.Claims, tokenTail10 string) error {
-	// In addition to jwt certification, additional checks can be customized here.
+**gRPC client side**
 
-	// err := errors.New("verify failed")
-	// if claims.Name != "admin" {
-	//     return err
-	// }
-	// token := getToken(claims.UID) // from cache or database
-	// if tokenTail10 != token[len(token)-10:] { return err }
+```go
+package main
 
-	return nil
-}
+import (
+    "context"
+    "github.com/go-dev-frame/sponge/pkg/grpc/grpccli"
+    "github.com/go-dev-frame/sponge/pkg/grpc/interceptor"
+    userV1 "user/api/user/v1"
+)
 
-func extraCustomVerifyFn(claims *jwt.CustomClaims, tokenTail10 string) error {
-	// In addition to jwt certification, additional checks can be customized here.
+func main() {
+    conn, _ := grpccli.NewClient("127.0.0.1:8282")
+    cli := userV1.NewUserClient(conn)
 
-	// err := errors.New("verify failed")
-	// token, fields := getToken(id) // from cache or database
-	// if tokenTail10 != token[len(token)-10:] { return err }
+    uid := "100"
+    ctx := context.Background()
 
-	// id, exist := claims.GetUint64("id")
-	// if !exist || id != fields["id"].(uint64) { return err }
+    // Case 1: get authorization from header key is "authorization", value is "Bearer xxx"
+    {
+        ctx = interceptor.SetAuthToCtx(ctx, authorization)
+    }
+    // Case 2: get token from grpc server response result
+    {
+        ctx = interceptor.SetJwtTokenToCtx(ctx, token)
+    }
 
-	// name, exist := claims.GetString("name")
-	// if !exist || name != fields["name"].(string) { return err }
-
-	// age, exist := claims.GetInt("age")
-	// if !exist || age != fields["age"].(int) { return err }
-
-	return nil
+    cli.GetByID(ctx, &userV1.GetUserByIDRequest{Id: 100})
 }
 ```
 
