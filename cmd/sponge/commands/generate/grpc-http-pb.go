@@ -11,7 +11,7 @@ import (
 	"github.com/go-dev-frame/sponge/pkg/replacer"
 )
 
-// GRPCAndHTTPPbCommand generate grpc+http service code bash on protobuf file
+// GRPCAndHTTPPbCommand generate grpc+http servers code based on protobuf file
 func GRPCAndHTTPPbCommand() *cobra.Command {
 	var (
 		moduleName   string // module name for go.mod
@@ -26,15 +26,15 @@ func GRPCAndHTTPPbCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "grpc-http-pb",
-		Short: "Generate grpc+http service code based on protobuf file",
-		Long:  "Generate grpc+http service code based on protobuf file.",
-		Example: color.HiBlackString(`  # Generate grpc+http service code.
+		Short: "Generate grpc+http servers code based on protobuf file",
+		Long:  "Generate grpc+http servers code based on protobuf file.",
+		Example: color.HiBlackString(`  # Generate grpc+http servers code.
   sponge micro grpc-http-pb --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --protobuf-file=./demo.proto
 
-  # Generate grpc+http service code and specify the output directory, Note: code generation will be canceled when the latest generated file already exists.
+  # Generate grpc+http servers code and specify the output directory, Note: code generation will be canceled when the latest generated file already exists.
   sponge micro grpc-http-pb --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --protobuf-file=./demo.proto --out=./yourServerDir
 
-  # Generate grpc+http service code and specify the docker image repository address.
+  # Generate grpc+http servers code and specify the docker image repository address.
   sponge micro grpc-http-pb --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --repo-addr=192.168.3.37:9443/user-name --protobuf-file=./demo.proto
 
   # If you want the generated code to suited to mono-repo, you need to set the parameter --suited-mono-repo=true`),
@@ -52,21 +52,33 @@ func GRPCAndHTTPPbCommand() *cobra.Command {
 			}
 
 			g := &httpAndGRPCPbGenerator{
-				moduleName:   moduleName,
-				serverName:   serverName,
-				projectName:  projectName,
-				protobufFile: protobufFile,
-				repoAddr:     repoAddr,
-				outPath:      outPath,
-
-				suitedMonoRepo: suitedMonoRepo,
+				moduleName:        moduleName,
+				serverName:        serverName,
+				projectName:       projectName,
+				protobufFile:      protobufFile,
+				repoAddr:          repoAddr,
+				outPath:           outPath,
+				suitedMonoRepo:    suitedMonoRepo,
+				isHandleProtoFile: true,
 			}
-			err = g.generateCode()
+			outPath, err = g.generateCode()
 			if err != nil {
 				return err
 			}
 
 			_ = generateConfigmap(serverName, outPath)
+
+			fmt.Printf(`
+using help:
+  1. open a terminal and execute the command to generate code: make proto
+  2. open file internal/handler/xxx.go, replace panic("implement me") according to template code example.
+  3. compile and run server: make run
+  4. access http://localhost:8080/apis/swagger/index.html in your browser, and test the http api.
+     open the file "internal/service/xxx_client_test.go" using Goland or VSCode, and test the grpc api.
+
+`)
+			fmt.Printf("generate %s's grpc+http servers code successfully, out = %s\n", g.serverName, outPath)
+
 			return nil
 		},
 	}
@@ -87,26 +99,43 @@ func GRPCAndHTTPPbCommand() *cobra.Command {
 }
 
 type httpAndGRPCPbGenerator struct {
-	moduleName   string
-	serverName   string
-	projectName  string
-	protobufFile string
-	repoAddr     string
-	outPath      string
+	moduleName        string
+	serverName        string
+	projectName       string
+	protobufFile      string
+	repoAddr          string
+	outPath           string
+	suitedMonoRepo    bool
+	isHandleProtoFile bool
 
-	suitedMonoRepo bool
+	// grpc+http servers code generation related
+	isAddDBInitCode    bool
+	dbDriver           string
+	extraReplaceFields []replacer.Field
 }
 
-func (g *httpAndGRPCPbGenerator) generateCode() error {
-	protobufFiles, isImportTypes, err := parseProtobufFiles(g.protobufFile)
-	if err != nil {
-		return err
+func (g *httpAndGRPCPbGenerator) generateCode() (string, error) {
+	var (
+		protobufFiles []string
+		isImportTypes bool
+		err           error
+	)
+	if g.isHandleProtoFile {
+		protobufFiles, isImportTypes, err = parseProtobufFiles(g.protobufFile)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		isImportTypes = true
 	}
 
-	subTplName := codeNameGRPCHTTP
+	subTplName := codeNameGRPCHTTPPb
+	if g.isAddDBInitCode {
+		subTplName = codeNameGRPCHTTP
+	}
 	r := Replacers[TplNameSponge]
 	if r == nil {
-		return errors.New("replacer is nil")
+		return "", errors.New("replacer is nil")
 	}
 
 	// specify the subdirectory and files
@@ -143,6 +172,12 @@ func (g *httpAndGRPCPbGenerator) generateCode() error {
 			"service.go", "service_test.go",
 		},
 	}
+	if g.isAddDBInitCode {
+		err = SetSelectFiles(g.dbDriver, selectFiles)
+		if err != nil {
+			return "", err
+		}
+	}
 
 	if g.suitedMonoRepo {
 		subDirs = removeElements(subDirs, "sponge/third_party")
@@ -163,25 +198,18 @@ func (g *httpAndGRPCPbGenerator) generateCode() error {
 	fields := g.addFields(r)
 	r.SetReplacementFields(fields)
 	if err = r.SaveFiles(); err != nil {
-		return err
+		return "", err
 	}
 
-	if err = saveProtobufFiles(g.moduleName, g.serverName, g.suitedMonoRepo, r.GetOutputDir(), protobufFiles); err != nil {
-		return err
+	if g.isHandleProtoFile {
+		if err = saveProtobufFiles(g.moduleName, g.serverName, g.suitedMonoRepo, r.GetOutputDir(), protobufFiles); err != nil {
+			return "", err
+		}
 	}
+
 	_ = saveGenInfo(g.moduleName, g.serverName, g.suitedMonoRepo, r.GetOutputDir())
 
-	fmt.Printf(`
-using help:
-  1. open a terminal and execute the command to generate code: make proto
-  2. open file internal/handler/xxx.go, replace panic("implement me") according to template code example.
-  3. compile and run service: make run
-  4. visit http://localhost:8080/apis/swagger/index.html in your browser, and test the http api.
-     open the file "internal/service/xxx_client_test.go" using Goland or VS Code, and test the grpc api.
-
-`)
-	fmt.Printf("generate %s's grpc+http service code successfully, out = %s\n", g.serverName, r.GetOutputDir())
-	return nil
+	return r.GetOutputDir(), nil
 }
 
 func (g *httpAndGRPCPbGenerator) addFields(r replacer.Replacer) []replacer.Field {
@@ -201,9 +229,14 @@ func (g *httpAndGRPCPbGenerator) addFields(r replacer.Replacer) []replacer.Field
 	fields = append(fields, deleteFieldsMark(r, gitIgnoreFile, wellStartMark, wellEndMark)...)
 	fields = append(fields, deleteAllFieldsMark(r, protoShellFile, wellStartMark, wellEndMark)...)
 	fields = append(fields, deleteAllFieldsMark(r, appConfigFile, wellStartMark, wellEndMark)...)
-	//fields = append(fields, deleteFieldsMark(r, deploymentConfigFile, wellStartMark, wellEndMark)...)
+
+	if g.isAddDBInitCode {
+		fields = append(fields, deleteFieldsMark(r, databaseInitDBFile, startMark, endMark)...)
+		undeterminedDBDriver = g.dbDriver
+	}
+
 	fields = append(fields, replaceFileContentMark(r, readmeFile,
-		setReadmeTitle(g.moduleName, g.serverName, codeNameGRPCHTTP, g.suitedMonoRepo))...)
+		setReadmeTitle(g.moduleName, g.serverName, codeNameGRPCHTTPPb, g.suitedMonoRepo))...)
 	fields = append(fields, []replacer.Field{
 		{ // replace the configuration of the *.yml file
 			Old: appConfigFileMark,
@@ -213,10 +246,6 @@ func (g *httpAndGRPCPbGenerator) addFields(r replacer.Replacer) []replacer.Field
 			Old: appConfigFileMark2,
 			New: getDBConfigCode(undeterminedDBDriver),
 		},
-		//{ // replace the contents of the model/init.go file
-		//	Old: modelInitDBFileMark,
-		//	New: getInitDBCode(DBDriverMysql), // default is mysql
-		//},
 		{ // replace the contents of the Dockerfile file
 			Old: dockerFileMark,
 			New: dockerFileGrpcCode,
@@ -237,10 +266,6 @@ func (g *httpAndGRPCPbGenerator) addFields(r replacer.Replacer) []replacer.Field
 			Old: dockerComposeFileMark,
 			New: dockerComposeFileGrpcCode,
 		},
-		//{ // replace the contents of the *-configmap.yml file
-		//	Old: deploymentConfigFileMark,
-		//	New: getDBConfigCode(DBDriverMysql, true),
-		//},
 		{ // replace the contents of the *-deployment.yml file
 			Old: k8sDeploymentFileMark,
 			New: k8sDeploymentFileGrpcCode,
@@ -337,10 +362,14 @@ func (g *httpAndGRPCPbGenerator) addFields(r replacer.Replacer) []replacer.Field
 		},
 	}...)
 
+	if g.isAddDBInitCode {
+		fields = append(fields, g.extraReplaceFields...)
+	}
+
 	fields = append(fields, getGRPCServiceFields()...)
 
 	if g.suitedMonoRepo {
-		fs := serverCodeFields(codeNameGRPCHTTP, g.moduleName, g.serverName)
+		fs := serverCodeFields(codeNameGRPCHTTPPb, g.moduleName, g.serverName)
 		fields = append(fields, fs...)
 	}
 

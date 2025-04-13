@@ -77,8 +77,8 @@ func newRPCClient(addr string, unaryClientInterceptors []grpc.UnaryClientInterce
 	return NewGreeterClient(conn)
 }
 
-func sayHelloMethod(client GreeterClient) error {
-	resp, err := client.SayHello(context.Background(), &HelloRequest{Name: "foo"})
+func sayHelloMethod(ctx context.Context, client GreeterClient) error {
+	resp, err := client.SayHello(ctx, &HelloRequest{Name: "foo"})
 	if err != nil {
 		return err
 	}
@@ -87,8 +87,8 @@ func sayHelloMethod(client GreeterClient) error {
 	return nil
 }
 
-func discussHelloMethod(client GreeterClient) error {
-	stream, err := client.DiscussHello(context.Background())
+func discussHelloMethod(ctx context.Context, client GreeterClient) error {
+	stream, err := client.DiscussHello(ctx)
 	if err != nil {
 		return err
 	}
@@ -527,21 +527,21 @@ func TestUnaryClientRequestID(t *testing.T) {
 	addr := newUnaryRPCServer()
 	time.Sleep(time.Millisecond * 200)
 	cli := newUnaryRPCClient(addr, UnaryClientRequestID())
-	_ = sayHelloMethod(cli)
+	_ = sayHelloMethod(context.Background(), cli)
 }
 
 func TestUnaryServerRequestID(t *testing.T) {
 	addr := newUnaryRPCServer(UnaryServerRequestID())
 	time.Sleep(time.Millisecond * 200)
 	cli := newUnaryRPCClient(addr)
-	_ = sayHelloMethod(cli)
+	_ = sayHelloMethod(context.Background(), cli)
 }
 
 func TestStreamClientRequestID(t *testing.T) {
 	addr := newStreamRPCServer()
 	time.Sleep(time.Millisecond * 200)
 	cli := newStreamRPCClient(addr, StreamClientRequestID())
-	_ = discussHelloMethod(cli)
+	_ = discussHelloMethod(context.Background(), cli)
 	time.Sleep(time.Millisecond)
 }
 
@@ -549,7 +549,7 @@ func TestStreamServerRequestID(t *testing.T) {
 	addr := newStreamRPCServer(StreamServerRequestID())
 	time.Sleep(time.Millisecond * 200)
 	cli := newStreamRPCClient(addr)
-	_ = discussHelloMethod(cli)
+	_ = discussHelloMethod(context.Background(), cli)
 	time.Sleep(time.Millisecond)
 }
 

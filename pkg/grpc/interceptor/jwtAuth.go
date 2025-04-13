@@ -20,7 +20,7 @@ import (
 //
 // authorization := "Bearer jwt-token"
 //
-//	ctx := SetJwtTokenToCtx(ctx, authorization)
+//	ctx := SetJwtTokenToCtx(ctx, jwt-token)
 //	cli.GetByID(ctx, req)
 func SetJwtTokenToCtx(ctx context.Context, token string) context.Context {
 	md, ok := metadata.FromOutgoingContext(ctx)
@@ -72,16 +72,8 @@ func GetAuthCtxKey() string {
 	return authCtxClaimsName
 }
 
-// ExtraDefaultVerifyFn extra default verify function, tokenTail10 is the last 10 characters of the token.
-type ExtraDefaultVerifyFn = func(claims *jwt.Claims, tokenTail10 string) error
-
-// ExtraCustomVerifyFn extra custom verify function, tokenTail10 is the last 10 characters of the token.
-type ExtraCustomVerifyFn = func(claims *jwt.CustomClaims, tokenTail10 string) error
-
-const (
-	defaultAuthType = 1 // use default auth
-	customAuthType  = 2 // use custom auth
-)
+// ExtraVerifyFn extra verify function
+type ExtraVerifyFn = func(ctx context.Context, claims *jwt.Claims) error
 
 // AuthOption setting the Authentication Field
 type AuthOption func(*authOptions)
@@ -92,9 +84,8 @@ type authOptions struct {
 	ctxClaimsName string
 	ignoreMethods map[string]struct{}
 
-	authType        int
-	defaultVerifyFn ExtraDefaultVerifyFn
-	customVerifyFn  ExtraCustomVerifyFn
+	signKey       []byte // sign key for jwt
+	extraVerifyFn ExtraVerifyFn
 }
 
 func defaultAuthOptions() *authOptions {
@@ -102,8 +93,6 @@ func defaultAuthOptions() *authOptions {
 		authScheme:    authScheme,
 		ctxClaimsName: authCtxClaimsName,
 		ignoreMethods: make(map[string]struct{}), // ways to ignore forensics
-
-		authType: defaultAuthType,
 	}
 }
 
@@ -138,23 +127,17 @@ func WithAuthIgnoreMethods(fullMethodNames ...string) AuthOption {
 	}
 }
 
-// WithDefaultVerify set default verify type
-func WithDefaultVerify(fn ...ExtraDefaultVerifyFn) AuthOption {
+// WithSignKey set jwt sign key
+func WithSignKey(key []byte) AuthOption {
 	return func(o *authOptions) {
-		o.authType = defaultAuthType
-		if len(fn) > 0 {
-			o.defaultVerifyFn = fn[0]
-		}
+		o.signKey = key
 	}
 }
 
-// WithCustomVerify set custom verify type with extra verify function
-func WithCustomVerify(fn ...ExtraCustomVerifyFn) AuthOption {
+// WithExtraVerify set extra verify function
+func WithExtraVerify(fn ExtraVerifyFn) AuthOption {
 	return func(o *authOptions) {
-		o.authType = customAuthType
-		if len(fn) > 0 {
-			o.customVerifyFn = fn[0]
-		}
+		o.extraVerifyFn = fn
 	}
 }
 
@@ -166,45 +149,23 @@ func jwtVerify(ctx context.Context, opt *authOptions) (context.Context, error) {
 		opt = defaultAuthOptions()
 	}
 
-	token, err := grpc_auth.AuthFromMD(ctx, authScheme) // key is authScheme
+	tokenString, err := grpc_auth.AuthFromMD(ctx, authScheme) // key is authScheme
 	if err != nil {
-		return ctx, status.Errorf(codes.Unauthenticated, "authFromMD error: %v", err)
+		return ctx, status.Errorf(codes.Unauthenticated, "AuthFromMD error: %v", err)
 	}
 
-	if len(token) <= 100 {
-		return ctx, status.Errorf(codes.Unauthenticated, "authorization is illegal")
+	if len(tokenString) <= 100 {
+		return ctx, status.Errorf(codes.Unauthenticated, "token is illegal")
 	}
 
-	// custom claims verify
-	if opt.authType == customAuthType {
-		var claims *jwt.CustomClaims
-		claims, err = jwt.ParseCustomToken(token)
-		if err != nil {
-			return ctx, status.Errorf(codes.Unauthenticated, "use custom verify type, ParseCustomToken error: %v", err)
-		}
-		// extra custom verify function
-		if opt.customVerifyFn != nil {
-			tokenTail10 := token[len(token)-10:]
-			err = opt.customVerifyFn(claims, tokenTail10)
-			if err != nil {
-				return ctx, status.Errorf(codes.Unauthenticated, "customVerifyFn error: %v", err)
-			}
-		}
-		newCtx := context.WithValue(ctx, authCtxClaimsName, claims) //nolint
-		return newCtx, nil
-	}
-
-	// default claims verify
-	claims, err := jwt.ParseToken(token)
+	claims, err := jwt.ValidateToken(tokenString, jwt.WithValidateTokenSignKey(opt.signKey))
 	if err != nil {
-		return ctx, status.Errorf(codes.Unauthenticated, "use default verify type, %v", err)
+		return ctx, status.Errorf(codes.Unauthenticated, "%v", err)
 	}
-	if opt.defaultVerifyFn != nil {
-		tokenTail10 := token[len(token)-10:]
-		// extra default verify function
-		err = opt.defaultVerifyFn(claims, tokenTail10)
+	if opt.extraVerifyFn != nil {
+		err = opt.extraVerifyFn(ctx, claims)
 		if err != nil {
-			return ctx, status.Errorf(codes.Unauthenticated, "verifyFn error: %v", err)
+			return ctx, status.Errorf(codes.Unauthenticated, "extra verification fails: %v", err)
 		}
 	}
 	newCtx := context.WithValue(ctx, authCtxClaimsName, claims) //nolint
@@ -214,12 +175,6 @@ func jwtVerify(ctx context.Context, opt *authOptions) (context.Context, error) {
 // GetJwtClaims get the jwt default claims from context, contains fixed fields uid and name
 func GetJwtClaims(ctx context.Context) (*jwt.Claims, bool) {
 	v, ok := ctx.Value(authCtxClaimsName).(*jwt.Claims)
-	return v, ok
-}
-
-// GetJwtCustomClaims get the jwt custom claims from context, contains custom fields
-func GetJwtCustomClaims(ctx context.Context) (*jwt.CustomClaims, bool) {
-	v, ok := ctx.Value(authCtxClaimsName).(*jwt.CustomClaims)
 	return v, ok
 }
 
@@ -273,20 +228,4 @@ func StreamServerJwtAuth(opts ...AuthOption) grpc.StreamServerInterceptor {
 		wrapped.WrappedContext = newCtx
 		return handler(srv, wrapped)
 	}
-}
-
-// ----------------------------------------------------
-
-// StandardVerifyFn default verify function, tokenTail10 is the last 10 characters of the token.
-// Deprecated: use ExtraDefaultVerifyFn instead.
-type StandardVerifyFn = ExtraDefaultVerifyFn
-
-// CustomVerifyFn custom verify function, tokenTail10 is the last 10 characters of the token.
-// Deprecated: use ExtraCustomVerifyFn instead.
-type CustomVerifyFn = ExtraCustomVerifyFn
-
-// WithStandardVerify set default verify type with extra verify function
-// Deprecated: use WithExtraDefaultVerify instead.
-func WithStandardVerify(fn StandardVerifyFn) AuthOption {
-	return WithDefaultVerify(fn)
 }

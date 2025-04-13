@@ -13,6 +13,7 @@
 
 </div>
 
+<<<<<<< HEAD
 ## 当前版本为魔改 restful 版本，具体用法请看 [官方文档](https://github.com/zhufuyi/sponge)
 
 // 注意 暂时实现 http web 版本，  pb 版本没测试

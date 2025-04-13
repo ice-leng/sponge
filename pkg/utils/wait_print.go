@@ -48,8 +48,8 @@ func (p *WaitPrinter) LoopPrint(runningTip string) {
 				index++
 				if index >= len(symbols) {
 					index = 0
-					p.clearCurrentLine()
 				}
+				p.clearCurrentLine()
 				fmt.Printf("\r%s", symbols[index])
 			}
 		}
@@ -70,9 +70,6 @@ func (p *WaitPrinter) StopPrint(tip string) {
 
 	p.cancel()
 	p.clearCurrentLine()
-	if tip == "" {
-		return
-	}
 	fmt.Println(tip)
 }
 

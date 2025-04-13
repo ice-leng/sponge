@@ -103,8 +103,8 @@ func HandlerCommand() *cobra.Command {
 using help:
   1. move the folder "internal" to your project code folder.
   2. open a terminal and execute the command: make docs
-  3. compile and run service: make run
-  4. visit http://localhost:8080/swagger/index.html in your browser, and test the CRUD api interface.
+  3. compile and run server: make run
+  4. access http://localhost:8080/swagger/index.html in your browser, and test the CRUD api interface.
 
 `)
 			fmt.Printf("generate \"handler\" code successfully, out = %s\n", outPath)

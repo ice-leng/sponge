@@ -15,7 +15,7 @@ func init() {
 func {{.TableNameCamelFCL}}Router(group *gin.RouterGroup, h handler.{{.TableNameCamel}}Handler) {
 	g := group.Group("/{{.TableNameCamelFCL}}")
 
-	// All the following routes use jwt authentication, you also can use middleware.Auth(middleware.WithVerify(fn))
+	// All the following routes use jwt authentication, you also can use middleware.Auth(middleware.WithExtraVerify(fn))
 	//g.Use(middleware.Auth())
 
 	// If jwt authentication is not required for all routes, authentication middleware can be added

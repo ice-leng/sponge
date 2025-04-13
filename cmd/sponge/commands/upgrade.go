@@ -57,7 +57,7 @@ func runUpgrade(targetVersion string) (string, error) {
 	p.LoopPrint(runningTip)
 	err := runUpgradeCommand(targetVersion)
 	if err != nil {
-		p.StopPrint(failTip)
+		p.StopPrint(failTip + "\nError: " + err.Error())
 		return "", err
 	}
 	p.StopPrint(finishTip)
@@ -69,7 +69,7 @@ func runUpgrade(targetVersion string) (string, error) {
 	p.LoopPrint(runningTip)
 	ver, err := copyToTempDir(targetVersion)
 	if err != nil {
-		p.StopPrint(failTip)
+		p.StopPrint(failTip + "\nError: " + err.Error())
 		return "", err
 	}
 	p.StopPrint(finishTip)
@@ -81,7 +81,7 @@ func runUpgrade(targetVersion string) (string, error) {
 	p.LoopPrint(runningTip)
 	err = updateSpongeInternalPlugin(ver)
 	if err != nil {
-		p.StopPrint(failTip)
+		p.StopPrint(failTip + "\nError: " + err.Error())
 		return "", err
 	}
 	p.StopPrint(finishTip)

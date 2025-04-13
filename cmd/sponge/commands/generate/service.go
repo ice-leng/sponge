@@ -105,8 +105,8 @@ func ServiceCommand() *cobra.Command {
 using help:
   1. move the folders "api" and "internal" to your project code folder.
   2. open a terminal and execute the command to generate code: make proto
-  3. compile and run service: make run
-  4. open the file internal/service/xxx_client_test.go using Goland or VS Code, and test the grpc CRUD api.
+  3. compile and run server: make run
+  4. open the file internal/service/xxx_client_test.go using Goland or VSCode, and test the grpc CRUD api.
 
 `)
 			fmt.Printf("generate \"service\" code successfully, out = %s\n", outPath)

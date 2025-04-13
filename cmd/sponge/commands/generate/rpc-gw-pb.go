@@ -11,7 +11,7 @@ import (
 	"github.com/go-dev-frame/sponge/pkg/replacer"
 )
 
-// RPCGwPbCommand generate grpc gateway service code base on protobuf file
+// RPCGwPbCommand generate grpc gateway server code base on protobuf file
 func RPCGwPbCommand() *cobra.Command {
 	var (
 		moduleName   string // module name for go.mod
@@ -26,15 +26,15 @@ func RPCGwPbCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "rpc-gw-pb",
-		Short: "Generate grpc gateway service code based on protobuf file",
-		Long:  "Generate grpc gateway service code based on protobuf file.",
-		Example: color.HiBlackString(`  # Generate grpc gateway service code.
+		Short: "Generate grpc gateway server code based on protobuf file",
+		Long:  "Generate grpc gateway server code based on protobuf file.",
+		Example: color.HiBlackString(`  # Generate grpc gateway server code.
   sponge micro rpc-gw-pb --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --protobuf-file=./demo.proto
 
-  # Generate grpc gateway service code and specify the output directory, Note: code generation will be canceled when the latest generated file already exists.
+  # Generate grpc gateway server code and specify the output directory, Note: code generation will be canceled when the latest generated file already exists.
   sponge micro rpc-gw-pb --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --protobuf-file=./demo.proto --out=./yourServerDir
 
-  # Generate grpc gateway service code and specify the docker image repository address.
+  # Generate grpc gateway server code and specify the docker image repository address.
   sponge micro rpc-gw-pb --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --repo-addr=192.168.3.37:9443/user-name --protobuf-file=./demo.proto
 
   # If you want the generated code to suited to mono-repo, you need to set the parameter --suited-mono-repo=true`),
@@ -174,11 +174,11 @@ func (g *rpcGwPbGenerator) generateCode() error {
 using help:
   1. open a terminal and execute the command to generate code: make proto
   2. open internal/service/xxx.go file, replace panic("implement me") according to template code example.
-  3. compile and run service: make run
-  4. visit http://localhost:8080/apis/swagger/index.html in your browser, and test the http api.
+  3. compile and run server: make run
+  4. access http://localhost:8080/apis/swagger/index.html in your browser, and test the http api.
 
 `)
-	fmt.Printf("generate %s's grpc gateway service code successfully, out = %s\n", g.serverName, r.GetOutputDir())
+	fmt.Printf("generate %s's grpc gateway server code successfully, out = %s\n", g.serverName, r.GetOutputDir())
 
 	return nil
 }

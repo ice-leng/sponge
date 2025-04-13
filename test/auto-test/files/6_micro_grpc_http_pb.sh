@@ -1,7 +1,7 @@
 #!/bin/bash
 
 testServerName="user"
-testServerDir="6_micro_grpc_http_pb_${testServerName}"
+testServerDir="auto-06-micro-grpc-http-pb"
 protoServiceNameCamelFCL="userHybrid"
 projectName="edusys"
 

@@ -11,7 +11,7 @@ import (
 	"github.com/go-dev-frame/sponge/pkg/replacer"
 )
 
-// RPCPbCommand generate grpc service code bash on protobuf file
+// RPCPbCommand generate grpc server code based on protobuf file
 func RPCPbCommand() *cobra.Command {
 	var (
 		moduleName   string // module name for go.mod
@@ -26,15 +26,15 @@ func RPCPbCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "rpc-pb",
-		Short: "Generate grpc service code based on protobuf file",
-		Long:  "Generate grpc service code based on protobuf file.",
-		Example: color.HiBlackString(`  # Generate grpc service code.
+		Short: "Generate grpc server code based on protobuf file",
+		Long:  "Generate grpc server code based on protobuf file.",
+		Example: color.HiBlackString(`  # Generate grpc server code.
   sponge micro rpc-pb --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --protobuf-file=./demo.proto
 
-  # Generate grpc service code and specify the output directory, Note: code generation will be canceled when the latest generated file already exists.
+  # Generate grpc server code and specify the output directory, Note: code generation will be canceled when the latest generated file already exists.
   sponge micro rpc-pb --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --protobuf-file=./demo.proto --out=./yourServerDir
 
-  # Generate grpc service code and specify the docker image repository address.
+  # Generate grpc server code and specify the docker image repository address.
   sponge micro rpc-pb --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --repo-addr=192.168.3.37:9443/user-name --protobuf-file=./demo.proto
 
   # If you want the generated code to suited to mono-repo, you need to set the parameter --suited-mono-repo=true`),
@@ -170,11 +170,11 @@ func (g *rpcPbGenerator) generateCode() error {
 using help:
   1. open a terminal and execute the command to generate code: make proto
   2. open file "internal/service/xxx.go", replace panic("implement me") according to template code example.
-  3. compile and run service: make run
-  4. open the file "internal/service/xxx_client_test.go" using Goland or VS Code, and test the grpc api.
+  3. compile and run server: make run
+  4. open the file "internal/service/xxx_client_test.go" using Goland or VSCode, and test the grpc api.
 
 `)
-	fmt.Printf("generate %s's grpc service code successfully, out = %s\n", g.serverName, r.GetOutputDir())
+	fmt.Printf("generate %s's grpc server code successfully, out = %s\n", g.serverName, r.GetOutputDir())
 	return nil
 }
 

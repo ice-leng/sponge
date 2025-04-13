@@ -2,195 +2,170 @@ package interceptor
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 
 	"github.com/go-dev-frame/sponge/pkg/jwt"
-	"github.com/go-dev-frame/sponge/pkg/utils"
 )
 
 var (
-	expectedUid  = "100"
-	expectedName = "tom"
-
-	expectedFields = jwt.KV{"id": utils.StrToUint64(expectedUid), "name": expectedName, "age": 10}
+	uid    = "100"
+	fields = map[string]interface{}{
+		"name":   "bob",
+		"age":    10,
+		"is_vip": true,
+	}
+	jwtSignKey = []byte("your-secret-key")
 )
 
-func extraDefaultVerifyFn(claims *jwt.Claims, tokenTail10 string) error {
-	// token := getToken(claims.UID)
-	// if  token[len(token)-10:] != tokenTail10 { return err }
+func extraVerifyFn(ctx context.Context, claims *jwt.Claims) error {
+	// judge whether the user is disabled, query whether jwt id exists from the blacklist
+	//if CheckBlackList(uid, claims.ID) {
+	//	return errors.New("user is disabled")
+	//}
 
-	if claims.UID != expectedUid || claims.Name != expectedName {
-		return status.Error(codes.Unauthenticated, "id or name not match")
+	// check fields
+	if claims.UID != uid {
+		return fmt.Errorf("uid not match, expect %s, got %s", uid, claims.UID)
+	}
+	if name, _ := claims.GetString("name"); name != fields["name"] {
+		return fmt.Errorf("name not match, expect %s, got %s", fields["name"], name)
+	}
+	if age, _ := claims.GetInt("age"); age != fields["age"] {
+		return fmt.Errorf("age not match, expect %d, got %d", fields["age"], age)
+	}
+	if isVip, _ := claims.GetBool("is_vip"); isVip != fields["is_vip"] {
+		return fmt.Errorf("is_vip not match, expect %v, got %v", fields["is_vip"], isVip)
 	}
 
 	return nil
 }
 
-func extraCustomVerifyFn(claims *jwt.CustomClaims, tokenTail10 string) error {
-	err := status.Error(codes.Unauthenticated, "custom verify failed")
+func TestJwtAuth_Unary(t *testing.T) {
+	t.Run("default jwt_sign_key", func(t *testing.T) {
+		// run grpc server
+		addr := newUnaryRPCServer(
+			UnaryServerJwtAuth(),
+		)
+		time.Sleep(time.Millisecond * 200)
 
-	//token, fields := getToken(id)
-	// if  token[len(token)-10:] != tokenTail10 { return err }
+		// run grpc client and call rpc method
+		cli := newUnaryRPCClient(addr)
+		ctx := context.Background()
+		_, token, _ := jwt.GenerateToken(uid)
+		ctx = SetJwtTokenToCtx(ctx, token)
 
-	id, exist := claims.GetUint64("id")
-	if !exist || id != expectedFields["id"] {
-		return err
-	}
+		err := sayHelloMethod(ctx, cli)
+		assert.NoError(t, err)
+	})
 
-	name, exist := claims.GetString("name")
-	if !exist || name != expectedFields["name"] {
-		return err
-	}
+	t.Run("custom jwt_sign_key and claims", func(t *testing.T) {
+		// run grpc server
+		addr := newUnaryRPCServer(
+			UnaryServerJwtAuth(
+				WithSignKey(jwtSignKey),
+				WithExtraVerify(extraVerifyFn),
+				WithAuthIgnoreMethods(
+					"/api.user.v1.User/Register",
+					"/api.user.v1.User/Login",
+				),
+			),
+		)
+		time.Sleep(time.Millisecond * 200)
 
-	age, exist := claims.GetInt("age")
-	if !exist || age != expectedFields["age"] {
-		return err
-	}
+		// run grpc client and call rpc method
+		cli := newUnaryRPCClient(addr)
+		ctx := context.Background()
+		_, token, _ := jwt.GenerateToken(
+			uid,
+			jwt.WithGenerateTokenSignKey(jwtSignKey),
+			jwt.WithGenerateTokenSignMethod(jwt.HS384),
+			jwt.WithGenerateTokenFields(fields),
+			jwt.WithGenerateTokenClaims([]jwt.RegisteredClaimsOption{
+				jwt.WithExpires(time.Hour * 12),
+				//jwt.WithIssuedAt(now),
+				// jwt.WithSubject("123"),
+				// jwt.WithIssuer("https://auth.example.com"),
+				// jwt.WithAudience("https://api.example.com"),
+				// jwt.WithNotBefore(now),
+				// jwt.WithJwtID("abc1234xxx"),
+			}...),
+		)
+		ctx = SetJwtTokenToCtx(ctx, token)
 
-	return nil
+		err := sayHelloMethod(ctx, cli)
+		assert.NoError(t, err)
+	})
 }
 
-func TestJwtDefaultVerify(t *testing.T) {
-	jwt.Init()
+func TestJwtAuth_Stream(t *testing.T) {
+	t.Run("default jwt_sign_key", func(t *testing.T) {
+		// run grpc server
+		addr := newStreamRPCServer(
+			StreamServerJwtAuth(),
+		)
+		time.Sleep(time.Millisecond * 200)
+
+		// run grpc client and call rpc method
+		cli := newStreamRPCClient(addr)
+		ctx := context.Background()
+		_, token, _ := jwt.GenerateToken(uid)
+		ctx = SetJwtTokenToCtx(ctx, token)
+
+		err := discussHelloMethod(ctx, cli)
+		assert.NoError(t, err)
+	})
+
+	t.Run("custom jwt_sign_key and claims", func(t *testing.T) {
+		// run grpc server
+		addr := newStreamRPCServer(
+			StreamServerJwtAuth(
+				WithSignKey(jwtSignKey),
+				WithExtraVerify(extraVerifyFn),
+			),
+		)
+		time.Sleep(time.Millisecond * 200)
+
+		// run grpc client and call rpc method
+		cli := newStreamRPCClient(addr)
+		ctx := context.Background()
+		_, token, _ := jwt.GenerateToken(
+			uid,
+			jwt.WithGenerateTokenSignKey(jwtSignKey),
+			jwt.WithGenerateTokenSignMethod(jwt.HS384),
+			jwt.WithGenerateTokenFields(fields),
+			jwt.WithGenerateTokenClaims([]jwt.RegisteredClaimsOption{
+				jwt.WithExpires(time.Hour * 12),
+				//jwt.WithIssuedAt(now),
+				// jwt.WithSubject("123"),
+				// jwt.WithIssuer("https://auth.example.com"),
+				// jwt.WithAudience("https://api.example.com"),
+				// jwt.WithNotBefore(now),
+				// jwt.WithJwtID("abc1234xxx"),
+			}...),
+		)
+		ctx = SetJwtTokenToCtx(ctx, token)
+
+		err := discussHelloMethod(ctx, cli)
+		assert.NoError(t, err)
+	})
+}
+
+func TestJwtVerifyError(t *testing.T) {
+	// token illegal
 	ctx := context.Background()
-	token, _ := jwt.GenerateToken(expectedUid, expectedName)
-	opt := defaultAuthOptions()
-	opt.authType = defaultAuthType
-
-	// success test
-	ctx = metadata.NewIncomingContext(ctx, metadata.MD{headerAuthorize: []string{GetAuthorization(token)}})
-	newCtx, err := jwtVerify(ctx, nil)
-	assert.NoError(t, err)
-	claims, ok := GetJwtClaims(newCtx)
-	assert.True(t, ok)
-	assert.Equal(t, expectedUid, claims.UID)
-
-	// success test
-	ctx = metadata.NewIncomingContext(ctx, metadata.MD{headerAuthorize: []string{GetAuthorization(token)}})
-	opt.defaultVerifyFn = extraDefaultVerifyFn
-	newCtx, err = jwtVerify(ctx, opt)
-	assert.NoError(t, err)
-	claims, ok = GetJwtClaims(newCtx)
-	assert.True(t, ok)
-	assert.Equal(t, expectedUid, claims.UID)
-
 	authorization := []string{GetAuthorization("error token......")}
-	// authorization format error, missing token
-	ctx = metadata.NewIncomingContext(context.Background(), metadata.MD{headerAuthorize: authorization})
-	_, err = jwtVerify(ctx, nil)
+	ctx = metadata.NewIncomingContext(ctx, metadata.MD{headerAuthorize: authorization})
+	_, err := jwtVerify(ctx, nil)
 	assert.Error(t, err)
 
 	// authorization format error, missing Bearer
 	ctx = context.WithValue(context.Background(), headerAuthorize, authorization)
 	_, err = jwtVerify(ctx, nil)
-	assert.Error(t, err)
-}
-
-func TestJwtCustomVerify(t *testing.T) {
-	jwt.Init()
-	ctx := context.Background()
-	token, _ := jwt.GenerateCustomToken(expectedFields)
-	opt := defaultAuthOptions()
-	opt.authType = customAuthType
-
-	// success test
-	ctx = metadata.NewIncomingContext(ctx, metadata.MD{headerAuthorize: []string{GetAuthorization(token)}})
-	newCtx, err := jwtVerify(ctx, opt)
-	assert.NoError(t, err)
-	claims, ok := GetJwtCustomClaims(newCtx)
-	assert.True(t, ok)
-	assert.Equal(t, expectedName, claims.Fields["name"])
-
-	// success test
-	ctx = metadata.NewIncomingContext(ctx, metadata.MD{headerAuthorize: []string{GetAuthorization(token)}})
-	opt.customVerifyFn = extraCustomVerifyFn
-	newCtx, err = jwtVerify(ctx, opt)
-	assert.NoError(t, err)
-	claims, ok = GetJwtCustomClaims(newCtx)
-	assert.True(t, ok)
-	assert.Equal(t, expectedName, claims.Fields["name"])
-
-	authorization := []string{GetAuthorization("mock token......")}
-
-	// authorization format error, missing token
-	ctx = metadata.NewIncomingContext(context.Background(), metadata.MD{headerAuthorize: authorization})
-	_, err = jwtVerify(ctx, opt)
-	assert.Error(t, err)
-
-	// authorization format error, missing Bearer
-	ctx = context.WithValue(context.Background(), headerAuthorize, authorization)
-	_, err = jwtVerify(ctx, opt)
-	assert.Error(t, err)
-}
-
-func TestUnaryServerJwtAuth(t *testing.T) {
-	interceptor := UnaryServerJwtAuth(WithDefaultVerify())
-	assert.NotNil(t, interceptor)
-	interceptor = UnaryServerJwtAuth(WithDefaultVerify(extraDefaultVerifyFn))
-	assert.NotNil(t, interceptor)
-
-	// mock client ctx
-	jwt.Init()
-	token, _ := jwt.GenerateToken(expectedUid, expectedName)
-	ctx := metadata.NewIncomingContext(context.Background(), metadata.MD{headerAuthorize: []string{GetAuthorization(token)}})
-
-	_, err := interceptor(ctx, nil, unaryServerInfo, unaryServerHandler)
-	assert.NoError(t, err)
-
-	ctx = metadata.NewIncomingContext(context.Background(), metadata.MD{headerAuthorize: []string{GetAuthorization("error token......")}})
-	_, err = interceptor(ctx, nil, unaryServerInfo, unaryServerHandler)
-	assert.Error(t, err)
-}
-
-func TestUnaryServerJwtCustomAuth(t *testing.T) {
-	interceptor := UnaryServerJwtAuth(WithCustomVerify())
-	assert.NotNil(t, interceptor)
-	interceptor = UnaryServerJwtAuth(WithCustomVerify(extraCustomVerifyFn))
-	assert.NotNil(t, interceptor)
-
-	// mock client ctx
-	jwt.Init()
-	token, _ := jwt.GenerateCustomToken(expectedFields)
-	ctx := metadata.NewIncomingContext(context.Background(), metadata.MD{headerAuthorize: []string{GetAuthorization(token)}})
-
-	_, err := interceptor(ctx, nil, unaryServerInfo, unaryServerHandler)
-	assert.NoError(t, err)
-
-	ctx = metadata.NewIncomingContext(context.Background(), metadata.MD{headerAuthorize: []string{GetAuthorization("error token......")}})
-	_, err = interceptor(ctx, nil, unaryServerInfo, unaryServerHandler)
-	assert.Error(t, err)
-}
-
-func TestStreamServerJwtAuth(t *testing.T) {
-	interceptor := StreamServerJwtAuth()
-	assert.NotNil(t, interceptor)
-
-	jwt.Init()
-	token, _ := jwt.GenerateToken(expectedUid, expectedName)
-	ctx := metadata.NewIncomingContext(context.Background(), metadata.MD{headerAuthorize: []string{authScheme + " " + token}})
-	err := interceptor(nil, newStreamServer(ctx), streamServerInfo, streamServerHandler)
-	assert.NoError(t, err)
-
-	err = interceptor(nil, newStreamServer(context.Background()), streamServerInfo, streamServerHandler)
-	assert.Error(t, err)
-}
-
-func TestStreamServerJwtCustomAuth(t *testing.T) {
-	interceptor := StreamServerJwtAuth(WithCustomVerify())
-	assert.NotNil(t, interceptor)
-
-	jwt.Init()
-	token, _ := jwt.GenerateCustomToken(expectedFields)
-	ctx := metadata.NewIncomingContext(context.Background(), metadata.MD{headerAuthorize: []string{authScheme + " " + token}})
-	err := interceptor(nil, newStreamServer(ctx), streamServerInfo, streamServerHandler)
-	assert.NoError(t, err)
-
-	err = interceptor(nil, newStreamServer(context.Background()), streamServerInfo, streamServerHandler)
 	assert.Error(t, err)
 }
 
@@ -217,21 +192,15 @@ func TestAuthOptions(t *testing.T) {
 	o.apply(WithAuthIgnoreMethods("/metrics"))
 	assert.Equal(t, struct{}{}, o.ignoreMethods["/metrics"])
 
-	o.apply(WithDefaultVerify())
-	assert.Equal(t, defaultAuthType, o.authType)
-	o.apply(WithDefaultVerify(extraDefaultVerifyFn))
-	assert.Equal(t, defaultAuthType, o.authType)
-
-	o.apply(WithCustomVerify())
-	assert.Equal(t, customAuthType, o.authType)
-	o.apply(WithCustomVerify(extraCustomVerifyFn))
-	assert.Equal(t, customAuthType, o.authType)
+	o.apply(WithSignKey(jwtSignKey))
+	assert.Equal(t, jwtSignKey, o.signKey)
+	o.apply(WithExtraVerify(extraVerifyFn))
+	assert.NotNil(t, o.extraVerifyFn)
 }
 
 func TestSetJWTTokenToCtx(t *testing.T) {
-	jwt.Init()
 	ctx := context.Background()
-	token, _ := jwt.GenerateToken(expectedUid, expectedName)
+	_, token, _ := jwt.GenerateToken(uid)
 	expected := []string{GetAuthorization(token)}
 
 	ctx = SetJwtTokenToCtx(ctx, token)
@@ -240,9 +209,8 @@ func TestSetJWTTokenToCtx(t *testing.T) {
 }
 
 func TestSetAuthToCtx(t *testing.T) {
-	jwt.Init()
 	ctx := context.Background()
-	token, _ := jwt.GenerateToken(expectedUid, expectedName)
+	_, token, _ := jwt.GenerateToken(uid)
 	authorization := GetAuthorization(token)
 	expected := []string{authorization}
 

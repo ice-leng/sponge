@@ -98,7 +98,7 @@ func (g gRegistry) Deregister(ctx context.Context, service *registry.ServiceInst
 	return nil
 }
 
-func Test_grpcServer_getOptions(t *testing.T) {
+func Test_grpcServer_setOptions(t *testing.T) {
 	err := config.Init(configs.Path("serverNameExample.yml"))
 	if err != nil {
 		t.Fatal(err)

@@ -50,15 +50,19 @@ function checkResult() {
     fi
 }
 
-function printTestResult() {
-  local errCount=$1
-  local serverDir=$2
-  if [ ${errCount} -eq 0 ]; then
+serverRunSuccess="false"
+
+function checkAndPrintTestResult() {
+  if [ "$serverRunSuccess" == "true" ]; then
     echo -e "\n\n${colorGreen}--------------------- [${serverDir}] test result: passed ---------------------${markEnd}\n"
-  else
-    echo -e "\n\n${colorRed}--------------------- [${serverDir}] test result: failed ---------------------${markEnd}\n"
   fi
+  serverRunSuccess="false" # reset serverRunSuccess
 }
+
+function printTestFailed() {
+  echo -e "\n\n${colorRed}--------------------- [${serverDir}] test result: failed ---------------------${markEnd}\n"
+}
+
 
 function stopService() {
   local name=$1
@@ -92,12 +96,12 @@ function checkServiceStarted() {
     sleep 1
     pid=$(ps -ef | grep "${processMark}" | grep -v grep | awk '{print $2}')
     if [ "${pid}" != "" ]; then
-        printTestResult 0 $serverDir
+        serverRunSuccess="true"
         break
     fi
     (( timeCount++ ))
     if (( timeCount >= 20 )); then
-      printTestResult 1 $serverDir
+      printTestFailed
       return 1
     fi
   done
@@ -120,6 +124,7 @@ function runningHTTPService() {
   sleep 1
   stopService $name
   checkResult $?
+  checkAndPrintTestResult
 }
 
 function runningProtoService() {
@@ -140,6 +145,7 @@ function runningProtoService() {
   sleep 1
   stopService $name
   checkResult $?
+  checkAndPrintTestResult
 }
 
 # -------------------------------------------------------------------------------------------
@@ -384,8 +390,128 @@ function generate_grpc_mongodb() {
 
 # ---------------------------------------------------------------
 
+function generate_grpc_http_mysql() {
+  local serverName="mono_09_grpc_http_mysql"
+  local outDir="$serverName"
+  echo -e "\n\n"
+  echo -e "create service code to directory $outDir"
+  if [ -d "${outDir}" ]; then
+    echo -e "$outDir already exists\n\n"
+  else
+    echo -e "\n${colorCyan}sponge micro grpc-http --server-name=$serverName --module-name=$projectName --project-name=$projectName --db-driver=mysql --db-dsn=$mysqlDsn --db-table=$mysqlTable1 --embed=true --suited-mono-repo=true --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro grpc-http --server-name=$serverName --module-name=$projectName --project-name=$projectName --db-driver=mysql --db-dsn=$mysqlDsn --db-table=$mysqlTable1 --embed=true --suited-mono-repo=true --extended-api=$isExtended --out=$outDir
+    checkResult $?
+
+    echo -e "\n${colorCyan}sponge micro service-handler --db-driver=mysql --db-dsn=$mysqlDsn --db-table=$mysqlTable2,$mysqlTable3 --suited-mono-repo=true --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro service-handler --db-driver=mysql --db-dsn=$mysqlDsn --db-table=$mysqlTable2,$mysqlTable3 --suited-mono-repo=true --extended-api=$isExtended --out=$outDir
+    checkResult $?
+  fi
+
+  if [ "$isOnlyGenerateCode" == "true" ]; then
+    echo -e "\n\n"
+    return
+  fi
+
+  cd $outDir
+  runningProtoService $serverName $outDir
+  checkResult $?
+  sleep 1
+  cd -
+}
+
+function generate_grpc_http_postgresql() {
+  local serverName="mono_10_grpc_http_postgresql"
+  local outDir="$serverName"
+  echo -e "\n\n"
+  echo -e "create service code to directory $outDir"
+  if [ -d "${outDir}" ]; then
+    echo -e "$outDir already exists\n\n"
+  else
+    echo -e "\n${colorCyan}sponge micro grpc-http --server-name=$serverName --module-name=$projectName --project-name=$projectName --db-driver=postgresql --db-dsn=$postgresqlDsn --db-table=$postgresqlTable1 --embed=true --suited-mono-repo=true --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro grpc-http --server-name=$serverName --module-name=$projectName --project-name=$projectName --db-driver=postgresql --db-dsn=$postgresqlDsn --db-table=$postgresqlTable1 --embed=true --suited-mono-repo=true --extended-api=$isExtended --out=$outDir
+    checkResult $?
+
+    echo -e "\n${colorCyan}sponge micro service-handler --db-driver=postgresql --db-dsn=$postgresqlDsn --db-table=$postgresqlTable2,$postgresqlTable3 --suited-mono-repo=true --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro service-handler --db-driver=postgresql --db-dsn=$postgresqlDsn --db-table=$postgresqlTable2,$postgresqlTable3 --suited-mono-repo=true --extended-api=$isExtended --out=$outDir
+    checkResult $?
+  fi
+
+  if [ "$isOnlyGenerateCode" == "true" ]; then
+    echo -e "\n\n"
+    return
+  fi
+
+  cd $outDir
+  runningProtoService $serverName $outDir
+  checkResult $?
+  sleep 1
+  cd -
+}
+
+function generate_grpc_http_sqlite() {
+  local serverName="mono_11_grpc_http_sqlite"
+  local outDir="$serverName"
+  echo -e "\n\n"
+  echo -e "create service code to directory $outDir"
+  if [ -d "${outDir}" ]; then
+    echo -e "$outDir already exists\n\n"
+  else
+    echo -e "\n${colorCyan}sponge micro grpc-http --server-name=$serverName --module-name=$projectName --project-name=$projectName --db-driver=sqlite --db-dsn=$sqliteDsn --db-table=$sqliteTable1 --embed=true --suited-mono-repo=true --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro grpc-http --server-name=$serverName --module-name=$projectName --project-name=$projectName --db-driver=sqlite --db-dsn=$sqliteDsn --db-table=$sqliteTable1 --embed=true --suited-mono-repo=true --extended-api=$isExtended --out=$outDir
+    checkResult $?
+
+    echo -e "\n${colorCyan}sponge micro service-handler --db-driver=sqlite --db-dsn=$sqliteDsn --db-table=$sqliteTable2,$sqliteTable3 --suited-mono-repo=true --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro service-handler --db-driver=sqlite --db-dsn=$sqliteDsn --db-table=$sqliteTable2,$sqliteTable3 --suited-mono-repo=true --extended-api=$isExtended --out=$outDir
+    checkResult $?
+
+    sed -E -i 's/\\\\sql\\\\/\\\\\.\.\\\\\sql\\\\/g' ${outDir}/configs/${serverName}.yml
+  fi
+
+  if [ "$isOnlyGenerateCode" == "true" ]; then
+    echo -e "\n\n"
+    return
+  fi
+
+  cd $outDir
+  runningProtoService $serverName $outDir
+  checkResult $?
+  sleep 1
+  cd -
+}
+
+function generate_grpc_http_mongodb() {
+  local serverName="mono_12_grpc_http_mongodb"
+  local outDir="$serverName"
+  echo -e "\n\n"
+  echo -e "create service code to directory $outDir"
+  if [ -d "${outDir}" ]; then
+    echo -e "$outDir already exists\n\n"
+  else
+    echo -e "\n${colorCyan}sponge micro grpc-http --server-name=$serverName --module-name=$projectName --project-name=$projectName --db-driver=mongodb --db-dsn=$mongodbDsn --db-table=$mongodbCollection1 --suited-mono-repo=true --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro grpc-http --server-name=$serverName --module-name=$projectName --project-name=$projectName --db-driver=mongodb --db-dsn=$mongodbDsn --db-table=$mongodbCollection1 --suited-mono-repo=true --extended-api=$isExtended --out=$outDir
+    checkResult $?
+
+    echo -e "\n${colorCyan}sponge micro service-handler --db-driver=mongodb --db-dsn=$mongodbDsn --db-table=$mongodbCollection2,$mongodbCollection3 --suited-mono-repo=true --extended-api=$isExtended --out=$outDir ${markEnd}"
+    sponge micro service-handler --db-driver=mongodb --db-dsn=$mongodbDsn --db-table=$mongodbCollection2,$mongodbCollection3 --suited-mono-repo=true --extended-api=$isExtended --out=$outDir
+    checkResult $?
+  fi
+
+  if [ "$isOnlyGenerateCode" == "true" ]; then
+    echo -e "\n\n"
+    return
+  fi
+
+  cd $outDir
+  runningProtoService $serverName $outDir
+  checkResult $?
+  sleep 1
+  cd -
+}
+
+# ---------------------------------------------------------------
+
 function generate_http_pb_mysql() {
-  local serverName="mono_09_http_pb_mysql"
+  local serverName="mono_13_http_pb_mysql"
   local outDir="$serverName"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
@@ -423,7 +549,7 @@ function generate_http_pb_mysql() {
 }
 
 function generate_http_pb_mongodb() {
-  local serverName="mono_10_http_pb_mongodb"
+  local serverName="mono_14_http_pb_mongodb"
   local outDir="$serverName"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
@@ -461,7 +587,7 @@ function generate_http_pb_mongodb() {
 # ---------------------------------------------------------------
 
 function generate_grpc_pb_mysql() {
-  local serverName="mono_11_grpc_pb_mysql"
+  local serverName="mono_15_grpc_pb_mysql"
   local outDir="$serverName"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
@@ -499,7 +625,7 @@ function generate_grpc_pb_mysql() {
 }
 
 function generate_grpc_pb_mongodb() {
-  local serverName="mono_12_grpc_pb_mongodb"
+  local serverName="mono_16_grpc_pb_mongodb"
   local outDir="$serverName"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
@@ -537,7 +663,7 @@ function generate_grpc_pb_mongodb() {
 # ---------------------------------------------------------------
 
 function generate_grpc_http_pb_mysql() {
-  local serverName="mono_13_grpc_http_pb_mysql"
+  local serverName="mono_17_grpc_http_pb_mysql"
   local outDir="$serverName"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
@@ -575,7 +701,7 @@ function generate_grpc_http_pb_mysql() {
 }
 
 function generate_grpc_http_pb_mongodb() {
-  local serverName="mono_14_grpc_http_pb_mongodb"
+  local serverName="mono_18_grpc_http_pb_mongodb"
   local outDir="$serverName"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
@@ -612,7 +738,7 @@ function generate_grpc_http_pb_mongodb() {
 # ---------------------------------------------------------------
 
 function generate_http_pb_mixed() {
-  local serverName="mono_15_http_pb_mixed"
+  local serverName="mono_19_http_pb_mixed"
   local outDir="$serverName"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
@@ -637,7 +763,7 @@ function generate_http_pb_mixed() {
 }
 
 function generate_grpc_pb_mixed() {
-  local serverName="mono_16_grpc_pb_mixed"
+  local serverName="mono_20_grpc_pb_mixed"
   local outDir="$serverName"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
@@ -664,7 +790,7 @@ function generate_grpc_pb_mixed() {
 # ---------------------------------------------------------------
 
 function generate_grpc_gw_pb_mixed() {
-  local serverName="mono_17_grpc_gw_pb_mixed"
+  local serverName="mono_21_grpc_gw_pb_mixed"
   local outDir="$serverName"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
@@ -689,7 +815,7 @@ function generate_grpc_gw_pb_mixed() {
 }
 
 function generate_grpc_gw_pb() {
-  local serverName="mono_18_grpc_gw_pb"
+  local serverName="mono_22_grpc_gw_pb"
   local outDir="$serverName"
   echo -e "\n\n"
   echo -e "create service code to directory $outDir"
@@ -727,6 +853,11 @@ function main() {
   generate_grpc_postgresql
   generate_grpc_sqlite
   generate_grpc_mongodb
+
+  generate_grpc_http_mysql
+  generate_grpc_http_postgresql
+  generate_grpc_http_sqlite
+  generate_grpc_http_mongodb
 
   generate_http_pb_mysql
   generate_http_pb_mongodb
