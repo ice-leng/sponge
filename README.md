@@ -17,19 +17,20 @@
 
 **Sponge** is a powerful `Go` development framework. Its core concept is to generate modular code by parsing `SQL`, `Protobuf`, or `JSON` files in reverse, these modular codes can be flexibly combined into various types of complete backend services (`similar to the characteristics of sponge cells, where disassembled sponge cells can automatically recombine into a new sponge`).
 
-Sponge offers outstanding project engineering capabilities, providing an all-in-one project development solution that covers code generation, development, testing, API documentation generation, and deployment. Sponge significantly enhances development efficiency and reduces technical barriers through the deep integration of modular architecture and AI-generated code. Its low-code development model enables developers to effortlessly build stable and reliable backend systems.
+Sponge offers outstanding project engineering capabilities, providing an all-in-one project development solution that covers code generation, development, testing, API documentation generation, and deployment. Sponge deeply integrates a modular architecture with an AI assistant to significantly enhance development efficiency and reduce technical barriers, empowering developers to easily build stable and reliable backend systems using a "low-code" approach.
 
 <br>
 
 ### Applicable Scenarios
 
-Sponge is suitable for quickly developing various high-performance backend services, including but not limited to:
+Sponge is suitable for rapidly building various types of high-performance backend services, including but not limited to:
 
-- `Web` services (gin);
-- `gRPC` services;
-- `HTTP+gRPC` hybrid services;
-- `gRPC Gateway API` services;
-- cloud-native microservices.
+- `RESTful API` services
+- `Web` services (Gin-based)
+- `gRPC` services
+- `HTTP+gRPC` hybrid services
+- `gRPC Gateway API` services
+- `cloud-native` microservices
 
 Additionally, developers can use custom templates to generate various types of code to meet specific business needs.
 
