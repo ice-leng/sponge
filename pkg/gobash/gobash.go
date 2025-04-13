@@ -95,13 +95,13 @@ func handleExec(ctx context.Context, cmd *exec.Cmd, result *Result) {
 	}
 }
 
-func getCmdReader(cmd *exec.Cmd) (io.ReadCloser, io.ReadCloser, error) {
-	stdout, err := cmd.StdoutPipe()
+func getCmdReader(cmd *exec.Cmd) (stdout io.ReadCloser, stderr io.ReadCloser, err error) {
+	stdout, err = cmd.StdoutPipe()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	stderr, err := cmd.StderrPipe()
+	stderr, err = cmd.StderrPipe()
 	if err != nil {
 		return nil, nil, err
 	}

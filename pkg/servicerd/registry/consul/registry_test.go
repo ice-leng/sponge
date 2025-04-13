@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/consul/api"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/go-dev-frame/sponge/pkg/servicerd/registry"
 )
@@ -15,7 +16,21 @@ func TestNewRegistry(t *testing.T) {
 	id := "serverName_192.168.3.37"
 	instanceName := "serverName"
 	instanceEndpoints := []string{"grpc://192.168.3.27:8282"}
+
+	// example 1
 	iRegistry, serviceInstance, err := NewRegistry(consulAddr, id, instanceName, instanceEndpoints)
+	assert.NoError(t, err)
+	t.Log(iRegistry, serviceInstance)
+
+	// example 2
+	iRegistry, serviceInstance, err = NewRegistryWithOptions(consulAddr, id, instanceName, instanceEndpoints,
+		WithHealthCheck(true),
+		//consulcli.WithScheme("https"),
+		//consulcli.WithDatacenter("foobar"),
+		//consulcli.WithToken("xxx"),
+		//consulcli.WithWaitTime(time.Second*5),
+	)
+	assert.NoError(t, err)
 	t.Log(err, iRegistry, serviceInstance)
 }
 

@@ -160,7 +160,7 @@ func TestGenerateError(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func Test_getOptions(t *testing.T) {
+func Test_setOptions(t *testing.T) {
 	a := &Args{
 		Package:        "Package",
 		GormType:       true,

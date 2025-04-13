@@ -80,7 +80,7 @@ func New{{.Name}}Server() {{.ProtoPkgName}}.{{.Name}}Server {
 {{if eq .InvokeType 1}}
 {{.Comment}}
 func (s *{{.LowerServiceName}}) {{.MethodName}}(stream {{.RequestImportPkgName}}.{{.ServiceName}}_{{.MethodName}}Server) error {
-	panic("{{.Prompt}}")
+	panic("implement me")
 
 	// fill in the business logic code here
 	// example:
@@ -118,7 +118,7 @@ func (s *{{.LowerServiceName}}) {{.MethodName}}(stream {{.RequestImportPkgName}}
 {{else if eq .InvokeType 2}}
 {{.Comment}}
 func (s *{{.LowerServiceName}}) {{.MethodName}}(req *{{.RequestImportPkgName}}.{{.Request}}, stream {{.ReplyImportPkgName}}.{{.ServiceName}}_{{.MethodName}}Server) error {
-	panic("{{.Prompt}}")
+	panic("implement me")
 
 	// fill in the business logic code here
 	// example:
@@ -155,7 +155,7 @@ func (s *{{.LowerServiceName}}) {{.MethodName}}(req *{{.RequestImportPkgName}}.{
 {{else if eq .InvokeType 3}}
 {{.Comment}}
 func (s *{{.LowerServiceName}}) {{.MethodName}}(stream {{.RequestImportPkgName}}.{{.ServiceName}}_{{.MethodName}}Server) error {
-	panic("{{.Prompt}}")
+	panic("implement me")
 
 	// fill in the business logic code here
 	// example:
@@ -199,7 +199,7 @@ func (s *{{.LowerServiceName}}) {{.MethodName}}(stream {{.RequestImportPkgName}}
 {{else}}
 {{.Comment}}
 func (s *{{.LowerServiceName}}) {{.MethodName}}(ctx context.Context, req *{{.RequestImportPkgName}}.{{.Request}}) (*{{.ReplyImportPkgName}}.{{.Reply}}, error) {
-	panic("{{.Prompt}}")
+	panic("implement me")
 
 	// fill in the business logic code here
 	// example:
@@ -228,8 +228,6 @@ func (s *{{.LowerServiceName}}) {{.MethodName}}(ctx context.Context, req *{{.Req
 }
 {{end}}
 {{- end}}
-
-// ---------- Do not delete or move this split line, this is the merge code marker ----------
 
 {{- end}}
 `
@@ -546,9 +544,9 @@ import (
 {{- range .PbServices}}
 
 // {{.LowerName}} business-level rpc error codes.
-// the _{{.LowerName}}NO value range is 1~100, if the same error code is used, it will cause panic.
+// the _{{.LowerName}}NO value range is 1~999, if the same error code is used, it will cause panic.
 var (
-	_{{.LowerName}}NO       = {{.RandNumber}}
+	_{{.LowerName}}NO       = 1
 	_{{.LowerName}}Name     = "{{.LowerName}}"
 	_{{.LowerName}}BaseCode = errcode.RCode(_{{.LowerName}}NO)
 // --blank line--
@@ -558,8 +556,6 @@ var (
 
 	// error codes are globally unique, adding 1 to the previous error code
 )
-
-// ---------- Do not delete or move this split line, this is the merge code marker ----------
 
 {{- end}}
 `

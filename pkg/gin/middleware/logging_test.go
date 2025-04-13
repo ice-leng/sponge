@@ -1,10 +1,12 @@
 package middleware
 
 import (
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/go-dev-frame/sponge/pkg/gin/response"
 	"github.com/go-dev-frame/sponge/pkg/httpcli"
@@ -20,7 +22,7 @@ func runLogHTTPServer() string {
 	serverAddr, requestAddr := utils.GetLocalHTTPAddrPairs()
 
 	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
+	r := gin.New()
 	r.Use(RequestID())
 
 	// default Print Log
@@ -33,6 +35,7 @@ func runLogHTTPServer() string {
 		WithRequestIDFromHeader(),
 		WithRequestIDFromContext(),
 		WithIgnoreRoutes("/ping"), // ignore path /ping
+		WithPrintErrorByCodes(409),
 	))
 
 	// custom zap log
@@ -45,17 +48,22 @@ func runLogHTTPServer() string {
 		logger.Info("test request id", GCtxRequestIDField(c))
 		response.Success(c, "hello world")
 	}
+	helloFunErr := func(c *gin.Context) {
+		logger.Info("test request id", GCtxRequestIDField(c))
+		response.Output(c, 500, "hello world error")
+	}
 
 	pingFun := func(c *gin.Context) {
 		response.Success(c, "ping")
 	}
 
-	r.GET("/hello", helloFun)
 	r.GET("/ping", pingFun)
+	r.GET("/hello", helloFun)
 	r.DELETE("/hello", helloFun)
 	r.POST("/hello", helloFun)
 	r.PUT("/hello", helloFun)
 	r.PATCH("/hello", helloFun)
+	r.POST("/helloErr", helloFunErr)
 
 	go func() {
 		err := r.Run(serverAddr)
@@ -149,26 +157,38 @@ func TestRequest(t *testing.T) {
 			t.Errorf("got: %s, want: %s", got, wantHello)
 		}
 	})
+
+	t.Run("post hello error", func(t *testing.T) {
+		err := httpcli.Post(result, requestAddr+"/helloErr", &User{"foobar"})
+		assert.Equal(t, true, strings.Contains(err.Error(), "500"))
+	})
 }
 
 func runLogHTTPServer2() string {
 	serverAddr, requestAddr := utils.GetLocalHTTPAddrPairs()
 
 	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
+	r := gin.New()
 	r.Use(RequestID())
 	r.Use(SimpleLog(
 		WithLog(logger.Get()),
 		WithMaxLen(200),
 		WithRequestIDFromContext(),
 		WithRequestIDFromHeader(),
+		WithPrintErrorByCodes(409),
 	))
 
-	pingFun := func(c *gin.Context) {
-		response.Success(c, "ping")
+	helloFun := func(c *gin.Context) {
+		logger.Info("test request id", GCtxRequestIDField(c))
+		response.Success(c, "hello world")
+	}
+	helloFunErr := func(c *gin.Context) {
+		logger.Info("test request id", GCtxRequestIDField(c))
+		response.Output(c, 500, "hello world error")
 	}
 
-	r.GET("/ping", pingFun)
+	r.GET("/hello", helloFun)
+	r.GET("/helloErr", helloFunErr)
 
 	go func() {
 		err := r.Run(serverAddr)
@@ -184,16 +204,18 @@ func runLogHTTPServer2() string {
 
 func TestRequest2(t *testing.T) {
 	requestAddr := runLogHTTPServer2()
-	result := &httpcli.StdResult{}
-	t.Run("get ping", func(t *testing.T) {
-		err := httpcli.Get(result, requestAddr+"/ping")
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		got := result.Data.(string)
-		if got != "ping" {
-			t.Errorf("got: %s, want: ping", got)
-		}
+	wantHello := "hello world"
+
+	t.Run("get hello", func(t *testing.T) {
+		result := &httpcli.StdResult{}
+		err := httpcli.Get(result, requestAddr+"/hello", httpcli.WithParams(map[string]interface{}{"id": "100"}))
+		assert.NoError(t, err)
+		assert.Equal(t, wantHello, result.Data.(string))
+	})
+
+	t.Run("get hello error", func(t *testing.T) {
+		result := &httpcli.StdResult{}
+		err := httpcli.Get(result, requestAddr+"/helloErr")
+		assert.Equal(t, true, strings.Contains(err.Error(), "500"))
 	})
 }

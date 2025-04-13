@@ -1,4 +1,4 @@
-package gptclient
+package chatgpt
 
 import (
 	"context"
@@ -9,8 +9,13 @@ import (
 
 var apiKey = "sk-xxxxxx"
 
+const (
+	genericRoleDescEN = "You are a helpful assistant, able to answer user questions in a clear and friendly manner."
+	genericRoleDescZH = "你是一个有帮助的助手，能够以清晰、友好的方式回答用户的问题。"
+)
+
 func TestClient_Send(t *testing.T) {
-	client, err := NewClient(apiKey, WithModel(ModelGPT4oMini), WithTemperature(0.0), WithRole(RoleTypeGeneral))
+	client, err := NewClient(apiKey)
 	if err != nil {
 		t.Log(err)
 		return
@@ -29,7 +34,9 @@ func TestClient_SendStream(t *testing.T) {
 	client, err := NewClient(apiKey,
 		WithModel(ModelGPT4o),
 		WithMaxTokens(8192),
-		WithUseContext(true),
+		WithEnableContext(),
+		WithTemperature(0.3),
+		WithInitialRole(genericRoleDescEN),
 	)
 	if err != nil {
 		t.Log(err)

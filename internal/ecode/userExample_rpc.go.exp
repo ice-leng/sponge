@@ -5,7 +5,7 @@ import (
 )
 
 // userExample business-level rpc error codes.
-// the _userExampleNO value range is 1~100, if the same error code is used, it will cause panic.
+// the _userExampleNO value range is 1~999, if the same error code is used, it will cause panic.
 var (
 	_userExampleNO       = 37
 	_userExampleName     = "userExample"

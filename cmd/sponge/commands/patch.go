@@ -23,8 +23,8 @@ func PatchCommand() *cobra.Command {
 		patch.CopyProtoCommand(),
 		patch.CopyThirdPartyProtoCommand(),
 		patch.CopyGOModCommand(),
-		patch.ModifyDuplicateNumCommand(),
-		patch.ModifyDuplicateErrCodeCommand(),
+		patch.ModifyDuplicateErrorCodeNumCommand(),
+		patch.ModifyDuplicateErrorCodeOffsetCommand(),
 		patch.AdaptMonoRepoCommand(),
 		patch.ModifyProtoPackageCommand(),
 	)

@@ -71,7 +71,7 @@ func New{{.Name}}Handler() {{.ProtoPkgName}}.{{.Name}}Logicer {
 
 {{if eq .InvokeType 0}}{{if .Path}}{{.Comment}}
 func (h *{{.LowerServiceName}}Handler) {{.MethodName}}(ctx context.Context, req *{{.RequestImportPkgName}}.{{.Request}}) (*{{.ReplyImportPkgName}}.{{.Reply}}, error) {
-	panic("{{.Prompt}}")
+	panic("implement me")
 
 	// fill in the business logic code here
 	// example:
@@ -104,9 +104,6 @@ func (h *{{.LowerServiceName}}Handler) {{.MethodName}}(ctx context.Context, req 
 }{{end}}{{end}}
 
 {{- end}}
-
-// ---------- Do not delete or move this split line, this is the merge code marker ----------
-
 {{- end}}
 `
 
@@ -177,8 +174,6 @@ func {{.LowerName}}Middlewares(c *middlewareConfig) {
 {{- end}}
 }
 
-// ---------- Do not delete or move this split line, this is the merge code marker ----------
-
 {{- end}}
 `
 
@@ -218,9 +213,6 @@ func (h *{{.LowerServiceName}}Handler) {{.MethodName}}(ctx context.Context, req 
 }{{end}}{{end}}
 
 {{- end}}
-
-// ---------- Do not delete or move this split line, this is the merge code marker ----------
-
 {{- end}}
 `
 
@@ -302,8 +294,6 @@ func {{.LowerName}}Middlewares(c *middlewareConfig) {
 {{- end}}
 }
 
-// ---------- Do not delete or move this split line, this is the merge code marker ----------
-
 {{- end}}
 `
 
@@ -320,9 +310,9 @@ import (
 {{- range .PbServices}}
 
 // {{.LowerName}} business-level http error codes.
-// the {{.LowerName}}NO value range is 1~100, if the same error code is used, it will cause panic.
+// the {{.LowerName}}NO value range is 1~999, if the same error code is used, it will cause panic.
 var (
-	{{.LowerName}}NO       = {{.RandNumber}}
+	{{.LowerName}}NO       = 1
 	{{.LowerName}}Name     = "{{.LowerName}}"
 	{{.LowerName}}BaseCode = errcode.HCode({{.LowerName}}NO)
 // --blank line--
@@ -332,8 +322,6 @@ var (
 
 	// error codes are globally unique, adding 1 to the previous error code
 )
-
-// ---------- Do not delete or move this split line, this is the merge code marker ----------
 
 {{- end}}
 `

@@ -18,7 +18,7 @@ import (
 	"github.com/go-dev-frame/sponge/pkg/sql2code/parser"
 )
 
-// HTTPCommand generate web service code
+// HTTPCommand generate web server code
 func HTTPCommand() *cobra.Command {
 	var (
 		moduleName  string // module name for go.mod
@@ -39,21 +39,21 @@ func HTTPCommand() *cobra.Command {
 	//nolint
 	cmd := &cobra.Command{
 		Use:   "http",
-		Short: "Generate web service code based on sql",
-		Long:  "Generate web service code based on sql.",
-		Example: color.HiBlackString(`  # Generate web service code.
+		Short: "Generate web server code based on sql",
+		Long:  "Generate web server code based on sql.",
+		Example: color.HiBlackString(`  # Generate web server code.
   sponge web http --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --db-driver=mysql --db-dsn=root:123456@(192.168.3.37:3306)/test --db-table=user
 
-  # Generate web service code with multiple table names.
+  # Generate web server code with multiple table names.
   sponge web http --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --db-driver=mysql --db-dsn=root:123456@(192.168.3.37:3306)/test --db-table=t1,t2
 
-  # Generate web service code with extended api.
+  # Generate web server code with extended api.
   sponge web http --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --db-driver=mysql --db-dsn=root:123456@(192.168.3.37:3306)/test --db-table=user --extended-api=true
 
-  # Generate web service code and specify the output directory, Note: code generation will be canceled when the latest generated file already exists.
+  # Generate web server code and specify the output directory, Note: code generation will be canceled when the latest generated file already exists.
   sponge web http --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --db-driver=mysql --db-dsn=root:123456@(192.168.3.37:3306)/test --db-table=user --out=./yourServerDir
 
-  # Generate web service code and specify the docker image repository address.
+  # Generate web server code and specify the docker image repository address.
   sponge web http --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --repo-addr=192.168.3.37:9443/user-name --db-driver=mysql --db-dsn=root:123456@(192.168.3.37:3306)/test --db-table=user
 
   # If you want the generated code to suited to mono-repo, you need to set the parameter --suited-mono-repo=true`),
@@ -138,11 +138,11 @@ func HTTPCommand() *cobra.Command {
 			fmt.Printf(`
 using help:
   1. open a terminal and execute the command to generate the swagger documentation: make docs
-  2. compile and run service: make run
-  3. visit http://localhost:8080/swagger/index.html in your browser, and test the http CRUD api.
+  2. compile and run server: make run
+  3. access http://localhost:8080/swagger/index.html in your browser, and test the http CRUD api.
 
 `)
-			fmt.Printf("generate %s's web service code successfully, out = %s\n", serverName, outPath)
+			fmt.Printf("generate %s's web server code successfully, out = %s\n", serverName, outPath)
 
 			_ = generateConfigmap(serverName, outPath)
 			return nil

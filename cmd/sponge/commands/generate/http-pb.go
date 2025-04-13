@@ -11,7 +11,7 @@ import (
 	"github.com/go-dev-frame/sponge/pkg/replacer"
 )
 
-// HTTPPbCommand generate web service code based on protobuf file
+// HTTPPbCommand generate web server code based on protobuf file
 func HTTPPbCommand() *cobra.Command {
 	var (
 		moduleName   string // module name for go.mod
@@ -26,15 +26,15 @@ func HTTPPbCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "http-pb",
-		Short: "Generate web service code based on protobuf file",
-		Long:  "Generate web service code based on protobuf file.",
-		Example: color.HiBlackString(`  # Generate web service code.
+		Short: "Generate web server code based on protobuf file",
+		Long:  "Generate web server code based on protobuf file.",
+		Example: color.HiBlackString(`  # Generate web server code.
   sponge web http-pb --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --protobuf-file=./test.proto
 
-  # Generate web service code and specify the output directory, Note: code generation will be canceled when the latest generated file already exists.
+  # Generate web server code and specify the output directory, Note: code generation will be canceled when the latest generated file already exists.
   sponge web http-pb --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --protobuf-file=./test.proto --out=./yourServerDir
 
-  # Generate web service code and specify the docker image repository address.
+  # Generate web server code and specify the docker image repository address.
   sponge web http-pb --module-name=yourModuleName --server-name=yourServerName --project-name=yourProjectName --repo-addr=192.168.3.37:9443/user-name --protobuf-file=./test.proto
 
   # If you want the generated code to suited to mono-repo, you need to set the parameter --suited-mono-repo=true`),
@@ -173,12 +173,12 @@ func (g *httpPbGenerator) generateCode() (string, error) {
 using help:
   1. open a terminal and execute the command to generate code: make proto
   2. open file internal/handler/xxx.go, replace panic("implement me") according to template code example.
-  3. compile and run service: make run
-  4. visit http://localhost:8080/apis/swagger/index.html in your browser, and test the http api.
+  3. compile and run server: make run
+  4. access http://localhost:8080/apis/swagger/index.html in your browser, and test the http api.
 
 `)
 	outpath := r.GetOutputDir()
-	fmt.Printf("generate %s's web service code successfully, out = %s\n", g.serverName, outpath)
+	fmt.Printf("generate %s's web server code successfully, out = %s\n", g.serverName, outpath)
 	return outpath, nil
 }
 

@@ -3,6 +3,7 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/huandu/xstrings"
 	"github.com/jinzhu/inflection"
@@ -68,7 +69,7 @@ func newTableInfo(data tmplData) TableInfo {
 		TableNamePluralCamelFCL: customFirstLetterToLower(customEndOfLetterToLower(data.TableName, pluralName)),
 		TableNameSnake:          xstrings.ToSnakeCase(data.TName),
 		TableComment:            data.Comment,
-		Columns:                 getColumns(data.Fields),
+		Columns:                 getColumns(data.DBDriver, data.Fields),
 		PrimaryKey:              getPrimaryKeyInfo(data.CrudInfo),
 		DBDriver:                data.DBDriver,
 		ColumnSubStructure:      data.SubStructs,
@@ -84,7 +85,7 @@ func (table TableInfo) getCode() []byte {
 	return code
 }
 
-func getColumns(fields []tmplField) []Field {
+func getColumns(dbDriver string, fields []tmplField) []Field {
 	var columns []Field
 
 	for _, field := range fields {
@@ -95,11 +96,21 @@ func getColumns(fields []tmplField) []Field {
 			ColumnComment:      field.Comment,
 			IsPrimaryKey:       field.IsPrimaryKey,
 			GoType:             field.GoType,
-			Tag:                field.Tag,
+			Tag:                handleTag(dbDriver, field.Tag),
 		})
 	}
 
 	return columns
+}
+
+func handleTag(dbDriver string, tag string) string {
+	if dbDriver == DBDriverMongodb {
+		tag = strings.ReplaceAll(tag, `bson:"column:`, `bson:"`)
+		tag = strings.ReplaceAll(tag, `;type:"`, `"`)
+		tag = strings.ReplaceAll(tag, `;type:;primary_key`, ``)
+		tag = strings.ReplaceAll(tag, `bson:"id" json:"id"`, `bson:"_id" json:"id"`)
+	}
+	return tag
 }
 
 func getPrimaryKeyInfo(info *CrudInfo) *PrimaryKey {

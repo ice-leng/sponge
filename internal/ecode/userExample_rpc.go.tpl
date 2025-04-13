@@ -5,7 +5,7 @@ import (
 )
 
 // {{.TableNameCamelFCL}} business-level rpc error codes.
-// the _{{.TableNameCamelFCL}}NO value range is 1~100, if the same error code is used, it will cause panic.
+// the _{{.TableNameCamelFCL}}NO value range is 1~999, if the same error code is used, it will cause panic.
 var (
 	_{{.TableNameCamelFCL}}NO       = 2
 	_{{.TableNameCamelFCL}}Name     = "{{.TableNameCamelFCL}}"

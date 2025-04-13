@@ -67,6 +67,49 @@ func ListDbDrivers(c *gin.Context) {
 	response.Success(c, data)
 }
 
+// ListLLM list llm info
+func ListLLM(c *gin.Context) {
+	llmTypes := []string{
+		"deepseek",
+		"chatgpt",
+		"gemini",
+	}
+
+	llmTypeOptions := []kv{}
+	for _, driver := range llmTypes {
+		llmTypeOptions = append(llmTypeOptions, kv{
+			Label: driver,
+			Value: driver,
+		})
+	}
+
+	allLLMOptions := map[string][]kv{
+		"deepseek": {
+			{Label: "deepseek-chat", Value: "deepseek-chat"},
+			{Label: "deepseek-reasoner", Value: "deepseek-reasoner"},
+		},
+		"chatgpt": {
+			{Label: "gpt-4o", Value: "gpt-4o"},
+			{Label: "gpt-4o-mini", Value: "gpt-4o-mini"},
+			{Label: "gpt-4-turbo", Value: "gpt-4-turbo"},
+			{Label: "gpt-4", Value: "gpt-4"},
+			{Label: "o1-mini", Value: "o1-mini"},
+			{Label: "o1-preview", Value: "o1-preview"},
+		},
+		"gemini": {
+			{Label: "gemini-2.5-pro-exp-03-25", Value: "gemini-2.5-pro-exp-03-25"},
+			{Label: "gemini-2.0-flash", Value: "gemini-2.0-flash"},
+			{Label: "gemini-2.0-flash-thinking-exp", Value: "gemini-2.0-flash-thinking-exp"},
+			{Label: "gemini-2.0-pro-exp", Value: "gemini-2.0-pro-exp"},
+		},
+	}
+
+	response.Success(c, gin.H{
+		"llmTypeOptions": llmTypeOptions,
+		"allLLMOptions":  allLLMOptions,
+	})
+}
+
 // ListTables list tables
 func ListTables(c *gin.Context) {
 	form := &dbInfoForm{}
@@ -215,7 +258,12 @@ func handleGenerateCode(c *gin.Context, outPath string, arg string) {
 	}
 
 	zipFile := out + ".zip"
-	err := CompressPathToZip(out, zipFile)
+	var err error
+	if gofile.IsWindows() {
+		err = AdaptToWindowsZip(out, zipFile)
+	} else {
+		err = CompressPathToZip(out, zipFile)
+	}
 	if err != nil {
 		responseErr(c, err, errcode.InternalServerError)
 		return
@@ -266,6 +314,42 @@ func handleGenerateCode(c *gin.Context, outPath string, arg string) {
 			}
 		}
 	}()
+}
+
+// HandleAssistant handle assistant generate and merge code
+func HandleAssistant(c *gin.Context) {
+	form := &GenerateCodeForm{}
+	err := c.ShouldBindJSON(form)
+	if err != nil {
+		responseErr(c, err, errcode.InvalidParams)
+		return
+	}
+
+	args := strings.Split(form.Arg, " ")
+	params := parseCommandArgs(args)
+
+	ctx, _ := context.WithTimeout(context.Background(), time.Minute*30) // nolint
+	result := gobash.Run(ctx, "sponge", args...)
+	resultInfo := ""
+	count := 0
+	for v := range result.StdOut {
+		count++
+		if count == 1 { // first line is the command
+			continue
+		}
+		if strings.Contains(v, "Waiting for assistant responses") {
+			continue
+		}
+		resultInfo += v
+	}
+	if result.Err != nil {
+		responseErr(c, result.Err, errcode.InternalServerError)
+		return
+	}
+
+	recordObj().set(c.ClientIP(), form.Path, params)
+
+	response.Success(c, resultInfo)
 }
 
 // GetRecord generate run command record
@@ -444,6 +528,56 @@ func compress(file *os.File, prefix string, zw *zip.Writer) error {
 	}
 
 	return nil
+}
+
+func AdaptToWindowsZip(outPath, targetFile string) error {
+	d, err := os.Create(targetFile)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+
+	w := zip.NewWriter(d)
+	defer w.Close()
+
+	baseDir := filepath.Dir(outPath)
+
+	return filepath.Walk(outPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(baseDir, path)
+		if err != nil {
+			return err
+		}
+		header.Name = filepath.ToSlash(relPath) // convert to slash path
+
+		if info.IsDir() {
+			header.Name += "/"
+			_, err = w.CreateHeader(header)
+			return err
+		}
+
+		writer, err := w.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, err = io.Copy(writer, file)
+		return err
+	})
 }
 
 func getSpongeDir() string {

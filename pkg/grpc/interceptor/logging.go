@@ -6,9 +6,12 @@ import (
 	"time"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/go-dev-frame/sponge/pkg/errcode"
 	zapLog "github.com/go-dev-frame/sponge/pkg/logger"
 )
 
@@ -28,6 +31,11 @@ func UnaryClientLog(logger *zap.Logger, opts ...LogOption) grpc.UnaryClientInter
 	}
 
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		// ignore printing of the specified method
+		if ignoreLogMethods[method] {
+			return invoker(ctx, method, req, reply, cc, opts...)
+		}
+
 		startTime := time.Now()
 
 		var reqIDField zap.Field
@@ -39,16 +47,21 @@ func UnaryClientLog(logger *zap.Logger, opts ...LogOption) grpc.UnaryClientInter
 
 		err := invoker(ctx, method, req, reply, cc, opts...)
 
+		statusCode := status.Code(err)
 		fields := []zap.Field{
-			zap.String("code", status.Code(err).String()),
+			zap.String("code", statusCode.String()),
 			zap.Error(err),
 			zap.String("type", "unary"),
 			zap.String("method", method),
 			zap.Int64("time_us", time.Since(startTime).Microseconds()),
 			reqIDField,
 		}
+		if err != nil && printErrorBySpecifiedCodes[statusCode] {
+			logger.WithOptions(zap.AddStacktrace(zapcore.PanicLevel)).Error("invoker error", fields...)
+		} else {
+			logger.Info("invoker result", fields...)
+		}
 
-		logger.Info("invoker result", fields...)
 		return err
 	}
 }
@@ -66,6 +79,11 @@ func StreamClientLog(logger *zap.Logger, opts ...LogOption) grpc.StreamClientInt
 
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string,
 		streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+		// ignore printing of the specified method
+		if ignoreLogMethods[method] {
+			return streamer(ctx, desc, cc, method, opts...)
+		}
+
 		startTime := time.Now()
 
 		var reqIDField zap.Field
@@ -77,27 +95,40 @@ func StreamClientLog(logger *zap.Logger, opts ...LogOption) grpc.StreamClientInt
 
 		clientStream, err := streamer(ctx, desc, cc, method, opts...)
 
+		statusCode := status.Code(err)
 		fields := []zap.Field{
-			zap.String("code", status.Code(err).String()),
+			zap.String("code", statusCode.String()),
 			zap.Error(err),
 			zap.String("type", "stream"),
 			zap.String("method", method),
 			zap.Int64("time_us", time.Since(startTime).Microseconds()),
 			reqIDField,
 		}
+		if err != nil && printErrorBySpecifiedCodes[statusCode] {
+			logger.WithOptions(zap.AddStacktrace(zapcore.PanicLevel)).Error("streamer invoker error", fields...)
+		} else {
+			logger.Info("streamer invoker result", fields...)
+		}
 
-		logger.Info("invoker result", fields...)
 		return clientStream, err
 	}
 }
 
 // ---------------------------------- server interceptor ----------------------------------
 
-var defaultMaxLength = 300                   // max length of response data to print
-var ignoreLogMethods = map[string]struct{}{} // ignore printing methods
+var defaultMaxLength = 300 // max length of response data to print
 var defaultMarshalFn = func(reply interface{}) []byte {
 	data, _ := json.Marshal(reply)
 	return data
+}
+var ignoreLogMethods = map[string]bool{ // ignore printing methods
+	"/grpc.health.v1.Health/Check": true,
+}
+var printErrorBySpecifiedCodes = map[codes.Code]bool{
+	codes.Internal:                           true,
+	codes.Unavailable:                        true,
+	errcode.StatusInternalServerError.Code(): true,
+	errcode.StatusServiceUnavailable.Code():  true,
 }
 
 // LogOption log settings
@@ -105,18 +136,14 @@ type LogOption func(*logOptions)
 
 type logOptions struct {
 	maxLength           int
-	fields              map[string]interface{}
-	ignoreMethods       map[string]struct{}
 	isReplaceGRPCLogger bool
 	marshalFn           func(reply interface{}) []byte // default json.Marshal
 }
 
 func defaultLogOptions() *logOptions {
 	return &logOptions{
-		maxLength:     defaultMaxLength,
-		fields:        make(map[string]interface{}),
-		ignoreMethods: make(map[string]struct{}),
-		marshalFn:     defaultMarshalFn,
+		maxLength: defaultMaxLength,
+		marshalFn: defaultMarshalFn,
 	}
 }
 
@@ -142,13 +169,12 @@ func WithReplaceGRPCLogger() LogOption {
 	}
 }
 
-// WithLogFields adding a custom print field
-func WithLogFields(kvs map[string]interface{}) LogOption {
+// WithPrintErrorByCodes set print error by grpc codes
+func WithPrintErrorByCodes(code ...codes.Code) LogOption {
 	return func(o *logOptions) {
-		if len(kvs) == 0 {
-			return
+		for _, c := range code {
+			printErrorBySpecifiedCodes[c] = true
 		}
-		o.fields = kvs
 	}
 }
 
@@ -167,7 +193,7 @@ func WithMarshalFn(fn func(reply interface{}) []byte) LogOption {
 func WithLogIgnoreMethods(fullMethodNames ...string) LogOption {
 	return func(o *logOptions) {
 		for _, method := range fullMethodNames {
-			o.ignoreMethods[method] = struct{}{}
+			ignoreLogMethods[method] = true
 		}
 	}
 }
@@ -176,7 +202,6 @@ func WithLogIgnoreMethods(fullMethodNames ...string) LogOption {
 func UnaryServerLog(logger *zap.Logger, opts ...LogOption) grpc.UnaryServerInterceptor {
 	o := defaultLogOptions()
 	o.apply(opts...)
-	ignoreLogMethods = o.ignoreMethods
 
 	if logger == nil {
 		logger, _ = zap.NewProduction()
@@ -187,7 +212,7 @@ func UnaryServerLog(logger *zap.Logger, opts ...LogOption) grpc.UnaryServerInter
 
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		// ignore printing of the specified method
-		if _, ok := ignoreLogMethods[info.FullMethod]; ok {
+		if ignoreLogMethods[info.FullMethod] {
 			return handler(ctx, req)
 		}
 
@@ -211,8 +236,9 @@ func UnaryServerLog(logger *zap.Logger, opts ...LogOption) grpc.UnaryServerInter
 			data = append(data[:o.maxLength], contentMark...)
 		}
 
+		statusCode := status.Code(err)
 		fields = []zap.Field{
-			zap.String("code", status.Code(err).String()),
+			zap.String("code", statusCode.String()),
 			zap.Error(err),
 			zap.String("type", "unary"),
 			zap.String("method", info.FullMethod),
@@ -222,7 +248,11 @@ func UnaryServerLog(logger *zap.Logger, opts ...LogOption) grpc.UnaryServerInter
 		if requestID != "" {
 			fields = append(fields, zap.String(ContextRequestIDKey, requestID))
 		}
-		logger.Info(">>>>", fields...)
+		if err != nil && printErrorBySpecifiedCodes[statusCode] {
+			logger.WithOptions(zap.AddStacktrace(zapcore.PanicLevel)).Error(">>>>", fields...)
+		} else {
+			logger.Info(">>>>", fields...)
+		}
 
 		return resp, err
 	}
@@ -232,7 +262,6 @@ func UnaryServerLog(logger *zap.Logger, opts ...LogOption) grpc.UnaryServerInter
 func UnaryServerSimpleLog(logger *zap.Logger, opts ...LogOption) grpc.UnaryServerInterceptor {
 	o := defaultLogOptions()
 	o.apply(opts...)
-	ignoreLogMethods = o.ignoreMethods
 
 	if logger == nil {
 		logger, _ = zap.NewProduction()
@@ -243,7 +272,7 @@ func UnaryServerSimpleLog(logger *zap.Logger, opts ...LogOption) grpc.UnaryServe
 
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		// ignore printing of the specified method
-		if _, ok := ignoreLogMethods[info.FullMethod]; ok {
+		if ignoreLogMethods[info.FullMethod] {
 			return handler(ctx, req)
 		}
 
@@ -252,17 +281,24 @@ func UnaryServerSimpleLog(logger *zap.Logger, opts ...LogOption) grpc.UnaryServe
 
 		resp, err := handler(ctx, req)
 
+		requestIDField := zap.Skip()
+		if requestID != "" {
+			requestIDField = zap.String(ContextRequestIDKey, requestID)
+		}
+		statusCode := status.Code(err)
 		fields := []zap.Field{
-			zap.String("code", status.Code(err).String()),
+			zap.String("code", statusCode.String()),
 			zap.Error(err),
 			zap.String("type", "unary"),
 			zap.String("method", info.FullMethod),
 			zap.Int64("time_us", time.Since(startTime).Microseconds()),
+			requestIDField,
 		}
-		if requestID != "" {
-			fields = append(fields, zap.String(ContextRequestIDKey, requestID))
+		if err != nil && printErrorBySpecifiedCodes[statusCode] {
+			logger.WithOptions(zap.AddStacktrace(zapcore.PanicLevel)).Error("gRPC response error", fields...)
+		} else {
+			logger.Info("gRPC response", fields...)
 		}
-		logger.Info("[GRPC] response", fields...)
 
 		return resp, err
 	}
@@ -272,7 +308,6 @@ func UnaryServerSimpleLog(logger *zap.Logger, opts ...LogOption) grpc.UnaryServe
 func StreamServerLog(logger *zap.Logger, opts ...LogOption) grpc.StreamServerInterceptor {
 	o := defaultLogOptions()
 	o.apply(opts...)
-	ignoreLogMethods = o.ignoreMethods
 
 	if logger == nil {
 		logger, _ = zap.NewProduction()
@@ -283,34 +318,40 @@ func StreamServerLog(logger *zap.Logger, opts ...LogOption) grpc.StreamServerInt
 
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		// ignore printing of the specified method
-		if _, ok := ignoreLogMethods[info.FullMethod]; ok {
+		if ignoreLogMethods[info.FullMethod] {
 			return handler(srv, stream)
 		}
 
 		startTime := time.Now()
 		requestID := ServerCtxRequestID(stream.Context())
 
+		requestIDField := zap.Skip()
+		if requestID != "" {
+			requestIDField = zap.String(ContextRequestIDKey, requestID)
+		}
 		fields := []zap.Field{
 			zap.String("type", "stream"),
 			zap.String("method", info.FullMethod),
-		}
-		if requestID != "" {
-			fields = append(fields, zap.String(ContextRequestIDKey, requestID))
+			requestIDField,
 		}
 		logger.Info("<<<<", fields...)
 
 		err := handler(srv, stream)
 
+		statusCode := status.Code(err)
 		fields = []zap.Field{
-			zap.String("code", status.Code(err).String()),
+			zap.String("code", statusCode.String()),
+			zap.Error(err),
 			zap.String("type", "stream"),
 			zap.String("method", info.FullMethod),
 			zap.Int64("time_us", time.Since(startTime).Microseconds()),
+			requestIDField,
 		}
-		if requestID != "" {
-			fields = append(fields, zap.String(ContextRequestIDKey, requestID))
+		if err != nil && printErrorBySpecifiedCodes[statusCode] {
+			logger.WithOptions(zap.AddStacktrace(zapcore.PanicLevel)).Error(">>>>", fields...)
+		} else {
+			logger.Info(">>>>", fields...)
 		}
-		logger.Info(">>>>", fields...)
 
 		return err
 	}
@@ -320,7 +361,6 @@ func StreamServerLog(logger *zap.Logger, opts ...LogOption) grpc.StreamServerInt
 func StreamServerSimpleLog(logger *zap.Logger, opts ...LogOption) grpc.StreamServerInterceptor {
 	o := defaultLogOptions()
 	o.apply(opts...)
-	ignoreLogMethods = o.ignoreMethods
 
 	if logger == nil {
 		logger, _ = zap.NewProduction()
@@ -331,25 +371,34 @@ func StreamServerSimpleLog(logger *zap.Logger, opts ...LogOption) grpc.StreamSer
 
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		// ignore printing of the specified method
-		if _, ok := ignoreLogMethods[info.FullMethod]; ok {
+		if ignoreLogMethods[info.FullMethod] {
 			return handler(srv, stream)
 		}
 
 		startTime := time.Now()
 		requestID := ServerCtxRequestID(stream.Context())
 
+		requestIDField := zap.Skip()
+		if requestID != "" {
+			requestIDField = zap.String(ContextRequestIDKey, requestID)
+		}
+
 		err := handler(srv, stream)
 
+		statusCode := status.Code(err)
 		fields := []zap.Field{
-			zap.String("code", status.Code(err).String()),
+			zap.String("code", statusCode.String()),
+			zap.Error(err),
 			zap.String("type", "stream"),
 			zap.String("method", info.FullMethod),
 			zap.Int64("time_us", time.Since(startTime).Microseconds()),
+			requestIDField,
 		}
-		if requestID != "" {
-			fields = append(fields, zap.String(ContextRequestIDKey, requestID))
+		if err != nil && printErrorBySpecifiedCodes[statusCode] {
+			logger.WithOptions(zap.AddStacktrace(zapcore.PanicLevel)).Error("gRPC response error", fields...)
+		} else {
+			logger.Info("gRPC response", fields...)
 		}
-		logger.Info("[GRPC] response", fields...)
 
 		return err
 	}

@@ -2,161 +2,293 @@ package jwt
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGenerateToken(t *testing.T) {
-	opt = nil
-	token, err := GenerateToken("123")
-	assert.Error(t, err)
-
-	Init()
-	token, err = GenerateToken("123")
-	assert.NoError(t, err)
-
-	v, err := ParseToken(token)
-	if err != nil {
-		t.Fatal(err)
+var (
+	uid          = "123"
+	customFields = map[string]interface{}{
+		"name":       "john",
+		"role":       "admin",
+		"department": "engineering",
+		"age":        11,
+		"is_active":  true,
+		"price":      3.14,
 	}
-	t.Log(v)
+)
 
-	time.Sleep(time.Second)
-	newToken, err := RefreshToken(token)
-	if err != nil {
-		t.Fatal(err)
+func getRegisteredClaimsOptions(ds ...time.Duration) []RegisteredClaimsOption {
+	now := time.Now()
+
+	d := time.Hour * 2
+	if len(ds) > 0 {
+		d = ds[0]
 	}
-	t.Log(token, newToken)
+	return []RegisteredClaimsOption{
+		WithIssuer("https://auth.example.com"),
+		WithSubject("123"),
+		WithAudience("https://api.example.com"),
+		WithIssuedAt(now),
+		WithNotBefore(now),
+		WithExpires(d),
+		WithDeadline(now.Add(d)),
+		WithJwtID("abc1234xxx"),
+	}
 }
 
-func TestParseToken(t *testing.T) {
-	opt = nil
-	v, err := ParseToken("token")
-	assert.Error(t, err)
+func TestGenerateAndValidateToken(t *testing.T) {
 
-	uid := "123"
-	name := "admin"
+	t.Run("GenerateAndValidateToken, default options", func(t *testing.T) {
+		jwtID, token, err := GenerateToken(uid)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, token)
+		assert.NotEmpty(t, jwtID)
+		t.Log(token)
 
-	Init(
-		WithSigningKey("123456"),
-		WithExpire(time.Second),
-		WithSigningMethod(HS512),
-	)
+		claims, err := ValidateToken(token)
+		assert.NoError(t, err)
+		assert.Equal(t, uid, claims.UID)
+	})
 
-	// success
-	token, err := GenerateToken(uid, name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(token)
-	v, err = ParseToken(token)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(v)
+	t.Run("GenerateAndValidateToken, have options", func(t *testing.T) {
+		signMethod := HS384
+		signKey := []byte("your-secret-key")
+		jwtID, token, err := GenerateToken(
+			uid,
+			WithGenerateTokenFields(customFields),
+			WithGenerateTokenSignMethod(signMethod),
+			WithGenerateTokenSignKey(signKey),
+			WithGenerateTokenClaims(getRegisteredClaimsOptions()...),
+		)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, token)
+		assert.NotEmpty(t, jwtID)
+		t.Log(jwtID, token)
 
-	// invalid token format
-	token2 := "xxx.xxx.xxx"
-	v, err = ParseToken(token2)
-	assert.Error(t, err)
+		claims, err := ValidateToken(token, WithValidateTokenSignKey(signKey))
+		assert.NoError(t, err)
+		assert.Equal(t, uid, claims.UID)
+		assert.Equal(t, customFields["name"], claims.Fields["name"])
+	})
 
-	// signature failure
-	token3 := token + "xxx"
-	v, err = ParseToken(token3)
-	assert.Error(t, err)
+	t.Run("GenerateAndValidateToken, error test", func(t *testing.T) {
+		// invalid token format
+		token2 := "xxx.xxx.xxx"
+		_, err := ValidateToken(token2)
+		assert.Error(t, err)
 
-	// token has expired
-	token, err = GenerateToken(uid, name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	time.Sleep(time.Second * 2)
-	v, err = ParseToken(token)
-	assert.True(t, errors.Is(err, ErrTokenExpired))
+		// signature failure
+		_, token, _ := GenerateToken(uid)
+		token3 := token + "xxx"
+		_, err = ValidateToken(token3)
+		assert.Error(t, err)
+
+		// token has expired
+		_, token, err = GenerateToken(uid, WithGenerateTokenClaims(WithExpires(time.Millisecond*200)))
+		assert.NoError(t, err)
+		time.Sleep(time.Second)
+		_, err = ValidateToken(token)
+		assert.True(t, errors.Is(err, ErrTokenExpired))
+	})
 }
 
-func TestGenerateCustomToken(t *testing.T) {
-	var (
-		id     uint64 = 20
-		name   string = "admin"
-		age    int    = 10
-		fields        = KV{"id": id, "name": name, "age": age}
-	)
+func TestRefreshToken(t *testing.T) {
 
-	Init()
-	token, err := GenerateCustomToken(fields)
-	assert.NoError(t, err)
+	t.Run("RefreshToken, default options", func(t *testing.T) {
+		jwtID, token, err := GenerateToken(uid)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, token)
+		t.Log(jwtID, "\n", token)
 
-	claims, err := ParseCustomToken(token)
-	assert.NoError(t, err)
+		time.Sleep(time.Second)
+		jwtID2, newToken, err := RefreshToken(token)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, newToken)
+		t.Log(jwtID, "\n", newToken)
 
-	idValue, _ := claims.GetUint64("id")
-	assert.Equal(t, idValue, fields["id"])
+		assert.Equal(t, jwtID, jwtID2)
+		assert.NotEqual(t, token, newToken)
+	})
 
-	nameValue, _ := claims.GetString("name")
-	assert.Equal(t, nameValue, fields["name"])
+	t.Run("RefreshToken, have options", func(t *testing.T) {
+		signMethod := HS512
+		signKey := []byte("your-secret-key")
+		jwtID, token, err := GenerateToken(
+			uid,
+			WithGenerateTokenFields(customFields),
+			WithGenerateTokenSignMethod(signMethod),
+			WithGenerateTokenSignKey(signKey),
+			WithGenerateTokenClaims(getRegisteredClaimsOptions()...),
+		)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, token)
+		t.Log(token)
 
-	ageValue, _ := claims.GetInt("age")
-	assert.Equal(t, ageValue, fields["age"])
+		time.Sleep(time.Second)
+		jwtID2, newToken, err := RefreshToken(
+			token,
+			WithRefreshTokenSignKey(signKey),
+			WithRefreshTokenExpire(time.Hour),
+		)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, newToken)
+		t.Log(newToken)
 
-	_, ok := claims.Get("foo")
-	assert.Equal(t, ok, false)
-
-	claims.Fields = nil
-	foo, _ := claims.Get("foo")
-	assert.Nil(t, foo)
-
-	time.Sleep(time.Second)
-	newToken, err := RefreshCustomToken(token)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(token, newToken)
+		assert.Equal(t, jwtID, jwtID2)
+		assert.NotEqual(t, token, newToken)
+	})
 }
 
-func TestParseCustomToken(t *testing.T) {
-	fields := KV{"id": 123, "foo": "bar"}
-	opt = nil
-	v, err := ParseCustomToken("token")
-	assert.Error(t, err)
+func TestGenerateAndValidateTwoTokens(t *testing.T) {
 
-	Init(
-		WithSigningKey("123456"),
-		WithExpire(time.Second),
-		WithSigningMethod(HS512),
+	t.Run("GenerateAndValidateTwoTokens, default options", func(t *testing.T) {
+		tokens, err := GenerateTwoTokens(uid)
+		assert.NoError(t, err)
+		assert.NotNil(t, tokens)
+		t.Log(tokens.JwtID, "\n", tokens.RefreshToken, "\n", tokens.AccessToken)
+
+		refreshClaims, err := ValidateToken(tokens.RefreshToken)
+		assert.NoError(t, err)
+		assert.Equal(t, uid, refreshClaims.UID)
+		assert.Equal(t, tokens.JwtID, refreshClaims.ID)
+
+		accessClaims, err := ValidateToken(tokens.AccessToken)
+		assert.NoError(t, err)
+		assert.Equal(t, uid, accessClaims.UID)
+		assert.Equal(t, tokens.JwtID, accessClaims.ID)
+	})
+
+	t.Run("GenerateAndValidateTwoTokens, custom options", func(t *testing.T) {
+		signMethod := HS256
+		signKey := []byte("your-secret-key")
+		tokens, err := GenerateTwoTokens(
+			uid,
+			WithGenerateTwoTokensSignMethod(signMethod),
+			WithGenerateTwoTokensSignKey(signKey),
+			WithGenerateTwoTokensFields(customFields),
+			WithGenerateTwoTokensRefreshTokenClaims(getRegisteredClaimsOptions(time.Hour*24)...),
+			WithGenerateTwoTokensAccessTokenClaims(getRegisteredClaimsOptions()...),
+		)
+		assert.NoError(t, err)
+		assert.NotNil(t, tokens)
+		assert.NotEqual(t, tokens.RefreshToken, tokens.AccessToken)
+		t.Log(tokens.JwtID, "\n", tokens.RefreshToken, "\n", tokens.AccessToken)
+
+		refreshClaims, err := ValidateToken(tokens.RefreshToken, WithValidateTokenSignKey(signKey))
+		assert.NoError(t, err)
+		assert.Equal(t, uid, refreshClaims.UID)
+		assert.Equal(t, customFields["name"], refreshClaims.Fields["name"])
+		assert.Equal(t, tokens.JwtID, refreshClaims.ID)
+
+		accessClaims, err := ValidateToken(tokens.AccessToken, WithValidateTokenSignKey(signKey))
+		assert.NoError(t, err)
+		assert.Equal(t, uid, accessClaims.UID)
+		assert.Equal(t, customFields["name"], accessClaims.Fields["name"])
+		assert.Equal(t, tokens.JwtID, accessClaims.ID)
+	})
+}
+
+func TestRefreshTwoToken(t *testing.T) {
+
+	t.Run("RefreshTwoToken, default options", func(t *testing.T) {
+		tokens, err := GenerateTwoTokens(uid)
+		assert.NoError(t, err)
+		assert.NotNil(t, tokens)
+		t.Log(tokens.JwtID, "\n", tokens.RefreshToken, "\n", tokens.AccessToken)
+
+		time.Sleep(time.Second)
+		newTokens, err := RefreshTwoTokens(tokens.RefreshToken, tokens.AccessToken)
+		assert.NoError(t, err)
+		assert.NotNil(t, newTokens)
+		assert.Equal(t, tokens.JwtID, newTokens.JwtID)
+		t.Log(newTokens.JwtID, "\n", newTokens.RefreshToken, "\n", newTokens.AccessToken)
+
+		assert.Equal(t, newTokens.RefreshToken, tokens.RefreshToken)
+		assert.NotEqual(t, newTokens.AccessToken, tokens.AccessToken)
+	})
+
+	t.Run("RefreshTwoToken, have options", func(t *testing.T) {
+		signMethod := HS384
+		signKey := []byte("your-secret-key")
+		tokens, err := GenerateTwoTokens(
+			uid,
+			WithGenerateTwoTokensFields(customFields),
+			WithGenerateTwoTokensSignMethod(signMethod),
+			WithGenerateTwoTokensSignKey(signKey),
+			WithGenerateTwoTokensRefreshTokenClaims(getRegisteredClaimsOptions(time.Hour*24)...),
+			WithGenerateTwoTokensAccessTokenClaims(getRegisteredClaimsOptions()...),
+		)
+		assert.NoError(t, err)
+		assert.NotNil(t, tokens)
+		t.Log(tokens.JwtID, "\n", tokens.RefreshToken, "\n", tokens.AccessToken)
+		assert.NotEqual(t, tokens.RefreshToken, tokens.AccessToken)
+
+		time.Sleep(time.Second)
+		newTokens, err := RefreshTwoTokens(
+			tokens.RefreshToken,
+			tokens.AccessToken,
+			WithRefreshTwoTokensSignKey(signKey),
+			WithRefreshTwoTokensRefreshTokenExpires(time.Hour*2), // if expire less 3 hour, will auto refresh token
+			WithRefreshTwoTokensAccessTokenExpires(time.Minute*15),
+		)
+		assert.NoError(t, err)
+		assert.NotNil(t, newTokens)
+		assert.Equal(t, tokens.JwtID, newTokens.JwtID)
+		t.Log(newTokens.JwtID, "\n", newTokens.RefreshToken, "\n", newTokens.AccessToken)
+
+		refreshClaims, err := ValidateToken(tokens.RefreshToken, WithValidateTokenSignKey(signKey))
+		assert.NoError(t, err)
+		if refreshClaims.ExpiresAt.Sub(time.Now()) < time.Hour*3 {
+			assert.NotEqual(t, newTokens.RefreshToken, tokens.RefreshToken)
+		} else {
+			assert.Equal(t, newTokens.RefreshToken, tokens.RefreshToken)
+		}
+		assert.NotEqual(t, newTokens.AccessToken, tokens.AccessToken)
+	})
+}
+
+func TestClaims(t *testing.T) {
+	_, token, _ := GenerateToken(
+		uid,
+		WithGenerateTokenFields(customFields),
+		WithGenerateTokenClaims(getRegisteredClaimsOptions()...),
 	)
+	claims, _ := ValidateToken(token)
 
-	// success
-	token, err := GenerateCustomToken(fields)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(token)
-	v, err = ParseCustomToken(token)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fmt.Println(v)
+	name, _ := claims.GetString("name")
+	assert.Equal(t, name, customFields["name"])
 
-	// invalid token format
-	token2 := "xxx.xxx.xxx"
-	v, err = ParseCustomToken(token2)
-	assert.Error(t, err)
+	age, _ := claims.GetInt("age")
+	assert.Equal(t, age, customFields["age"])
+	age2, _ := claims.GetInt64("age")
+	assert.Equal(t, int(age2), customFields["age"])
 
-	// signature failure
-	token3 := token + "xxx"
-	v, err = ParseCustomToken(token3)
-	assert.Error(t, err)
+	is_active, _ := claims.GetBool("is_active")
+	assert.Equal(t, is_active, customFields["is_active"])
 
-	// token has expired
-	token, err = GenerateCustomToken(fields)
-	if err != nil {
-		t.Fatal(err)
-	}
-	time.Sleep(time.Second * 2)
-	v, err = ParseCustomToken(token)
-	assert.True(t, errors.Is(err, ErrTokenExpired))
+	price, _ := claims.GetFloat64("price")
+	assert.Equal(t, price, customFields["price"])
+
+	_, isExist := claims.Get("unknown_field")
+	assert.Equal(t, false, isExist)
+}
+
+func TestGetClaimsUnverified(t *testing.T) {
+	signMethod := HS512
+	signKey := []byte("your-secret-key")
+	_, tokenStr, err := GenerateToken(
+		uid,
+		WithGenerateTokenFields(customFields),
+		WithGenerateTokenSignMethod(signMethod),
+		WithGenerateTokenSignKey(signKey),
+		WithGenerateTokenClaims(getRegisteredClaimsOptions(time.Second)...),
+	)
+	time.Sleep(time.Second * 2) // wait for token expired
+	claims, err := GetClaimsUnverified(tokenStr)
+	assert.NoError(t, err)
+	assert.Equal(t, claims.UID, "123")
+	assert.Equal(t, claims.Fields["name"], "john")
 }

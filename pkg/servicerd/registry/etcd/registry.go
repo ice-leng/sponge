@@ -69,6 +69,32 @@ func NewRegistry(etcdEndpoints []string, id string, instanceName string, instanc
 	return New(cli), serviceInstance, nil
 }
 
+// NewRegistryWithOptions instantiating the etcd registry, opts can be set by etcdcli.WithXXX and etcd.WithXXX functions.
+// Note: If the etcdcli.WithConfig(*clientv3.Config) parameter is set, the etcdEndpoints parameter is ignored!
+func NewRegistryWithOptions(etcdEndpoints []string, id string, instanceName string, instanceEndpoints []string, opts ...interface{}) (registry.Registry, *registry.ServiceInstance, error) {
+	serviceInstance := registry.NewServiceInstance(id, instanceName, instanceEndpoints)
+
+	var etcdOptions []etcdcli.Option
+	var registryOptions []Option
+	for _, opt := range opts {
+		switch v := opt.(type) {
+		case etcdcli.Option:
+			etcdOptions = append(etcdOptions, v)
+		case Option:
+			registryOptions = append(registryOptions, v)
+		default:
+			return nil, nil, fmt.Errorf("unknown option type: %T", v)
+		}
+	}
+
+	cli, err := etcdcli.Init(etcdEndpoints, etcdOptions...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return New(cli, registryOptions...), serviceInstance, nil
+}
+
 // Registry is etcd registry.
 type Registry struct {
 	opts   *options

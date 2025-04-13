@@ -1,6 +1,8 @@
 package merge
 
 import (
+	"fmt"
+
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 )
@@ -21,9 +23,12 @@ func GRPCServiceCode() *cobra.Command {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			dir = adaptDir(dir)
-			mergeGRPCECode(dir)
-			mergeGRPCServiceTmpl(dir)
+			codeTypes := []mergeType{errCodeType, serviceGRPCTmplType, serviceGRPCClientType}
+			for _, codeType := range codeTypes {
+				if err := newMergeParams(dir, codeType).runMerge(); err != nil {
+					fmt.Printf("[Warning] %v\n", err)
+				}
+			}
 			return nil
 		},
 	}

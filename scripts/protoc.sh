@@ -93,17 +93,24 @@ function handlePbGoFiles(){
     cd ..
 }
 
-function patchTypesPbFile() {
-  for file in $allProtoFiles; do
-    if [  "$file" = "api/types/types.proto"  ]; then
-      return
-    fi
-    if grep -q "api/types/types.proto" "$file"; then
-      allProtoFiles=$allProtoFiles" api/types/types.proto"
-      bash scripts/patch.sh types-pb
-      return
+autoDetectTypesProto() {
+  local target="api/types/types.proto"
+  for file in "$@"; do
+    if [ "$file" = "$target" ]; then
+      return 0
     fi
   done
+
+  for file in "$@"; do
+    if grep -q "$target" "$file"; then
+      allProtoFiles=$allProtoFiles" $target"
+      sponge patch gen-types-pb --out=. > /dev/null 2>&1
+      # Note: If the project uses mono-repo type, please manually move "api/types" directory to "../api/types"
+      return 0
+    fi
+  done
+
+  return 0
 }
 
 function autoDetectInitDbFile() {
@@ -118,7 +125,7 @@ function generateByAllProto(){
     allProtoFiles=$specifiedProtoFilePaths
   fi
 
-  patchTypesPbFile
+  autoDetectTypesProto $allProtoFiles
   autoDetectInitDbFile
 
   if [ "$allProtoFiles"x = x ];then

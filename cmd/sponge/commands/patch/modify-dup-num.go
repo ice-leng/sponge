@@ -1,43 +1,44 @@
 package patch
 
 import (
-	"bytes"
 	"fmt"
 	"os"
-	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+
+	"github.com/go-dev-frame/sponge/pkg/goast"
 )
 
-// ModifyDuplicateNumCommand modify duplicate numbers
-func ModifyDuplicateNumCommand() *cobra.Command {
-	var (
-		dir string
-	)
+// ModifyDuplicateErrorCodeNumCommand Command modify duplicate error code numbers
+func ModifyDuplicateErrorCodeNumCommand() *cobra.Command {
+	var dir string
 
 	cmd := &cobra.Command{
 		Use:   "modify-dup-num",
-		Short: "Modify duplicate numbers",
-		Long:  "Modify duplicate numbers.",
-		Example: color.HiBlackString(`  # Modify duplicate numbers
+		Short: "Modify duplicate error code numbers",
+		Long:  "Modify duplicate error code numbers.",
+		Example: color.HiBlackString(`  # Modify duplicate error code numbers
   sponge patch modify-dup-num --dir=internal/ecode`),
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			files, err := listErrCodeFiles(dir)
+			files, err := listErrorCodeFiles(dir)
 			if err != nil {
-				return err
+				fmt.Println("listErrCodeFiles:", err)
+				return nil
 			}
 
-			count, err := checkAndModifyDuplicateNum(files)
+			err = checkAndModifyGoFileErrorCodeNO(files[httpType])
 			if err != nil {
-				return err
+				fmt.Println("checkAndModifyGoFileErrorCodeNO[http]:", err)
 			}
-			if count > 0 {
-				fmt.Println("modify duplicate num successfully.")
+			err = checkAndModifyGoFileErrorCodeNO(files[grpcType])
+			if err != nil {
+				fmt.Println("checkAndModifyGoFileErrorCodeNO[grpc]:", err)
 			}
 
 			return nil
@@ -49,161 +50,150 @@ func ModifyDuplicateNumCommand() *cobra.Command {
 	return cmd
 }
 
-type coreInfo struct {
-	name   string
-	num    int
-	srcStr string
-	dstStr string
-	file   string
-}
-
-var (
-	httpNumMark = "errcode.HCode"
-	grpcNumMark = "errcode.RCode"
-	httpPattern = `errcode\.HCode\(([^)]+)\)`
-	grpcPattern = `errcode\.RCode\(([^)]+)\)`
-)
-
-func getVariableName(data []byte, pattern string) string {
-	re := regexp.MustCompile(pattern)
-	match := re.FindStringSubmatch(string(data))
-	if len(match) < 2 {
-		return ""
+// distinguish between _http.go and _rpc.go files, check and correct duplicate error code NO
+func checkAndModifyGoFileErrorCodeNO(files []string) error {
+	if len(files) < 1 {
+		return nil
 	}
 
-	return strings.ReplaceAll(match[1], " ", "")
-}
-
-func parseNumInfo(data []byte, variableName string) coreInfo {
-	var info coreInfo
-	pattern := variableName + `\s*=\s*(\d+)`
-	re := regexp.MustCompile(pattern)
-	match := re.FindStringSubmatch(string(data))
-	if len(match) < 2 {
-		return info
-	}
-
-	num, err := strconv.Atoi(match[1])
-	if err != nil {
-		return info
-	}
-
-	ss := strings.Split(match[0], "=")
-	if len(ss) != 2 {
-		return info
-	}
-
-	info.name = variableName
-	info.num = num
-	info.srcStr = match[0]
-	info.dstStr = ss[0] + "= "
-
-	return info
-}
-
-func getNumberInfos(file string) []coreInfo {
-	var infos []coreInfo
-	data, err := os.ReadFile(file)
-	if err != nil {
-		return infos
-	}
-
-	serviceGroupData := bytes.Split(data, []byte(serviceGroupSeparatorMark))
-	for _, groupData := range serviceGroupData {
-		pattern := ""
-		if bytes.Contains(groupData, []byte(httpNumMark)) {
-			pattern = httpPattern
-		} else if bytes.Contains(groupData, []byte(grpcNumMark)) {
-			pattern = grpcPattern
+	var noCodeAsts []*ErrorCodeNOAst
+	for _, file := range files {
+		asts, err := NewErrorCodeNOAst(file)
+		if err != nil {
+			return err
 		}
-		if pattern != "" {
-			variableName := getVariableName(groupData, pattern)
-			if variableName != "" {
-				info := parseNumInfo(groupData, variableName)
-				if info.name != "" {
-					info.file = file
-					infos = append(infos, info)
+		noCodeAsts = append(noCodeAsts, asts...)
+	}
+
+	return CheckAndModifyDuplicateErrorCodeNO(noCodeAsts)
+}
+
+// ErrorCodeNOAst is the struct for error code NO
+type ErrorCodeNOAst struct {
+	FilePath string
+	SrcCode  string
+	fileSize int
+
+	VarName    string // example: userExampleNO
+	VarValue   int    // example: 1
+	VarSrcCode string // example: "userExampleNO = 1"
+}
+
+// SaveToFile save the modified source code to file
+func (e *ErrorCodeNOAst) SaveToFile(maxErrorCodeNO int) error {
+	oldStr := e.VarSrcCode
+	newStr := "\t" + e.VarName + " = " + strconv.Itoa(maxErrorCodeNO)
+	e.SrcCode = strings.Replace(e.SrcCode, oldStr, newStr, 1)
+	if e.SrcCode == "" {
+		return nil
+	}
+
+	return os.WriteFile(e.FilePath, []byte(e.SrcCode), 0666)
+}
+
+// CheckAndModifyDuplicateErrorCodeNO check and modify duplicate error code NO
+func CheckAndModifyDuplicateErrorCodeNO(errorCodeNOs []*ErrorCodeNOAst) error {
+	varValueMap := make(map[int][]*ErrorCodeNOAst)
+	duplicateNOMap := make(map[int][]*ErrorCodeNOAst)
+	maxErrorCodeNO := 0
+
+	for _, e := range errorCodeNOs {
+		varValueMap[e.VarValue] = append(varValueMap[e.VarValue], e)
+		if e.VarValue > maxErrorCodeNO {
+			maxErrorCodeNO = e.VarValue
+		}
+	}
+
+	for varNOValue, es := range varValueMap {
+		if len(es) > 1 {
+			duplicateNOMap[varNOValue] = es
+		}
+	}
+
+	if len(duplicateNOMap) == 0 {
+		return nil
+	}
+
+	for _, es := range duplicateNOMap {
+		sort.Slice(es, func(i, j int) bool {
+			return es[i].VarValue > es[j].VarValue
+		})
+		for i, e := range es {
+			if i > 0 {
+				maxErrorCodeNO++
+				if maxErrorCodeNO > 999 {
+					maxErrorCodeNO = 999
+				}
+				if err := e.SaveToFile(maxErrorCodeNO); err != nil {
+					return err
 				}
 			}
 		}
 	}
 
-	return infos
+	return nil
 }
 
-func getModifyNumInfos(infos []coreInfo) ([]coreInfo, map[int]struct{}) {
-	m := map[int][]coreInfo{}
-	allNum := map[int]struct{}{}
-	for _, info := range infos {
-		allNum[info.num] = struct{}{}
-		if cis, ok := m[info.num]; ok {
-			m[info.num] = append(cis, info)
-		} else {
-			m[info.num] = []coreInfo{info}
-		}
+// NewErrorCodeNOAst create a ErrorCodeNOAst object
+func NewErrorCodeNOAst(filePath string) ([]*ErrorCodeNOAst, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
 	}
 
-	needModify := []coreInfo{}
-	for _, numInfos := range m {
-		if len(numInfos) > 1 {
-			needModify = append(needModify, numInfos[1:]...)
-		}
+	astInfos, err := goast.ParseGoCode(filePath, data)
+	if err != nil {
+		return nil, err
 	}
 
-	return needModify, allNum
-}
+	var errorCodeNOAsts []*ErrorCodeNOAst
 
-func modifyNumberInfos(infos []coreInfo, allNum map[int]struct{}) (int, error) {
-	l := len(infos)
-	if l == 0 {
-		return 0, nil
-	}
+	for _, info := range astInfos {
+		if info.Type == goast.VarType {
+			spliceType := 0
+			if strings.Contains(info.Body, httpMark) {
+				spliceType = 1
+			} else if strings.Contains(info.Body, grpcMark) {
+				spliceType = 2
+			}
 
-	var nums []int
-	for i := 1; i < 100; i++ {
-		if _, ok := allNum[i]; !ok {
-			nums = append(nums, i)
-			if len(nums) == len(infos) {
-				break
+			if spliceType > 0 {
+				var varNames = map[string]struct{}{}
+				for _, varName := range info.Names {
+					if strings.HasSuffix(varName, "NO") {
+						if spliceType == 2 {
+							varName = strings.TrimPrefix(varName, "_")
+						}
+						varNames[varName] = struct{}{}
+					}
+				}
+
+				serviceName := getServiceName(varNames, info.Body)
+				if serviceName == "" {
+					continue
+				}
+				varNOName := serviceName + "NO"
+				if spliceType == 2 {
+					varNOName = "_" + varNOName
+				}
+				infoBody := "package ecode\n\nimport (\"github.com/go-dev-frame/sponge/pkg/errcode\")\n\n" + info.Body
+				varNOCodeSrc, varNOValueStr, err := findVarLineContent(varNOName, infoBody)
+				if err != nil {
+					continue
+				}
+				varNOValue, _ := strconv.Atoi(varNOValueStr)
+
+				errorCodeNOAsts = append(errorCodeNOAsts, &ErrorCodeNOAst{
+					FilePath:   filePath,
+					SrcCode:    string(data),
+					fileSize:   len(data),
+					VarName:    varNOName,
+					VarValue:   varNOValue,
+					VarSrcCode: varNOCodeSrc,
+				})
 			}
 		}
 	}
 
-	if len(nums) < l {
-		for i := 0; i < l-len(nums); i++ {
-			nums = append(nums, 99) // 99 is the largest number
-		}
-	}
-
-	count := 0
-	for i, info := range infos {
-		data, err := os.ReadFile(info.file)
-		if err != nil {
-			return 0, err
-		}
-
-		newData := bytes.ReplaceAll(data, []byte(info.srcStr), []byte(info.dstStr+strconv.Itoa(nums[i])))
-
-		err = os.WriteFile(info.file, newData, 0666)
-		if err != nil {
-			return 0, err
-		}
-		count++
-	}
-
-	return count, nil
-}
-
-func checkAndModifyDuplicateNum(files []string) (int, error) {
-	var allInfos []coreInfo
-	for _, file := range files {
-		infos := getNumberInfos(file)
-		if len(infos) > 0 {
-			allInfos = append(allInfos, infos...)
-		}
-	}
-
-	needModify, allNum := getModifyNumInfos(allInfos)
-
-	return modifyNumberInfos(needModify, allNum)
+	return errorCodeNOAsts, nil
 }

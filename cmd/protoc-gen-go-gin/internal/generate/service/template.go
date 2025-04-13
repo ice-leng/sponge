@@ -59,7 +59,7 @@ func New{{.Name}}Client() {{.ProtoPkgName}}.{{.Name}}Logicer {
 
 {{if eq .InvokeType 0}}{{if .Path}}{{.Comment}}
 func (c *{{.LowerServiceName}}Client) {{.MethodName}}(ctx context.Context, req *{{.RequestImportPkgName}}.{{.Request}}) (*{{.ReplyImportPkgName}}.{{.Reply}}, error) {
-	panic("{{.Prompt}}")
+	panic("implement me")
 
 	// fill in the business logic code here
 	// example:
@@ -92,9 +92,6 @@ func (c *{{.LowerServiceName}}Client) {{.MethodName}}(ctx context.Context, req *
 }{{end}}{{end}}
 
 {{- end}}
-
-// ---------- Do not delete or move this split line, this is the merge code marker ----------
-
 {{- end}}
 `
 
@@ -178,8 +175,6 @@ func {{.LowerName}}Middlewares(c *middlewareConfig) {
 {{- end}}
 }
 
-// ---------- Do not delete or move this split line, this is the merge code marker ----------
-
 {{- end}}
 `
 
@@ -196,9 +191,9 @@ import (
 {{- range .PbServices}}
 
 // {{.LowerName}} business-level rpc error codes.
-// the {{.LowerName}}NO value range is 1~100, if the same error code is used, it will cause panic.
+// the {{.LowerName}}NO value range is 1~999, if the same error code is used, it will cause panic.
 var (
-	_{{.LowerName}}NO       = {{.RandNumber}}
+	_{{.LowerName}}NO       = 1
 	_{{.LowerName}}Name     = "{{.LowerName}}"
 	_{{.LowerName}}BaseCode = errcode.RCode(_{{.LowerName}}NO)
 // --blank line--
@@ -208,8 +203,6 @@ var (
 
 	// error codes are globally unique, adding 1 to the previous error code
 )
-
-// ---------- Do not delete or move this split line, this is the merge code marker ----------
 
 {{- end}}
 `

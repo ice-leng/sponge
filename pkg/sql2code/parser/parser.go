@@ -60,12 +60,13 @@ const (
 	// DBDriverMongodb mongodb driver
 	DBDriverMongodb = "mongodb"
 
-	jsonTypeName    = "datatypes.JSON"
-	jsonPkgPath     = "gorm.io/datatypes"
-	boolTypeName    = "sgorm.Bool"
-	boolPkgPath     = "github.com/go-dev-frame/sponge/pkg/sgorm"
-	decimalTypeName = "decimal.Decimal"
-	decimalPkgPath  = "github.com/shopspring/decimal"
+	jsonTypeName     = "datatypes.JSON"
+	jsonPkgPath      = "gorm.io/datatypes"
+	boolTypeName     = "sgorm.Bool"
+	boolTypeTinyName = "sgorm.TinyBool"
+	boolPkgPath      = "github.com/go-dev-frame/sponge/pkg/sgorm"
+	decimalTypeName  = "decimal.Decimal"
+	decimalPkgPath   = "github.com/shopspring/decimal"
 
 	unknownCustomType = "UnknownCustomType"
 )
@@ -232,7 +233,7 @@ func (t tmplField) ConditionZero() string {
 	if t.DBDriver == DBDriverMysql || t.DBDriver == DBDriverPostgresql || t.DBDriver == DBDriverTidb {
 		if t.rewriterField != nil {
 			switch t.rewriterField.goType {
-			case boolTypeName:
+			case boolTypeName, boolTypeTinyName:
 				return ` != nil` //nolint
 			case jsonTypeName:
 				return `.String() != ""`
@@ -282,7 +283,7 @@ func (t tmplField) GoZero() string {
 			switch t.rewriterField.goType {
 			case jsonTypeName, decimalTypeName:
 				return ` = "string"`
-			case boolTypeName:
+			case boolTypeName, boolTypeTinyName:
 				return `= false`
 			}
 		}
@@ -330,7 +331,7 @@ func (t tmplField) GoTypeZero() string {
 				return `""` //nolint
 			case decimalTypeName:
 				return `""`
-			case boolTypeName:
+			case boolTypeName, boolTypeTinyName:
 				return `false`
 			}
 		}
@@ -754,7 +755,7 @@ func getModelStructCode(data tmplData, importPaths []string, isEmbed bool, jsonN
 					//case jsonTypeName, decimalTypeName:
 					//	field.GoType = field.rewriterField.goType
 					//	importPaths = append(importPaths, field.rewriterField.path)
-					case jsonTypeName, decimalTypeName, boolTypeName:
+					case jsonTypeName, decimalTypeName, boolTypeName, boolTypeTinyName:
 						field.GoType = "*" + field.rewriterField.goType
 						importPaths = append(importPaths, field.rewriterField.path)
 					}
@@ -805,7 +806,7 @@ func getModelStructCode(data tmplData, importPaths []string, isEmbed bool, jsonN
 						//case jsonTypeName, decimalTypeName:
 						//	field.GoType = field.rewriterField.goType
 						//	importPaths = append(importPaths, field.rewriterField.path)
-						case jsonTypeName, decimalTypeName, boolTypeName:
+						case jsonTypeName, decimalTypeName, boolTypeName, boolTypeTinyName:
 							field.GoType = "*" + field.rewriterField.goType
 							importPaths = append(importPaths, field.rewriterField.path)
 						}
@@ -1245,7 +1246,7 @@ func mysqlToGoType(colTp *types.FieldType, style NullStyle) (name string, path s
 			if strings.ToLower(colTp.String()) == "tinyint(1)" {
 				name = "bool"
 				rrField = &rewriterField{
-					goType: boolTypeName,
+					goType: boolTypeTinyName,
 					path:   boolPkgPath,
 				}
 			} else {
@@ -1361,7 +1362,7 @@ func goTypeToProto(fields []tmplField, jsonNameType int, isCommonStyle bool) []t
 			switch field.rewriterField.goType {
 			case jsonTypeName, decimalTypeName:
 				field.GoType = "string"
-			case boolTypeName:
+			case boolTypeName, boolTypeTinyName:
 				field.GoType = "bool"
 			}
 		}
