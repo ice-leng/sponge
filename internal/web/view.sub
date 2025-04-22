@@ -184,7 +184,7 @@ import UserExampleAPI, {
   UserExamplePageVO,
   UserExampleForm,
   UserExamplePageQuery,
-} from "@/api/userExample";
+} from "@/api/userExample.api";
 
 const queryFormRef = ref(ElForm);
 const dataFormRef = ref(ElForm);

@@ -605,7 +605,7 @@ func (g *httpGenerator) addFields(r replacer.Replacer) []replacer.Field {
 		},
 		{
 			Old: "api.sub",
-			New: "src/api/" + xstrings.FirstRuneToLower(g.codes[parser.TableName]) + ".ts",
+			New: "src/api/" + xstrings.FirstRuneToLower(g.codes[parser.TableName]) + ".api.ts",
 		},
 		{
 			Old: "view.sub",
