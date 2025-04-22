@@ -636,7 +636,7 @@ func (g *httpGenerator) isInit() bool {
 	if global.Path != g.outPath {
 		path = g.outPath
 	}
-	_, err := os.Stat(path + "/go.mod")
+	_, err := os.Stat(path + "/server/go.mod")
 	if err == nil {
 		return true // File exists
 	}
