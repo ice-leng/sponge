@@ -632,8 +632,11 @@ func commonHTTPExtendedFields(r replacer.Replacer) []replacer.Field {
 }
 
 func (g *httpGenerator) isInit() bool {
-	path := global.Path + "/go.mod"
-	_, err := os.Stat(path)
+	path := global.Path
+	if global.Path != g.outPath {
+		path = g.outPath
+	}
+	_, err := os.Stat(path + "/go.mod")
 	if err == nil {
 		return true // File exists
 	}
