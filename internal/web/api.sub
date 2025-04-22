@@ -6,7 +6,7 @@ const UserExampleAPI = {
   /** 获取分页数据 */
   getPage(queryParams?: UserExamplePageQuery) {
     return request<any, PageResult<UserExamplePageVO[]>>({
-      url: `${USEREXAMPLE_BASE_URL}/list`,
+      url: `${USEREXAMPLE_BASE_URL}`,
       method: "get",
       params: queryParams,
     });
