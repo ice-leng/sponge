@@ -12,11 +12,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 
 	"github.com/go-dev-frame/sponge/pkg/gin/handlerfunc"
 	"github.com/go-dev-frame/sponge/pkg/gin/middleware"
-	"github.com/go-dev-frame/sponge/pkg/gin/validator"
 	"github.com/go-dev-frame/sponge/pkg/logger"
 )
 
@@ -36,7 +34,6 @@ func NewRouter(spongeAddr string, isLog bool) *gin.Engine {
 	if isLog {
 		r.Use(middleware.Logging(middleware.WithLog(logger.Get())))
 	}
-	binding.Validator = validator.Init()
 
 	// solve vue using history route 404 problem
 	r.NoRoute(handlerfunc.BrowserRefreshFS(staticFS, "static/index.html"))
