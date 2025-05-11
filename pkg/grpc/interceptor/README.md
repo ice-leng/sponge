@@ -2,16 +2,16 @@
 
 Common interceptors for gRPC server and client side, including:
 
-- Logging
-- Recovery
-- Retry
-- Rate limiter
-- Circuit breaker
-- Timeout
-- Tracing
-- Request id
-- Metrics
-- JWT authentication
+- [Logging](README.md#logging-interceptor)
+- [Recovery](README.md#recovery-interceptor)
+- [Retry](README.md#retry-interceptor)
+- [Rate limiter](README.md#rate-limiter-interceptor)
+- [Circuit breaker](README.md#circuit-breaker-interceptor)
+- [Timeout](README.md#timeout-interceptor)
+- [Tracing](README.md#tracing-interceptor)
+- [Request id](README.md#request-id-interceptor)
+- [Metrics](README.md#metrics-interceptor)
+- [JWT authentication](README.md#jwt-authentication-interceptor)
 
 <br>
 
@@ -491,6 +491,15 @@ func extraVerifyFn(ctx context.Context, claims *jwt.Claims) error {
     //isVip, _ := claims.GetBool("is_vip")
 
     return nil
+}
+
+// GetByID ...
+func (s *user) GetByID(ctx context.Context, req *userV1.GetByIDRequest) (*userV1.GetByIDReply, error) {
+    // ......
+
+	claims,ok := interceptor.GetJwtClaims(ctx) // if necessary, claims can be got from gin context.
+
+	// ......
 }
 ```
 
