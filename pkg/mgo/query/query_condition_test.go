@@ -65,7 +65,7 @@ func TestParams_ConvertToMongoFilter(t *testing.T) {
 					},
 				},
 			},
-			want:    bson.M{"name": bson.M{"$neq": "ZhangSan"}},
+			want:    bson.M{"name": bson.M{"$ne": "ZhangSan"}},
 			wantErr: false,
 		},
 		{
@@ -187,7 +187,7 @@ func TestParams_ConvertToMongoFilter(t *testing.T) {
 					},
 				},
 			},
-			want:    bson.M{"$and": []bson.M{{"name": bson.M{"$neq": "ZhangSan"}}, {"name": bson.M{"$neq": "LiSi"}}}},
+			want:    bson.M{"$and": []bson.M{{"name": bson.M{"$ne": "ZhangSan"}}, {"name": bson.M{"$ne": "LiSi"}}}},
 			wantErr: false,
 		},
 		{
@@ -315,7 +315,7 @@ func TestParams_ConvertToMongoFilter(t *testing.T) {
 					},
 				},
 			},
-			want:    bson.M{"$or": []bson.M{{"name": "LiSi"}, {"gender": bson.M{"$neq": "male"}}}},
+			want:    bson.M{"$or": []bson.M{{"name": "LiSi"}, {"gender": bson.M{"$ne": "male"}}}},
 			wantErr: false,
 		},
 		{

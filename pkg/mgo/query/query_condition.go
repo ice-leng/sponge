@@ -145,7 +145,7 @@ func (c *Column) convert() error {
 		switch c.Exp {
 		//case eqSymbol:
 		case neqSymbol:
-			c.Value = bson.M{"$neq": c.Value}
+			c.Value = bson.M{"$ne": c.Value}
 		case gtSymbol:
 			c.Value = bson.M{"$gt": c.Value}
 		case gteSymbol:
