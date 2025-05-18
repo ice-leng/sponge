@@ -1,6 +1,7 @@
 package query
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
@@ -538,6 +539,38 @@ func TestParams_ConvertToMongoFilter(t *testing.T) {
 	}
 }
 
+func TestParams_ConvertToMongoFilter_Error(t *testing.T) {
+	p := &Params{
+		Limit: 10,
+		Columns: []Column{
+			{
+				Name:  "age",
+				Value: 10,
+			},
+			{
+				Name:  "email",
+				Value: "foo@bar.com",
+			},
+		}}
+
+	whitelists := map[string]bool{"name": true, "age": true}
+	_, err := p.ConvertToMongoFilter(WithWhitelistNames(whitelists))
+	t.Log(err)
+	assert.Error(t, err)
+
+	fn := func(columns []Column) error {
+		for _, col := range columns {
+			if col.Value == "foo@bar.com" {
+				return errors.New("'foo@bar.com' is not allowed")
+			}
+		}
+		return nil
+	}
+	_, err = p.ConvertToMongoFilter(WithValidateFn(fn))
+	t.Log(err)
+	assert.Error(t, err)
+}
+
 func TestConditions_ConvertToMongo(t *testing.T) {
 	c := Conditions{
 		Columns: []Column{
@@ -666,4 +699,34 @@ func Test_getSort(t *testing.T) {
 		d := getSort(name)
 		t.Log(d)
 	}
+}
+
+func TestConditions_ConvertToMongo_Error(t *testing.T) {
+	c := Conditions{Columns: []Column{
+		{
+			Name:  "age",
+			Value: 10,
+		},
+		{
+			Name:  "email",
+			Value: "foo@bar.com",
+		},
+	}}
+
+	whitelists := map[string]bool{"name": true, "age": true}
+	_, err := c.ConvertToMongo(WithWhitelistNames(whitelists))
+	t.Log(err)
+	assert.Error(t, err)
+
+	fn := func(columns []Column) error {
+		for _, col := range columns {
+			if col.Value == "foo@bar.com" {
+				return errors.New("'foo@bar.com' is not allowed")
+			}
+		}
+		return nil
+	}
+	_, err = c.ConvertToMongo(WithValidateFn(fn))
+	t.Log(err)
+	assert.Error(t, err)
 }

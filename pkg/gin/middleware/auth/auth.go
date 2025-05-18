@@ -35,7 +35,7 @@ type initAuthOptions struct {
 	signingMethod *SigningMethodHMAC
 }
 
-func defaultInirAuthOptions() *initAuthOptions {
+func defaultInitAuthOptions() *initAuthOptions {
 	return &initAuthOptions{
 		signingMethod: HS256,
 	}
@@ -66,7 +66,7 @@ func WithInitAuthIssuer(issuer string) InitAuthOption {
 
 // InitAuth initializes jwt options.
 func InitAuth(signingKey []byte, expire time.Duration, opts ...InitAuthOption) {
-	o := defaultInirAuthOptions()
+	o := defaultInitAuthOptions()
 	o.apply(opts...)
 
 	customSigningKey = signingKey

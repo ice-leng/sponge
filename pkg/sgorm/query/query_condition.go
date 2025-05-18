@@ -77,6 +77,38 @@ var logicMap = map[string]string{
 	"or:)":  " OR ",
 }
 
+// ---------------------------------------------------------------------------
+
+type rulerOptions struct {
+	whitelistNames map[string]bool
+	validateFn     func(columns []Column) error
+}
+
+// RulerOption set the parameters of ruler options
+type RulerOption func(*rulerOptions)
+
+func (o *rulerOptions) apply(opts ...RulerOption) {
+	for _, opt := range opts {
+		opt(o)
+	}
+}
+
+// WithWhitelistNames set white list names of columns
+func WithWhitelistNames(whitelistNames map[string]bool) RulerOption {
+	return func(o *rulerOptions) {
+		o.whitelistNames = whitelistNames
+	}
+}
+
+// WithValidateFn set validate function of columns
+func WithValidateFn(fn func(columns []Column) error) RulerOption {
+	return func(o *rulerOptions) {
+		o.validateFn = fn
+	}
+}
+
+// -----------------------------------------------------------------------------
+
 // Params query parameters
 type Params struct {
 	Page  int    `json:"page" form:"page" binding:"gte=0"`
@@ -97,22 +129,8 @@ type Column struct {
 	Logic string      `json:"logic" form:"logic"` // logical type, defaults to and when the value is null, with &(and), ||(or)
 }
 
-func (c *Column) checkValid() error {
-	if c.Name == "" {
-		return fmt.Errorf("field 'name' cannot be empty")
-	}
-	if c.Value == nil {
-		v := expMap[strings.ToLower(c.Exp)]
-		if v == " IS NULL " || v == " IS NOT NULL " {
-			return nil
-		}
-		return fmt.Errorf("field 'value' cannot be nil")
-	}
-	return nil
-}
-
 // converting ExpType to sql expressions and LogicType to sql using characters
-func (c *Column) convert() (string, error) {
+func (c *Column) checkExp() (string, error) {
 	symbol := "?"
 	if c.Exp == "" {
 		c.Exp = Eq
@@ -185,7 +203,7 @@ func (p *Params) ConvertToPage() (order string, limit int, offset int) { //nolin
 
 // ConvertToGormConditions conversion to gorm-compliant parameters based on the Columns parameter
 // ignore the logical type of the last column, whether it is a one-column or multi-column query
-func (p *Params) ConvertToGormConditions() (string, []interface{}, error) {
+func (p *Params) ConvertToGormConditions(opts ...RulerOption) (string, []interface{}, error) { //nolint
 	str := ""
 	args := []interface{}{}
 	l := len(p.Columns)
@@ -199,12 +217,31 @@ func (p *Params) ConvertToGormConditions() (string, []interface{}, error) {
 	}
 	field := p.Columns[0].Name
 
-	for i, column := range p.Columns {
-		if err := column.checkValid(); err != nil {
+	o := rulerOptions{}
+	o.apply(opts...)
+	if o.validateFn != nil {
+		err := o.validateFn(p.Columns)
+		if err != nil {
 			return "", nil, err
 		}
+	}
 
-		symbol, err := column.convert()
+	for i, column := range p.Columns {
+		// check name
+		if column.Name == "" || (o.whitelistNames != nil && !o.whitelistNames[column.Name]) {
+			return "", nil, fmt.Errorf("field name '%s' is not allowed", column.Name)
+		}
+
+		// check value
+		if column.Value == nil {
+			v := expMap[strings.ToLower(column.Exp)]
+			if v != " IS NULL " && v != " IS NOT NULL " {
+				return "", nil, fmt.Errorf("field 'value' cannot be nil")
+			}
+		}
+
+		// check exp
+		symbol, err := column.checkExp()
 		if err != nil {
 			return "", nil, err
 		}
@@ -256,9 +293,9 @@ type Conditions struct {
 
 // ConvertToGorm conversion to gorm-compliant parameters based on the Columns parameter
 // ignore the logical type of the last column, whether it is a one-column or multi-column query
-func (c *Conditions) ConvertToGorm() (string, []interface{}, error) {
+func (c *Conditions) ConvertToGorm(opts ...RulerOption) (string, []interface{}, error) {
 	p := &Params{Columns: c.Columns}
-	return p.ConvertToGormConditions()
+	return p.ConvertToGormConditions(opts...)
 }
 
 // CheckValid check valid

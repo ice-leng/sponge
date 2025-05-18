@@ -1,6 +1,7 @@
 package query
 
 import (
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -617,6 +618,38 @@ func TestParams_ConvertToGormConditions(t *testing.T) {
 	}
 }
 
+func TestConditions_ConvertToGormConditions_Error(t *testing.T) {
+	p := &Params{
+		Limit: 10,
+		Columns: []Column{
+			{
+				Name:  "age",
+				Value: 10,
+			},
+			{
+				Name:  "email",
+				Value: "foo@bar.com",
+			},
+		}}
+
+	whitelists := map[string]bool{"name": true, "age": true}
+	_, _, err := p.ConvertToGormConditions(WithWhitelistNames(whitelists))
+	t.Log(err)
+	assert.Error(t, err)
+
+	fn := func(columns []Column) error {
+		for _, col := range columns {
+			if col.Value == "foo@bar.com" {
+				return errors.New("'foo@bar.com' is not allowed")
+			}
+		}
+		return nil
+	}
+	_, _, err = p.ConvertToGormConditions(WithValidateFn(fn))
+	t.Log(err)
+	assert.Error(t, err)
+}
+
 func TestConditions_ConvertToGorm(t *testing.T) {
 	c := Conditions{
 		Columns: []Column{
@@ -635,4 +668,34 @@ func TestConditions_ConvertToGorm(t *testing.T) {
 	}
 	assert.Equal(t, "name = ? AND gender = ?", str)
 	assert.Equal(t, len(values), 2)
+}
+
+func TestConditions_ConvertToGorm_Error(t *testing.T) {
+	c := Conditions{Columns: []Column{
+		{
+			Name:  "age",
+			Value: 10,
+		},
+		{
+			Name:  "email",
+			Value: "foo@bar.com",
+		},
+	}}
+
+	whitelists := map[string]bool{"name": true, "age": true}
+	_, _, err := c.ConvertToGorm(WithWhitelistNames(whitelists))
+	t.Log(err)
+	assert.Error(t, err)
+
+	fn := func(columns []Column) error {
+		for _, col := range columns {
+			if col.Value == "foo@bar.com" {
+				return errors.New("'foo@bar.com' is not allowed")
+			}
+		}
+		return nil
+	}
+	_, _, err = c.ConvertToGorm(WithValidateFn(fn))
+	t.Log(err)
+	assert.Error(t, err)
 }

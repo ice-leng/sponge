@@ -78,6 +78,38 @@ var logicMap = map[string]string{
 	orSymbol2:  orSymbol1,
 }
 
+// ---------------------------------------------------------------------------
+
+type rulerOptions struct {
+	whitelistNames map[string]bool
+	validateFn     func(columns []Column) error
+}
+
+// RulerOption set the parameters of ruler options
+type RulerOption func(*rulerOptions)
+
+func (o *rulerOptions) apply(opts ...RulerOption) {
+	for _, opt := range opts {
+		opt(o)
+	}
+}
+
+// WithWhitelistNames set white list names of columns
+func WithWhitelistNames(whitelistNames map[string]bool) RulerOption {
+	return func(o *rulerOptions) {
+		o.whitelistNames = whitelistNames
+	}
+}
+
+// WithValidateFn set validate function of columns
+func WithValidateFn(fn func(columns []Column) error) RulerOption {
+	return func(o *rulerOptions) {
+		o.validateFn = fn
+	}
+}
+
+// -----------------------------------------------------------------------------
+
 // Params query parameters
 type Params struct {
 	Page  int    `json:"page" form:"page" binding:"gte=0"`
@@ -96,6 +128,13 @@ type Column struct {
 	Exp   string      `json:"exp" form:"exp"`     // expressions, default value is "=", support =, !=, >, >=, <, <=, like, in
 	Value interface{} `json:"value" form:"value"` // column value
 	Logic string      `json:"logic" form:"logic"` // logical type, defaults to and when the value is null, with &(and), ||(or)
+}
+
+func (c *Column) checkName(whitelists map[string]bool) error {
+	if c.Name == "" || (whitelists != nil && !whitelists[c.Name]) {
+		return fmt.Errorf("field name '%s' is not allowed", c.Name)
+	}
+	return nil
 }
 
 func (c *Column) checkValid() error {
@@ -187,7 +226,16 @@ func (p *Params) ConvertToPage() (sort bson.D, limit int, skip int) { //nolint
 
 // ConvertToMongoFilter conversion to mongo-compliant parameters based on the Columns parameter
 // ignore the logical type of the last column, whether it is a one-column or multi-column query
-func (p *Params) ConvertToMongoFilter() (bson.M, error) {
+func (p *Params) ConvertToMongoFilter(opts ...RulerOption) (bson.M, error) {
+	o := rulerOptions{}
+	o.apply(opts...)
+	if o.validateFn != nil {
+		err := o.validateFn(p.Columns)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	filter := bson.M{}
 	l := len(p.Columns)
 	switch l {
@@ -195,7 +243,11 @@ func (p *Params) ConvertToMongoFilter() (bson.M, error) {
 		return bson.M{}, nil
 
 	case 1: // l == 1
-		err := p.Columns[0].convert()
+		err := p.Columns[0].checkName(o.whitelistNames)
+		if err != nil {
+			return nil, err
+		}
+		err = p.Columns[0].convert()
 		if err != nil {
 			return nil, err
 		}
@@ -203,7 +255,15 @@ func (p *Params) ConvertToMongoFilter() (bson.M, error) {
 		return filter, nil
 
 	case 2: // l == 2
-		err := p.Columns[0].convert()
+		err := p.Columns[0].checkName(o.whitelistNames)
+		if err != nil {
+			return nil, err
+		}
+		err = p.Columns[1].checkName(o.whitelistNames)
+		if err != nil {
+			return nil, err
+		}
+		err = p.Columns[0].convert()
 		if err != nil {
 			return nil, err
 		}
@@ -223,11 +283,11 @@ func (p *Params) ConvertToMongoFilter() (bson.M, error) {
 		return filter, nil
 
 	default: // l >=3
-		return p.convertMultiColumns()
+		return p.convertMultiColumns(o.whitelistNames)
 	}
 }
 
-func (p *Params) convertMultiColumns() (bson.M, error) {
+func (p *Params) convertMultiColumns(whitelistNames map[string]bool) (bson.M, error) {
 	filter := bson.M{}
 	logicType, groupIndexes, err := checkSameLogic(p.Columns)
 	if err != nil {
@@ -235,7 +295,12 @@ func (p *Params) convertMultiColumns() (bson.M, error) {
 	}
 	if logicType == allLogicAnd {
 		for _, column := range p.Columns {
-			err := column.convert()
+			err = column.checkName(whitelistNames)
+			if err != nil {
+				return nil, err
+			}
+
+			err = column.convert()
 			if err != nil {
 				return nil, err
 			}
@@ -251,7 +316,7 @@ func (p *Params) convertMultiColumns() (bson.M, error) {
 		return filter, nil
 	} else if logicType == allLogicOr {
 		for _, column := range p.Columns {
-			err := column.convert()
+			err = column.convert()
 			if err != nil {
 				return nil, err
 			}
@@ -376,7 +441,7 @@ func (c *Conditions) CheckValid() error {
 
 // ConvertToMongo conversion to mongo-compliant parameters based on the Columns parameter
 // ignore the logical type of the last column, whether it is a one-column or multi-column query
-func (c *Conditions) ConvertToMongo() (bson.M, error) {
+func (c *Conditions) ConvertToMongo(opts ...RulerOption) (bson.M, error) {
 	p := &Params{Columns: c.Columns}
-	return p.ConvertToMongoFilter()
+	return p.ConvertToMongoFilter(opts...)
 }

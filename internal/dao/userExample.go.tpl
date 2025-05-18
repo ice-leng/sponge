@@ -181,44 +181,13 @@ func (d *{{.TableNameCamelFCL}}Dao) GetBy{{.ColumnNameCamel}}(ctx context.Contex
 	return nil, err
 }
 
-// GetByColumns get paging records by column information,
-// Note: query performance degrades when table rows are very large because of the use of offset.
-//
-// params includes paging parameters and query parameters
-// paging parameters (required):
-//
-//	page: page number, starting from 0
-//	limit: lines per page
-//	sort: sort fields, default is {{.ColumnNameCamelFCL}} backwards, you can add - sign before the field to indicate reverse order, no - sign to indicate ascending order, multiple fields separated by comma
-//
-// query parameters (not required):
-//
-//	name: column name
-//	exp: expressions, which default is "=",  support =, !=, >, >=, <, <=, like, in, notin, isnull, isnotnull
-//	value: column value, if exp=in, multiple values are separated by commas
-//	logic: logical type, default value is "and", support &, and, ||, or
-//
-// example: search for a male over 20 years of age
-//
-//	params = &query.Params{
-//	    Page: 0,
-//	    Limit: 20,
-//	    Columns: []query.Column{
-//		{
-//			Name:    "age",
-//			Exp: ">",
-//			Value:   20,
-//		},
-//		{
-//			Name:  "gender",
-//			Value: "male",
-//		},
-//	}
+// GetByColumns get paging records by column information.
+// For more details, please refer to https://go-sponge.com/component/custom-page-query.html
 func (d *{{.TableNameCamelFCL}}Dao) GetByColumns(ctx context.Context, params *query.Params) ([]*model.{{.TableNameCamel}}, int64, error) {
 	if params.Sort == "" {
 		params.Sort = "-{{.ColumnName}}"
 	}
-	queryStr, args, err := params.ConvertToGormConditions()
+	queryStr, args, err := params.ConvertToGormConditions(query.WithWhitelistNames(model.{{.TableNameCamel}}ColumnNames))
 	if err != nil {
 		return nil, 0, errors.New("query params error: " + err.Error())
 	}
