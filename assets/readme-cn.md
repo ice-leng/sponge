@@ -2,26 +2,27 @@
 
 <br>
 
-**sponge** 是一个强大的 `Go` 开发框架，其核心理念是通过解析 `SQL`、`Protobuf`、`JSON` 文件逆向生成模块化的代码，这些模块代码可灵活组合成多种类型的完整后端服务（`类似海绵细胞的特性，打散的海绵细胞能自动重新组合成新的海绵`）。sponge 拥有出色的项目工程化能力，提供一站式项目开发解决方案，涵盖代码生成、开发、测试、API 文档生成和部署。sponge 通过模块化架构与AI助手深度融合，大幅提升开发效率、降低技术门槛，助力开发者以"低代码"方式轻松构建稳定可靠的后端系统。
+**sponge** 是一个强大且易用的 `Go` 开发框架，其核心理念是通过解析 `SQL`、`Protobuf`、`JSON` 文件逆向生成模块化的代码，这些模块代码可灵活组合成多种类型的完整后端服务。sponge 采用模块化架构并深度集成 AI 助手，显著提升开发效率、降低技术门槛，以"低代码"方式轻松构建高性能、高可用的后端服务体系。
 
 <br>
 
 ### 适用场景
 
-sponge 适用于快速构建多种类型的高性能后端服务，包括但不限于：
+sponge 适用于快速构建多种类型的高性能后端服务，适用场景如下：
 
-- `RESTful API` 服务
-- `Web` 服务 (基于Gin)
-- `gRPC` 服务
-- `HTTP+gRPC` 混合服务
-- `gRPC Gateway API` 服务
-- 云原生微服务
+- 开发企业内部 API 服务。
+- 快速构建微服务 (Microservices)。
+- 搭建后台管理系统 API。
+- 构建 gRPC 服务进行服务间通信。
+- 作为 Go 初学者或团队学习 Go 项目结构和最佳实践的起点。
+- 需要提高开发效率、统一开发规范的团队。
+- 云原生开发。
 
 此外，开发者还可以通过自定义模板，生成满足业务需求的各类代码。
 
 <br>
 
-### 核心优势
+### 主要特点
 
 1. **一键生成完整后端服务代码**  
    对于仅需 `CRUD API` 的 `Web` 或 `gRPC` 服务，无需编写任何 `Go` 代码。只需连接数据库(如 `MySQL`、`MongoDB`、`PostgreSQL`、`SQLite`)，即可一键生成完整后端服务代码，并轻松部署到 Linux 服务器、Docker 或 Kubernetes 上。
@@ -56,7 +57,7 @@ sponge 适用于快速构建多种类型的高性能后端服务，包括但不�
 
 1. **安装 sponge**
 
-   支持在 windows、mac、linux 环境下安装 sponge，点击查看 [**安装 sponge 说明**](https://github.com/go-dev-frame/sponge/blob/main/assets/install-cn.md)。
+   支持在 windows、mac、linux、docker 环境下安装 sponge，点击查看 [**安装 sponge 说明**](https://github.com/go-dev-frame/sponge/blob/main/assets/install-cn.md)。
 
 2. **打开生成代码 UI 页面**
 
@@ -72,17 +73,17 @@ sponge 适用于快速构建多种类型的高性能后端服务，包括但不�
    <img width="1500px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/sponge-ui.png">
    </p>
 
-   > 如果想要在跨主机的浏览器上访问，启动UI时需要指定宿主机ip或域名，示例 `sponge run -a http://your_host_ip:24631`。 也可以在 docker 上启动UI服务来支持跨主机访问，点击查看 [在 docker 运行 sponge UI 服务说明](https://github.com/go-dev-frame/sponge/blob/main/assets/install-cn.md#Docker%E7%8E%AF%E5%A2%83)。
+   > 如果想要在跨主机的浏览器上访问，启动UI时需要指定宿主机ip或域名，示例 `sponge run -a http://your_host_ip:24631`。
 
 <br>
 
-### 主要功能
+### 组件
 
 sponge 内置了丰富的组件(按需使用)：
 
 | 组件 | 使用示例 |
 | :--- | :-------- |
-| Web 框架 [gin](https://github.com/gin-gonic/gin) | [gin 示例](https://github.com/go-dev-frame/sponge/blob/main/internal/routers/routers.go#L35)<br>[gin 中间件示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/gin/middleware/README.md) |
+| Web 框架 [gin](https://github.com/gin-gonic/gin) | [gin 示例](https://github.com/go-dev-frame/sponge/blob/main/internal/routers/routers.go#L32)<br>[gin 中间件示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/gin/middleware/README.md) |
 | RPC 框架 [gRPC](https://github.com/grpc/grpc-go) | [gRPC 示例](https://github.com/go-dev-frame/sponge/blob/main/internal/server/grpc.go#L312)<br>[gRPC 拦截器示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/grpc/interceptor/README.md) |
 | 配置解析 [viper](https://github.com/spf13/viper) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/conf/README.md#example-of-use) |
 | 日志 [zap](https://github.com/uber-go/zap) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/logger/README.md#example-of-use) |
@@ -103,20 +104,20 @@ sponge 内置了丰富的组件(按需使用)：
 | 服务注册与发现 [etcd](https://github.com/etcd-io/etcd), [consul](https://github.com/hashicorp/consul), [nacos](https://github.com/alibaba/nacos) | [服务注册示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/servicerd/registry/README.md#example-of-use)<br>[服务发现示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/servicerd/discovery/README.md#example-of-use) |
 | 自适应采集 [profile](https://go.dev/blog/pprof) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/prof/go-profile-cn.md) |
 | 资源统计 [gopsutil](https://github.com/shirou/gopsutil) | [示例](https://github.com/go-dev-frame/sponge/tree/main/pkg/stat#example-of-use) |
-| 配置中心 [nacos](https://github.com/alibaba/nacos) | [示例](https://go-sponge.com/zh-cn/components?id=%e9%85%8d%e7%bd%ae%e4%b8%ad%e5%bf%83) |
+| 配置中心 [nacos](https://github.com/alibaba/nacos) | [示例](https://go-sponge.com/zh/component/config-center.html) |
 | 代码质量检查 [golangci-lint](https://github.com/golangci/golangci-lint) | - |
-| 持续集成部署 CI/CD [kubernetes](https://github.com/kubernetes/kubernetes), [docker](https://www.docker.com/), [jenkins](https://github.com/jenkinsci/jenkins) | [示例](https://go-sponge.com/zh-cn/deployment?id=%e6%8c%81%e7%bb%ad%e9%9b%86%e6%88%90%e9%83%a8%e7%bd%b2) |
+| 持续集成部署 CI/CD [kubernetes](https://github.com/kubernetes/kubernetes), [docker](https://www.docker.com/), [jenkins](https://github.com/jenkinsci/jenkins) | [示例](https://go-sponge.com/zh/deployment/kubernetes.html) |
 | 生成项目业务架构图 [spograph](https://github.com/go-dev-frame/spograph) | [示例](https://github.com/go-dev-frame/spograph?tab=readme-ov-file#example-of-use) |
-| 生成自定义代码 [go template](https://pkg.go.dev/text/template@go1.23.3) | [json 示例](https://go-sponge.com/zh-cn/custom-template-field)<br>[sql 示例](https://go-sponge.com/zh-cn/custom-template-sql)<br>[protobuf 示例](https://go-sponge.com/zh-cn/custom-template-protobuf) |
+| 生成自定义代码 [go template](https://pkg.go.dev/text/template@go1.23.3) | [json 示例](https://go-sponge.com/zh/guide/customize/template-json.html)<br>[sql 示例](https://go-sponge.com/zh/guide/customize/template-sql.html)<br>[protobuf 示例](https://go-sponge.com/zh/guide/customize/template-protobuf.html) |
 | AI助手 [DeepSeek](https://deepseek.com), [ChatGPT](https://chatgpt.com), [Gemini](https://gemini.google.com) | [示例](https://github.com/go-dev-frame/sponge/blob/main/cmd/sponge/commands/assistant/generate.go#L44) |
 
 <br>
 
 ### 代码生成引擎
 
-sponge 的代码生成引擎支持**内置模板**和**自定义模板**两种方式生成项目所需的代码，支持 AI 助手生成业务逻辑代码。
+sponge 提供强大的代码生成能力，支持基于`内置模板`和`自定义模板`两种方式快速生成项目所需代码，同时集成`AI 助手`辅助生成业务逻辑代码。
 
-1. sponge 基于内置模板生成代码框架如下图所示，支持 sql 和 protobuf 两种方式。
+1. sponge 基于内置模板生成代码框架，如下图所示：
 
 <p align="center">
 <img width="1500px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/sponge-framework.png">
@@ -124,7 +125,7 @@ sponge 的代码生成引擎支持**内置模板**和**自定义模板**两种�
 
 <br>
 
-2. sponge 基于自定义模板生成代码框架如下图所示，支持 json、sql、protobuf 三种方式。
+2. sponge 基于自定义模板生成代码框架，如下图所示：
 
 <p align="center">
 <img width="1200px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/template-framework.png">
@@ -132,7 +133,7 @@ sponge 的代码生成引擎支持**内置模板**和**自定义模板**两种�
 
 <br>
 
-3. sponge 基于函数描述信息生成业务逻辑代码框架，如下图所示：
+3. sponge 基于函数及注释生成业务逻辑代码框架，如下图所示：
 
 <p align="center">
 <img width="1200px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/ai-assistant-framework.png">
@@ -142,7 +143,7 @@ sponge 的代码生成引擎支持**内置模板**和**自定义模板**两种�
 
 ### 微服务框架
 
-sponge 创建的后端服务属于典型的微服务架构，下图展示了典型的微服务分层结构，具备高性能、高扩展性，并内置常用的服务治理功能。
+sponge 是一个现代化的 Go 微服务框架，它采用典型的微服务分层架构，内置了丰富的服务治理功能，帮助开发者快速构建和维护复杂的微服务系统，框架结构如下图所示：
 
 <p align="center">
 <img width="1000px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/microservices-framework.png">
@@ -150,13 +151,19 @@ sponge 创建的后端服务属于典型的微服务架构，下图展示了典�
 
 <br>
 
-创建的http和grpc服务代码的性能测试： 50个并发，总共100万个请求。
+创建的 HTTP 和 gRPC 服务代码的性能测试： 50个并发，总共100万个请求。
 
 ![http-server](https://raw.githubusercontent.com/zhufuyi/microservices_framework_benchmark/main/test/assets/http-server.png)
 
 ![grpc-server](https://raw.githubusercontent.com/zhufuyi/microservices_framework_benchmark/main/test/assets/grpc-server.png)
 
 点击查看[**测试代码**](https://github.com/zhufuyi/microservices_framework_benchmark)。
+
+<br>
+
+### sponge 开发指南
+
+欢迎查阅 [Sponge 开发项目的完整技术文档](https://go-sponge.com/zh/)，该文档详尽涵盖了代码生成、开发流程、系统配置及部署方案等核心内容。
 
 <br>
 
@@ -176,7 +183,7 @@ sponge 支持创建 `单体应用单体仓库(monolith)`、`微服务多仓库(m
    ├── configs        # 配置文件的目录
    ├── deployments    # 裸机、docker、k8s部署脚本目录
    ├── docs           # 设计文档和界面文档目录
-   ├── internal       # 业务逻辑代码目录
+   ├── internal       # 项目内部代码目录
    │    ├── cache        # 基于业务包装的缓存目录
    │    ├── config       # Go结构的配置文件目录
    │    ├── dao          # 数据访问目录
@@ -200,7 +207,7 @@ sponge 支持创建 `单体应用单体仓库(monolith)`、`微服务多仓库(m
 
 <br>
 
-2. 创建`微服务单体仓库(mono-repo)`代码目录结构(大仓库代码目录结构)如下：
+2. 创建`微服务单体仓库(mono-repo)`(大仓库)代码目录结构如下：
 
 ```bash
    .
@@ -220,15 +227,9 @@ sponge 支持创建 `单体应用单体仓库(monolith)`、`微服务多仓库(m
 
 <br>
 
-### sponge 开发文档
+### 代码示例
 
-点击查看 [sponge 开发项目的详细文档](https://go-sponge.com/zh-cn/)，包括代码生成、开发、配置、部署说明等。
-
-<br>
-
-### 使用示例
-
-#### 使用 sponge 创建服务示例
+#### sponge 创建服务代码示例
 
 - [基于sql创建web服务(包括CRUD)](https://github.com/go-dev-frame/sponge_examples/tree/main/1_web-gin-CRUD)
 - [基于sql创建grpc服务(包括CRUD)](https://github.com/go-dev-frame/sponge_examples/tree/main/2_micro-grpc-CRUD)
@@ -236,11 +237,6 @@ sponge 支持创建 `单体应用单体仓库(monolith)`、`微服务多仓库(m
 - [基于protobuf创建grpc服务](https://github.com/go-dev-frame/sponge_examples/tree/main/4_micro-grpc-protobuf)
 - [基于protobuf创建grpc网关服务](https://github.com/go-dev-frame/sponge_examples/tree/main/5_micro-gin-rpc-gateway)
 - [基于protobuf创建grpc+http服务](https://github.com/go-dev-frame/sponge_examples/tree/main/_10_micro-grpc-http-protobuf)
-
-#### 使用 sponge 开发完整项目示例
-
-- [简单的社区web后端服务](https://github.com/go-dev-frame/sponge_examples/tree/main/7_community-single)
-- [简单的社区web后端服务拆分为微服务](https://github.com/go-dev-frame/sponge_examples/tree/main/8_community-cluster)
 
 #### 分布式事务示例
 
@@ -250,7 +246,12 @@ sponge 支持创建 `单体应用单体仓库(monolith)`、`微服务多仓库(m
 
 ####  sponge+AI 助手协同开发示例
 
-- [家电零售管理平台](https://github.com/go-dev-frame/sponge_examples/tree/main/_15_appliance_store)
+- [家电零售管理](https://github.com/go-dev-frame/sponge_examples/tree/main/_15_appliance_store)
+
+#### sponge 开发项目示例
+
+- [社区后端服务](https://github.com/go-dev-frame/sponge_examples/tree/main/7_community-single)
+- [单体服务拆分为微服务](https://github.com/go-dev-frame/sponge_examples/tree/main/8_community-cluster)
 
 <br>
 <br>
