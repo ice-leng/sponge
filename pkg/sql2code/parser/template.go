@@ -26,6 +26,16 @@ func (m *{{.TableName}}) TableName() string {
 {{end}}
 `
 
+	tableColumnsTmpl    *template.Template
+	tableColumnsTmplRaw = `
+// {{.TableName}}ColumnNames Whitelist for custom query fields to prevent sql injection attacks
+var {{.TableName}}ColumnNames = map[string]bool{
+{{- range .Fields}}
+	"{{.ColName}}": true,
+{{- end}}
+}
+`
+
 	modelTmpl    *template.Template
 	modelTmplRaw = `package {{.Package}}
 {{if .ImportPath}}
@@ -729,6 +739,10 @@ func initTemplate() {
 		modelStructTmpl, err = template.New("goStruct").Parse(modelStructTmplRaw)
 		if err != nil {
 			errSum = errors.Wrap(err, "modelStructTmplRaw")
+		}
+		tableColumnsTmpl, err = template.New("tableColumns").Parse(tableColumnsTmplRaw)
+		if err != nil {
+			errSum = errors.Wrap(err, "tableColumnsTmplRaw")
 		}
 		modelTmpl, err = template.New("goFile").Parse(modelTmplRaw)
 		if err != nil {
