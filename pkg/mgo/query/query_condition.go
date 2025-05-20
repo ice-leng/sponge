@@ -164,15 +164,13 @@ func (c *Column) convert() error {
 		return err
 	}
 
-	if c.Name == "id" || c.Name == "_id" {
-		if str, ok := c.Value.(string); ok {
-			c.Name = "_id"
-			c.Value, _ = primitive.ObjectIDFromHex(str)
-		}
-	} else if strings.Contains(c.Name, ":oid") {
-		if str, ok := c.Value.(string); ok {
-			c.Name = strings.Replace(c.Name, ":oid", "", 1)
-			c.Value, _ = primitive.ObjectIDFromHex(str)
+	if oid, ok := isObjectID(c.Value); ok {
+		c.Value = oid
+
+		if c.Name == "id" {
+			c.Name = "_id" // force to "_id"
+		} else if strings.HasSuffix(c.Name, ":oid") {
+			c.Name = strings.TrimSuffix(c.Name, ":oid")
 		}
 	}
 
@@ -356,6 +354,16 @@ func (p *Params) convertMultiColumns(whitelistNames map[string]bool) (bson.M, er
 	filter["$or"] = orConditions
 
 	return filter, nil
+}
+
+func isObjectID(v interface{}) (primitive.ObjectID, bool) {
+	if str, ok := v.(string); ok && len(str) == 24 {
+		value, err := primitive.ObjectIDFromHex(str)
+		if err == nil {
+			return value, true
+		}
+	}
+	return [12]byte{}, false
 }
 
 func checkSameLogic(columns []Column) (int, [][]int, error) {

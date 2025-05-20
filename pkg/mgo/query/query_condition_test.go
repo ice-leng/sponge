@@ -440,8 +440,9 @@ func TestParams_ConvertToMongoFilter(t *testing.T) {
 			wantErr: false,
 		},
 
+		// --------------------------- object id ------------------------------
 		{
-			name: "convert to object id",
+			name: "convert to object id 1",
 			args: args{
 				columns: []Column{
 					{
@@ -455,6 +456,42 @@ func TestParams_ConvertToMongoFilter(t *testing.T) {
 				},
 			},
 			want:    bson.M{"$and": []bson.M{{"_id": primitive.ObjectID{0x65, 0xce, 0x48, 0x48, 0x3f, 0x11, 0xaf, 0xf6, 0x97, 0xe3, 0xd, 0x6d}}, {"order_id": primitive.ObjectID{0x65, 0xce, 0x48, 0x48, 0x3f, 0x11, 0xaf, 0xf6, 0x97, 0xe3, 0xd, 0x6d}}}},
+			wantErr: false,
+		},
+
+		{
+			name: "convert to object id 2",
+			args: args{
+				columns: []Column{
+					{
+						Name:  "userId",
+						Value: "65ce48483f11aff697e30d6d",
+					},
+					{
+						Name:  "orderID",
+						Value: "65ce48483f11aff697e30d6d",
+					},
+				},
+			},
+			want:    bson.M{"$and": []bson.M{{"userId": primitive.ObjectID{0x65, 0xce, 0x48, 0x48, 0x3f, 0x11, 0xaf, 0xf6, 0x97, 0xe3, 0xd, 0x6d}}, {"orderID": primitive.ObjectID{0x65, 0xce, 0x48, 0x48, 0x3f, 0x11, 0xaf, 0xf6, 0x97, 0xe3, 0xd, 0x6d}}}},
+			wantErr: false,
+		},
+
+		{
+			name: "convert to object id 3",
+			args: args{
+				columns: []Column{
+					{
+						Name:  "_id",
+						Value: "65ce48483f11aff697e30d6d",
+					},
+					{
+						Name:  "my_order",
+						Value: "65ce48483f11aff697e30d6d",
+					},
+				},
+			},
+			want:    bson.M{"$and": []bson.M{{"_id": primitive.ObjectID{0x65, 0xce, 0x48, 0x48, 0x3f, 0x11, 0xaf, 0xf6, 0x97, 0xe3, 0xd, 0x6d}}, {"my_order": primitive.ObjectID{0x65, 0xce, 0x48, 0x48, 0x3f, 0x11, 0xaf, 0xf6, 0x97, 0xe3, 0xd, 0x6d}}}},
 			wantErr: false,
 		},
 
