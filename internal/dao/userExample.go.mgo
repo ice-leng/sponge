@@ -194,42 +194,7 @@ func (d *userExampleDao) GetByID(ctx context.Context, id string) (*model.UserExa
 }
 
 // GetByColumns get paging records by column information,
-// Note: query performance degrades when table rows are very large because of the use of offset.
-//
-// params includes paging parameters and query parameters
-// paging parameters (required):
-//
-//	page: page number, starting from 0
-//	limit: lines per page
-//	sort: sort fields, default is id backwards, you can add - sign before the field to indicate reverse order, no - sign to indicate ascending order, multiple fields separated by comma
-//
-// query parameters (not required):
-//
-//	name: column name, if value is of type objectId, the suffix :oid must be added, e.g. order_id:oid
-//	exp: expressions, which default is "=",  support =, !=, >, >=, <, <=, like, in, notin
-//	value: column value, if exp=in, multiple values are separated by commas
-//	logic: logical type, default value is "and", support &, and, ||, or
-//
-// example: search for a male over 20 years of age
-//
-//	params = &query.Params{
-//	    Page: 0,
-//	    Limit: 20,
-//	    Columns: []query.Column{
-//		{
-//			Name:    "age",
-//			Exp: ">",
-//			Value:   20,
-//		},
-//		{
-//			Name:  "gender",
-//			Value: "male",
-//		},
-//		{
-//			Name:  "post_id:oid",   // suffix :oid is required for objectId type
-//			Value: "65ce48483f11aff697e30d6d",
-//		},
-//	}
+// For more details, please refer to https://go-sponge.com/component/custom-page-query.html
 func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params) ([]*model.UserExample, int64, error) {
 	filter, err := params.ConvertToMongoFilter(query.WithWhitelistNames(model.UserExampleColumnNames))
 	if err != nil {
