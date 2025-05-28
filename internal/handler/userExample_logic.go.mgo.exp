@@ -6,8 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jinzhu/copier"
-
+	"github.com/go-dev-frame/sponge/pkg/copier"
 	"github.com/go-dev-frame/sponge/pkg/gin/middleware"
 	"github.com/go-dev-frame/sponge/pkg/logger"
 	"github.com/go-dev-frame/sponge/pkg/mgo/query"
@@ -301,12 +300,8 @@ func convertUserExamplePb(record *model.UserExample) (*serverNameExampleV1.UserE
 	if err != nil {
 		return nil, err
 	}
-	// Note: if copier.Copy cannot assign a value to a field, add it here, e.g. CreatedAt, UpdatedAt
+	// Note: if copier.Copy cannot assign a value to a field, add it here
 	value.Id = record.ID.Hex()
-	// todo generate the conversion createdAt and updatedAt code here
-	// delete the templates code start
-	value.CreatedAt = record.CreatedAt.Format(time.RFC3339)
-	value.UpdatedAt = record.UpdatedAt.Format(time.RFC3339)
-	// delete the templates code end
+
 	return value, nil
 }

@@ -7,8 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jinzhu/copier"
-
+	"github.com/go-dev-frame/sponge/pkg/copier"
 	"github.com/go-dev-frame/sponge/pkg/sgorm/query"
 	"github.com/go-dev-frame/sponge/pkg/gin/middleware"
 	"github.com/go-dev-frame/sponge/pkg/logger"
@@ -304,12 +303,7 @@ func convert{{.TableNameCamel}}Pb(record *model.{{.TableNameCamel}}) (*serverNam
 	if err != nil {
 		return nil, err
 	}
-	// Note: if copier.Copy cannot assign a value to a field, add it here, e.g. CreatedAt, UpdatedAt
-	value.{{if .IsStandardPrimaryKey}}Id{{else}}{{.ColumnNameCamel}}{{end}} = record.{{.ColumnNameCamel}}
-	// todo generate the conversion createdAt and updatedAt code here
-	// delete the templates code start
-	value.CreatedAt = record.CreatedAt.Format(time.RFC3339)
-	value.UpdatedAt = record.UpdatedAt.Format(time.RFC3339)
-	// delete the templates code end
+	// Note: if copier.Copy cannot assign a value to a field, add it here
+
 	return value, nil
 }

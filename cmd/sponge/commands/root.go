@@ -20,9 +20,13 @@ var (
 func NewRootCMD() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "sponge",
-		Long: fmt.Sprintf(`Sponge is a powerful Go development framework, it's easy to develop web and microservice projects.
+		Long: fmt.Sprintf(`
+A powerful and easy-to-use Go development framework that enables you to effortlessly 
+build stable, reliable, and high-performance backend services with a "low-code" approach.
 Repo: %s
-Docs: %s`, color.HiCyanString("https://github.com/go-dev-frame/sponge"), color.HiCyanString("https://go-sponge.com")),
+Docs: %s`,
+			color.HiCyanString("https://github.com/go-dev-frame/sponge"),
+			color.HiCyanString("https://go-sponge.com")),
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		Version:       getVersion(),
