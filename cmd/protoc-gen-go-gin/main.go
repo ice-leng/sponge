@@ -160,6 +160,9 @@ func main() {
 
 func saveGinRouterFiles(f *protogen.File) error {
 	ginRouterFileContent := router.GenerateFiles(f)
+	if len(ginRouterFileContent) == 0 {
+		return nil
+	}
 	if !bytes.Contains(ginRouterFileContent, []byte("errors.")) {
 		ginRouterFileContent = bytes.Replace(ginRouterFileContent, []byte(`"errors"`), []byte(""), 1)
 	}
