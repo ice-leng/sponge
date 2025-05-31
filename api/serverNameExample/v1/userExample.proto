@@ -13,15 +13,13 @@ import "tagger/tagger.proto";
 
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
-// Default settings for generating *.swagger.json documents
-// NOTE: because json does not support 64 bits, the int64 and uint64 types under *.swagger.json are automatically converted to string types
-// Reference https://github.com/grpc-ecosystem/grpc-gateway/blob/db7fbefff7c04877cdb32e16d4a248a024428207/examples/internal/proto/examplepb/a_bit_of_everything.proto
+// Default settings for generating *.swagger.json documents. For reference, see: https://bit.ly/4dE5jj7
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   host: "localhost:8080"
   base_path: ""
   info: {
     title: "serverNameExample api docs";
-    version: "2.0";
+    version: "v1.0.0";
   }
   schemes: HTTP;
   schemes: HTTPS;
@@ -41,26 +39,26 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 service userExample {
-  // create userExample
+  // create a new userExample
   rpc Create(CreateUserExampleRequest) returns (CreateUserExampleReply) {
     option (google.api.http) = {
       post: "/api/v1/userExample"
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "create userExample",
-      description: "submit information to create userExample",
+      summary: "create a new userExample";
+      description: "Creates a new userExample entity using the provided data in the request body.";
     };
   }
 
-  // delete userExample by id
+  // delete a userExample by id
   rpc DeleteByID(DeleteUserExampleByIDRequest) returns (DeleteUserExampleByIDReply) {
     option (google.api.http) = {
       delete: "/api/v1/userExample/{id}"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "delete userExample",
-      description: "delete userExample by id",
+      summary: "delete a userExample by id";
+      description: "Deletes a existing userExample identified by the given id in the path.";
       //security: {
       //  security_requirement: {
       //    key: "BearerAuth";
@@ -70,15 +68,15 @@ service userExample {
     };
   }
 
-  // update userExample by id
+  // update a userExample by id
   rpc UpdateByID(UpdateUserExampleByIDRequest) returns (UpdateUserExampleByIDReply) {
     option (google.api.http) = {
       put: "/api/v1/userExample/{id}"
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "update userExample",
-      description: "update userExample by id",
+      summary: "update a userExample by id";
+      description: "Updates the specified userExample with new data provided in the request body. The target is identified by id in the path.";
       //security: {
       //  security_requirement: {
       //    key: "BearerAuth";
@@ -88,14 +86,14 @@ service userExample {
     };
   }
 
-  // get userExample by id
+  // get userExample details by id
   rpc GetByID(GetUserExampleByIDRequest) returns (GetUserExampleByIDReply) {
     option (google.api.http) = {
       get: "/api/v1/userExample/{id}"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "get userExample detail",
-      description: "get userExample detail by id",
+      summary: "get userExample details by id";
+      description: "Gets detailed information of a userExample specified by the given id in the path.";
       //security: {
       //  security_requirement: {
       //    key: "BearerAuth";
@@ -105,15 +103,15 @@ service userExample {
     };
   }
 
-  // list of userExample by query parameters
+  // get a list of userExamples by custom conditions
   rpc List(ListUserExampleRequest) returns (ListUserExampleReply) {
     option (google.api.http) = {
       post: "/api/v1/userExample/list"
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "list of userExamples by query parameters",
-      description: "list of userExamples by paging and conditions",
+      summary: "get a list of userExamples by custom conditions";
+      description: "Returns a paginated list of userExamples filtered by specified query parameters. The request supports pagination (page number, page size) and filtering conditions.";
       //security: {
       //  security_requirement: {
       //    key: "BearerAuth";
@@ -139,11 +137,14 @@ If used to generate code that supports the HTTP protocol, notes for defining mes
     2. If the request url is followed by a query parameter, such as /api/v1/getUserExample?name=Tom,
         a form tag must be added when defining the query parameter in the message, such as:
         string name = 1 [(tagger.tags) = "form:\"name\""].
-    3. If the message field name contain underscores(such as 'field_name'), it will cause a problem
-        where the JSON field names of the Swagger request parameters are different from those of the
-        GRPC JSON tag names. There are two solutions: Solution 1, remove the underline from the
-         message field name. Option 2, use the tool 'protoc-go-inject-tag' to modify the JSON tag name,
-         such as: string first_name = 1 ; // @gotags: json:"firstName"
+    3. When the message fields use snake_case naming (e.g., order_id), the generated swagger.json file
+        will use camelCase (e.g., orderId) instead of the expected snake_case. This behavior aligns with
+        the JSON tag names used by gRPC, but it can cause the Gin framework to fail to correctly bind and
+        retrieve parameter values. There are two ways to resolve this issue:
+            (1) Explicitly specify the JSON tag name using the json_name option, such as:
+                 string order_id = 1 [json_name = "order_id"];
+            (2) If you want to switch to camelCase naming and update the JSON tag name accordingly, such as:
+                 string order_id = 1 [json_name = "orderID", (tagger.tags) = "json:\"orderID\""];
 */
 
 

@@ -62,12 +62,12 @@ func (d *{{.TableNameCamelFCL}}Dao) deleteCache(ctx context.Context, {{.ColumnNa
 	return nil
 }
 
-// Create a record, insert the record and the {{.ColumnNameCamelFCL}} value is written back to the table
+// Create a new {{.TableNameCamelFCL}}, insert the record and the {{.ColumnNameCamelFCL}} value is written back to the table
 func (d *{{.TableNameCamelFCL}}Dao) Create(ctx context.Context, table *model.{{.TableNameCamel}}) error {
 	return d.db.WithContext(ctx).Create(table).Error
 }
 
-// DeleteBy{{.ColumnNameCamel}} delete a record by {{.ColumnNameCamelFCL}}
+// DeleteBy{{.ColumnNameCamel}} delete a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 func (d *{{.TableNameCamelFCL}}Dao) DeleteBy{{.ColumnNameCamel}}(ctx context.Context, {{.ColumnNameCamelFCL}} {{.GoType}}) error {
 	err := d.db.WithContext(ctx).Where("{{.ColumnName}} = ?", {{.ColumnNameCamelFCL}}).Delete(&model.{{.TableNameCamel}}{}).Error
 	if err != nil {
@@ -80,7 +80,7 @@ func (d *{{.TableNameCamelFCL}}Dao) DeleteBy{{.ColumnNameCamel}}(ctx context.Con
 	return nil
 }
 
-// UpdateBy{{.ColumnNameCamel}} update a record by {{.ColumnNameCamelFCL}}
+// UpdateBy{{.ColumnNameCamel}} update a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 func (d *{{.TableNameCamelFCL}}Dao) UpdateBy{{.ColumnNameCamel}}(ctx context.Context, table *model.{{.TableNameCamel}}) error {
 	err := d.updateDataBy{{.ColumnNameCamel}}(ctx, d.db, table)
 
@@ -131,7 +131,7 @@ func (d *{{.TableNameCamelFCL}}Dao) updateDataBy{{.ColumnNameCamel}}(ctx context
 	return db.WithContext(ctx).Model(table).Updates(update).Error
 }
 
-// GetBy{{.ColumnNameCamel}} get a record by {{.ColumnNameCamelFCL}}
+// GetBy{{.ColumnNameCamel}} get {{.TableNameCamelFCL}} details by {{.ColumnNameCamelFCL}}
 func (d *{{.TableNameCamelFCL}}Dao) GetBy{{.ColumnNameCamel}}(ctx context.Context, {{.ColumnNameCamelFCL}} {{.GoType}}) (*model.{{.TableNameCamel}}, error) {
 	// no cache
 	if d.cache == nil {
@@ -187,7 +187,7 @@ func (d *{{.TableNameCamelFCL}}Dao) GetBy{{.ColumnNameCamel}}(ctx context.Contex
 	return nil, err
 }
 
-// GetByColumns get paging records by column information.
+// GetByColumns get a list of {{.TableNameCamelFCL}} by custom conditions.
 // For more details, please refer to https://go-sponge.com/component/custom-page-query.html
 func (d *{{.TableNameCamelFCL}}Dao) GetByColumns(ctx context.Context, params *query.Params) ([]*model.{{.TableNameCamel}}, int64, error) {
 	if params.Sort == "" {
@@ -219,7 +219,7 @@ func (d *{{.TableNameCamelFCL}}Dao) GetByColumns(ctx context.Context, params *qu
 	return records, total, err
 }
 
-// DeleteBy{{.ColumnNamePluralCamel}} delete records by batch {{.ColumnNameCamelFCL}}
+// DeleteBy{{.ColumnNamePluralCamel}} delete {{.TableNameCamelFCL}} by batch {{.ColumnNameCamelFCL}}
 func (d *{{.TableNameCamelFCL}}Dao) DeleteBy{{.ColumnNamePluralCamel}}(ctx context.Context, {{.ColumnNamePluralCamelFCL}} []{{.GoType}}) error {
 	err := d.db.WithContext(ctx).Where("{{.ColumnName}} IN (?)", {{.ColumnNamePluralCamelFCL}}).Delete(&model.{{.TableNameCamel}}{}).Error
 	if err != nil {
@@ -234,7 +234,7 @@ func (d *{{.TableNameCamelFCL}}Dao) DeleteBy{{.ColumnNamePluralCamel}}(ctx conte
 	return nil
 }
 
-// GetByCondition get a record by condition
+// GetByCondition get {{.TableNameCamelFCL}} details by custom condition
 // For more details, please refer to https://go-sponge.com/component/custom-page-query.html#_2-condition-parameters-optional
 func (d *{{.TableNameCamelFCL}}Dao) GetByCondition(ctx context.Context, c *query.Conditions) (*model.{{.TableNameCamel}}, error) {
 	queryStr, args, err := c.ConvertToGorm(query.WithWhitelistNames(model.{{.TableNameCamel}}ColumnNames))
@@ -251,7 +251,7 @@ func (d *{{.TableNameCamelFCL}}Dao) GetByCondition(ctx context.Context, c *query
 	return table, nil
 }
 
-// GetBy{{.ColumnNamePluralCamel}} get records by batch {{.ColumnNameCamelFCL}}
+// GetBy{{.ColumnNamePluralCamel}} get a list of {{.TableNameCamelFCL}} by batch {{.ColumnNameCamelFCL}}
 func (d *{{.TableNameCamelFCL}}Dao) GetBy{{.ColumnNamePluralCamel}}(ctx context.Context, {{.ColumnNamePluralCamelFCL}} []{{.GoType}}) (map[{{.GoType}}]*model.{{.TableNameCamel}}, error) {
 	// no cache
 	if d.cache == nil {
@@ -326,7 +326,7 @@ func (d *{{.TableNameCamelFCL}}Dao) GetBy{{.ColumnNamePluralCamel}}(ctx context.
 	return itemMap, nil
 }
 
-// GetByLast{{.ColumnNameCamel}} get paging records by last {{.ColumnNameCamelFCL}} and limit
+// GetByLast{{.ColumnNameCamel}} get a list of {{.TableNameCamelFCL}} by last {{.ColumnNameCamelFCL}}
 func (d *{{.TableNameCamelFCL}}Dao) GetByLast{{.ColumnNameCamel}}(ctx context.Context, last{{.ColumnNameCamel}} {{.GoType}}, limit int, sort string) ([]*model.{{.TableNameCamel}}, error) {
 	if sort == "" {
 		sort = "-{{.ColumnName}}"

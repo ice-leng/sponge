@@ -61,7 +61,7 @@ func (d *userExampleDao) deleteCache(ctx context.Context, id string) error {
 	return nil
 }
 
-// Create a record, insert the record and the id value is written back to the table
+// Create a new userExample, insert the record and the id value is written back to the table
 func (d *userExampleDao) Create(ctx context.Context, record *model.UserExample) error {
 	if record.ID.IsZero() {
 		record.ID = primitive.NewObjectID()
@@ -76,7 +76,7 @@ func (d *userExampleDao) Create(ctx context.Context, record *model.UserExample) 
 	return err
 }
 
-// DeleteByID soft delete a record by id
+// DeleteByID delete a userExample by id
 func (d *userExampleDao) DeleteByID(ctx context.Context, id string) error {
 	filter := bson.M{"_id": database.ToObjectID(id)}
 	_, err := d.collection.UpdateOne(ctx, mgo.ExcludeDeleted(filter), mgo.EmbedDeletedAt(bson.M{}))
@@ -90,7 +90,7 @@ func (d *userExampleDao) DeleteByID(ctx context.Context, id string) error {
 	return nil
 }
 
-// UpdateByID update a record by id
+// UpdateByID update a userExample by id
 func (d *userExampleDao) UpdateByID(ctx context.Context, record *model.UserExample) error {
 	err := d.updateDataByID(ctx, d.collection, record)
 
@@ -139,7 +139,7 @@ func (d *userExampleDao) updateDataByID(ctx context.Context, collection *mongo.C
 	return err
 }
 
-// GetByID get a record by id
+// GetByID get userExample details by id
 func (d *userExampleDao) GetByID(ctx context.Context, id string) (*model.UserExample, error) {
 	oid := database.ToObjectID(id)
 	if oid.IsZero() {
@@ -198,7 +198,7 @@ func (d *userExampleDao) GetByID(ctx context.Context, id string) (*model.UserExa
 	return nil, err
 }
 
-// GetByColumns get paging records by column information,
+// GetByColumns get a list of userExample by custom conditions.
 // For more details, please refer to https://go-sponge.com/component/custom-page-query.html
 func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params) ([]*model.UserExample, int64, error) {
 	filter, err := params.ConvertToMongoFilter(query.WithWhitelistNames(model.UserExampleColumnNames))
@@ -232,7 +232,7 @@ func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params)
 	return records, total, err
 }
 
-// DeleteByIDs soft delete records by batch id
+// DeleteByIDs delete userExample by batch id
 func (d *userExampleDao) DeleteByIDs(ctx context.Context, ids []string) error {
 	oids := mgo.ConvertToObjectIDs(ids)
 	filter := bson.M{"_id": bson.M{"$in": oids}}
@@ -249,7 +249,7 @@ func (d *userExampleDao) DeleteByIDs(ctx context.Context, ids []string) error {
 	return nil
 }
 
-// GetByCondition get a record by condition
+// GetByCondition get userExample details by custom condition.
 // For more details, please refer to https://go-sponge.com/component/custom-page-query.html#_2-condition-parameters-optional
 func (d *userExampleDao) GetByCondition(ctx context.Context, c *query.Conditions) (*model.UserExample, error) {
 	filter, err := c.ConvertToMongo(query.WithWhitelistNames(model.UserExampleColumnNames))
@@ -266,7 +266,7 @@ func (d *userExampleDao) GetByCondition(ctx context.Context, c *query.Conditions
 	return record, nil
 }
 
-// GetByIDs get records by batch id
+// GetByIDs get a list of userExample by batch id
 func (d *userExampleDao) GetByIDs(ctx context.Context, ids []string) (map[string]*model.UserExample, error) {
 	// no cache
 	if d.cache == nil {
@@ -352,7 +352,7 @@ func (d *userExampleDao) GetByIDs(ctx context.Context, ids []string) (map[string
 	return itemMap, nil
 }
 
-// GetByLastID get paging records by last id and limit
+// GetByLastID get a list of userExample by last id
 func (d *userExampleDao) GetByLastID(ctx context.Context, lastID string, limit int, sort string) ([]*model.UserExample, error) {
 	page := query.NewPage(0, limit, sort)
 

@@ -105,31 +105,31 @@ import "validate/validate.proto";
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
 service {{.TName}} {
-  // create {{.TName}}
+  // create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {}
 
-  // delete {{.TName}} by id
+  // delete a {{.TName}} by id
   rpc DeleteByID(Delete{{.TableName}}ByIDRequest) returns (Delete{{.TableName}}ByIDReply) {}
 
-  // update {{.TName}} by id
+  // update a {{.TName}} by id
   rpc UpdateByID(Update{{.TableName}}ByIDRequest) returns (Update{{.TableName}}ByIDReply) {}
 
-  // get {{.TName}} by id
+  // get {{.TName}} details by id
   rpc GetByID(Get{{.TableName}}ByIDRequest) returns (Get{{.TableName}}ByIDReply) {}
 
-  // list of {{.TName}} by query parameters
+  // get a list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {}
 
   // delete {{.TName}} by batch id
   rpc DeleteByIDs(Delete{{.TableName}}ByIDsRequest) returns (Delete{{.TableName}}ByIDsReply) {}
 
-  // get {{.TName}} by condition
+  // get {{.TName}} details by custom condition
   rpc GetByCondition(Get{{.TableName}}ByConditionRequest) returns (Get{{.TableName}}ByConditionReply) {}
 
-  // list of {{.TName}} by batch id
+  // get a list of {{.TName}} by batch id
   rpc ListByIDs(List{{.TableName}}ByIDsRequest) returns (List{{.TableName}}ByIDsReply) {}
 
-  // list {{.TName}} by last id
+  // get a list of {{.TName}} by last id
   rpc ListByLastID(List{{.TableName}}ByLastIDRequest) returns (List{{.TableName}}ByLastIDReply) {}
 }
 
@@ -228,19 +228,19 @@ import "validate/validate.proto";
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
 service {{.TName}} {
-  // create {{.TName}}
+  // create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {}
 
-  // delete {{.TName}} by id
+  // delete a {{.TName}} by id
   rpc DeleteByID(Delete{{.TableName}}ByIDRequest) returns (Delete{{.TableName}}ByIDReply) {}
 
-  // update {{.TName}} by id
+  // update a {{.TName}} by id
   rpc UpdateByID(Update{{.TableName}}ByIDRequest) returns (Update{{.TableName}}ByIDReply) {}
 
-  // get {{.TName}} by id
+  // get {{.TName}} details by id
   rpc GetByID(Get{{.TableName}}ByIDRequest) returns (Get{{.TableName}}ByIDReply) {}
 
-  // list of {{.TName}} by query parameters
+  // get a list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {}
 }
 
@@ -308,10 +308,8 @@ import "validate/validate.proto";
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
 /*
-Reference https://github.com/grpc-ecosystem/grpc-gateway/blob/db7fbefff7c04877cdb32e16d4a248a024428207/examples/internal/proto/examplepb/a_bit_of_everything.proto
-Default settings for generating swagger documents
-NOTE: because json does not support 64 bits, the int64 and uint64 types under *.swagger.json are automatically converted to string types
-Tips: add swagger option to rpc method, example:
+Default settings for generating *.swagger.json documents. For reference, see: https://bit.ly/4dE5jj7
+Tip: To enhance the generated Swagger documentation, you can add the openapiv2_operation option to your RPC method. For example:
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "get user by id",
       description: "get user by id",
@@ -328,7 +326,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   base_path: ""
   info: {
     title: "serverNameExample api docs";
-    version: "2.0";
+    version: "v1.0.0";
   }
   schemes: HTTP;
   schemes: HTTPS;
@@ -348,7 +346,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 service {{.TName}} {
-  // create {{.TName}}
+  // create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}"
@@ -356,14 +354,14 @@ service {{.TName}} {
     };
   }
 
-  // delete {{.TName}} by id
+  // delete a {{.TName}} by id
   rpc DeleteByID(Delete{{.TableName}}ByIDRequest) returns (Delete{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       delete: "/api/v1/{{.TName}}/{id}"
     };
   }
 
-  // update {{.TName}} by id
+  // update a {{.TName}} by id
   rpc UpdateByID(Update{{.TableName}}ByIDRequest) returns (Update{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       put: "/api/v1/{{.TName}}/{id}"
@@ -371,14 +369,14 @@ service {{.TName}} {
     };
   }
 
-  // get {{.TName}} by id
+  // get {{.TName}} details by id
   rpc GetByID(Get{{.TableName}}ByIDRequest) returns (Get{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/{id}"
     };
   }
 
-  // list of {{.TName}} by query parameters
+  // get a list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/list"
@@ -394,7 +392,7 @@ service {{.TName}} {
     };
   }
 
-  // get {{.TName}} by condition
+  // get {{.TName}} details by custom condition
   rpc GetByCondition(Get{{.TableName}}ByConditionRequest) returns (Get{{.TableName}}ByConditionReply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/condition"
@@ -402,7 +400,7 @@ service {{.TName}} {
     };
   }
 
-  // list of {{.TName}} by batch id
+  // get a list of {{.TName}} by batch id
   rpc ListByIDs(List{{.TableName}}ByIDsRequest) returns (List{{.TableName}}ByIDsReply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/list/ids"
@@ -410,7 +408,7 @@ service {{.TName}} {
     };
   }
 
-  // list {{.TName}} by last id
+  // get a list of {{.TName}} by last id
   rpc ListByLastID(List{{.TableName}}ByLastIDRequest) returns (List{{.TableName}}ByLastIDReply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/list"
@@ -433,11 +431,14 @@ If used to generate code that supports the HTTP protocol, notes for defining mes
     2. If the request url is followed by a query parameter, such as /api/v1/getUserExample?name=Tom,
         a form tag must be added when defining the query parameter in the message, such as:
         string name = 1 [(tagger.tags) = "form:\"name\""].
-    3. If the message field name contain underscores(such as 'field_name'), it will cause a problem
-        where the JSON field names of the Swagger request parameters are different from those of the
-        GRPC JSON tag names. There are two solutions: Solution 1, remove the underline from the
-         message field name. Option 2, use the tool 'protoc-go-inject-tag' to modify the JSON tag name,
-         such as: string first_name = 1 ; // @gotags: json:"firstName"
+    3. When the message fields use snake_case naming (e.g., order_id), the generated swagger.json file
+        will use camelCase (e.g., orderId) instead of the expected snake_case. This behavior aligns with
+        the JSON tag names used by gRPC, but it can cause the Gin framework to fail to correctly bind and
+        retrieve parameter values. There are two ways to resolve this issue:
+            (1) Explicitly specify the JSON tag name using the json_name option, such as:
+                 string order_id = 1 [json_name = "order_id"];
+            (2) If you want to switch to camelCase naming and update the JSON tag name accordingly, such as:
+                 string order_id = 1 [json_name = "orderID", (tagger.tags) = "json:\"orderID\""];
 */
 
 
@@ -529,10 +530,8 @@ import "validate/validate.proto";
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
 /*
-Reference https://github.com/grpc-ecosystem/grpc-gateway/blob/db7fbefff7c04877cdb32e16d4a248a024428207/examples/internal/proto/examplepb/a_bit_of_everything.proto
-Default settings for generating swagger documents
-NOTE: because json does not support 64 bits, the int64 and uint64 types under *.swagger.json are automatically converted to string types
-Tips: add swagger option to rpc method, example:
+Default settings for generating *.swagger.json documents. For reference, see: https://bit.ly/4dE5jj7
+Tip: To enhance the generated Swagger documentation, you can add the openapiv2_operation option to your RPC method. For example:
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "get user by id",
       description: "get user by id",
@@ -549,7 +548,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   base_path: ""
   info: {
     title: "serverNameExample api docs";
-    version: "2.0";
+    version: "v1.0.0";
   }
   schemes: HTTP;
   schemes: HTTPS;
@@ -569,7 +568,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 service {{.TName}} {
-  // create {{.TName}}
+  // create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}"
@@ -577,14 +576,14 @@ service {{.TName}} {
     };
   }
 
-  // delete {{.TName}} by id
+  // delete a {{.TName}} by id
   rpc DeleteByID(Delete{{.TableName}}ByIDRequest) returns (Delete{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       delete: "/api/v1/{{.TName}}/{id}"
     };
   }
 
-  // update {{.TName}} by id
+  // update a {{.TName}} by id
   rpc UpdateByID(Update{{.TableName}}ByIDRequest) returns (Update{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       put: "/api/v1/{{.TName}}/{id}"
@@ -592,14 +591,14 @@ service {{.TName}} {
     };
   }
 
-  // get {{.TName}} by id
+  // get {{.TName}} details by id
   rpc GetByID(Get{{.TableName}}ByIDRequest) returns (Get{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/{id}"
     };
   }
 
-  // list of {{.TName}} by query parameters
+  // get a list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/list"
@@ -623,11 +622,14 @@ If used to generate code that supports the HTTP protocol, notes for defining mes
     2. If the request url is followed by a query parameter, such as /api/v1/getUserExample?name=Tom,
         a form tag must be added when defining the query parameter in the message, such as:
         string name = 1 [(tagger.tags) = "form:\"name\""].
-    3. If the message field name contain underscores(such as 'field_name'), it will cause a problem
-        where the JSON field names of the Swagger request parameters are different from those of the
-        GRPC JSON tag names. There are two solutions: Solution 1, remove the underline from the
-         message field name. Option 2, use the tool 'protoc-go-inject-tag' to modify the JSON tag name,
-         such as: string first_name = 1 ; // @gotags: json:"firstName"
+    3. When the message fields use snake_case naming (e.g., order_id), the generated swagger.json file
+        will use camelCase (e.g., orderId) instead of the expected snake_case. This behavior aligns with
+        the JSON tag names used by gRPC, but it can cause the Gin framework to fail to correctly bind and
+        retrieve parameter values. There are two ways to resolve this issue:
+            (1) Explicitly specify the JSON tag name using the json_name option, such as:
+                 string order_id = 1 [json_name = "order_id"];
+            (2) If you want to switch to camelCase naming and update the JSON tag name accordingly, such as:
+                 string order_id = 1 [json_name = "orderID", (tagger.tags) = "json:\"orderID\""];
 */
 
 

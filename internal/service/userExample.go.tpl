@@ -46,7 +46,7 @@ func New{{.TableNameCamel}}Server() serverNameExampleV1.{{.TableNameCamel}}Serve
 	}
 }
 
-// Create a record
+// Create a new {{.TableNameCamelFCL}}
 func (s *{{.TableNameCamelFCL}}) Create(ctx context.Context, req *serverNameExampleV1.Create{{.TableNameCamel}}Request) (*serverNameExampleV1.Create{{.TableNameCamel}}Reply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -71,7 +71,7 @@ func (s *{{.TableNameCamelFCL}}) Create(ctx context.Context, req *serverNameExam
 	return &serverNameExampleV1.Create{{.TableNameCamel}}Reply{ {{if .IsStandardPrimaryKey}}Id{{else}}{{.ColumnNameCamel}}{{end}}: record.{{.ColumnNameCamel}} }, nil
 }
 
-// DeleteBy{{.ColumnNameCamel}} delete a record by {{.ColumnNameCamelFCL}}
+// DeleteBy{{.ColumnNameCamel}} delete a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 func (s *{{.TableNameCamelFCL}}) DeleteBy{{.ColumnNameCamel}}(ctx context.Context, req *serverNameExampleV1.Delete{{.TableNameCamel}}By{{.ColumnNameCamel}}Request) (*serverNameExampleV1.Delete{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -89,7 +89,7 @@ func (s *{{.TableNameCamelFCL}}) DeleteBy{{.ColumnNameCamel}}(ctx context.Contex
 	return &serverNameExampleV1.Delete{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply{}, nil
 }
 
-// UpdateBy{{.ColumnNameCamel}} update a record by {{.ColumnNameCamelFCL}}
+// UpdateBy{{.ColumnNameCamel}} update a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 func (s *{{.TableNameCamelFCL}}) UpdateBy{{.ColumnNameCamel}}(ctx context.Context, req *serverNameExampleV1.Update{{.TableNameCamel}}By{{.ColumnNameCamel}}Request) (*serverNameExampleV1.Update{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -115,7 +115,7 @@ func (s *{{.TableNameCamelFCL}}) UpdateBy{{.ColumnNameCamel}}(ctx context.Contex
 	return &serverNameExampleV1.Update{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply{}, nil
 }
 
-// GetBy{{.ColumnNameCamel}} get a record by {{.ColumnNameCamelFCL}}
+// GetBy{{.ColumnNameCamel}} get {{.TableNameCamelFCL}} details by {{.ColumnNameCamelFCL}}
 func (s *{{.TableNameCamelFCL}}) GetBy{{.ColumnNameCamel}}(ctx context.Context, req *serverNameExampleV1.Get{{.TableNameCamel}}By{{.ColumnNameCamel}}Request) (*serverNameExampleV1.Get{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -143,7 +143,7 @@ func (s *{{.TableNameCamelFCL}}) GetBy{{.ColumnNameCamel}}(ctx context.Context, 
 	return &serverNameExampleV1.Get{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply{ {{.TableNameCamel}}: data}, nil
 }
 
-// List of records by query parameters
+// List get a list of {{.TableNameCamelFCL}} by custom conditions
 func (s *{{.TableNameCamelFCL}}) List(ctx context.Context, req *serverNameExampleV1.List{{.TableNameCamel}}Request) (*serverNameExampleV1.List{{.TableNameCamel}}Reply, error) {
 	err := req.Validate()
 	if err != nil {

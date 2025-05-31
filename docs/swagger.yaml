@@ -1,13 +1,19 @@
 definitions:
-  github_com_zhufuyi_sponge_internal_types.Column:
+  errcode.ErrInfo:
+    properties:
+      code:
+        type: integer
+      msg:
+        type: string
+    type: object
+  github_com_go-dev-frame_sponge_internal_types.Column:
     properties:
       exp:
         description: expressions, which default to = when the value is null, have
           =, !=, >, >=, <, <=, like
         type: string
       logic:
-        description: logical type, defaults to and when value is null, only &(and),
-          ||(or)
+        description: logical type, default value is "and", support &, and, ||, or
         type: string
       name:
         description: column name
@@ -15,12 +21,12 @@ definitions:
       value:
         description: column value
     type: object
-  github_com_zhufuyi_sponge_internal_types.Params:
+  github_com_go-dev-frame_sponge_internal_types.Params:
     properties:
       columns:
         description: query conditions
         items:
-          $ref: '#/definitions/github_com_zhufuyi_sponge_internal_types.Column'
+          $ref: '#/definitions/github_com_go-dev-frame_sponge_internal_types.Column'
         type: array
       limit:
         description: lines per page
@@ -38,6 +44,8 @@ definitions:
         type: string
       status:
         type: string
+    type: object
+  handlerfunc.PingReply:
     type: object
   types.CreateUserExampleReply:
     properties:
@@ -205,13 +213,14 @@ info:
   contact: {}
   description: http server api docs
   title: serverNameExample api docs
-  version: "2.0"
+  version: v1.0.0
 paths:
   /api/v1/userExample:
     post:
       consumes:
       - application/json
-      description: submit information to create userExample
+      description: Creates a new userExample entity using the provided data in the
+        request body.
       parameters:
       - description: userExample information
         in: body
@@ -228,14 +237,15 @@ paths:
             $ref: '#/definitions/types.CreateUserExampleReply'
       security:
       - BearerAuth: []
-      summary: create userExample
+      summary: create a new userExample
       tags:
       - userExample
   /api/v1/userExample/{id}:
     delete:
       consumes:
       - application/json
-      description: delete userExample by id
+      description: Deletes a existing userExample identified by the given id in the
+        path.
       parameters:
       - description: id
         in: path
@@ -251,13 +261,14 @@ paths:
             $ref: '#/definitions/types.DeleteUserExampleByIDReply'
       security:
       - BearerAuth: []
-      summary: delete userExample
+      summary: delete a userExample by id
       tags:
       - userExample
     get:
       consumes:
       - application/json
-      description: get userExample detail by id
+      description: Gets detailed information of a userExample specified by the given
+        id in the path.
       parameters:
       - description: id
         in: path
@@ -273,13 +284,14 @@ paths:
             $ref: '#/definitions/types.GetUserExampleByIDReply'
       security:
       - BearerAuth: []
-      summary: get userExample detail
+      summary: get userExample details by id
       tags:
       - userExample
     put:
       consumes:
       - application/json
-      description: update userExample information by id
+      description: Updates the specified userExample by given id in the path, support
+        partial update.
       parameters:
       - description: id
         in: path
@@ -301,21 +313,22 @@ paths:
             $ref: '#/definitions/types.UpdateUserExampleByIDReply'
       security:
       - BearerAuth: []
-      summary: update userExample
+      summary: update a userExample by id
       tags:
       - userExample
   /api/v1/userExample/list:
     post:
       consumes:
       - application/json
-      description: list of userExamples by paging and conditions
+      description: Returns a paginated list of userExample based on query filters,
+        including page number and size.
       parameters:
       - description: query parameters
         in: body
         name: data
         required: true
         schema:
-          $ref: '#/definitions/github_com_zhufuyi_sponge_internal_types.Params'
+          $ref: '#/definitions/github_com_go-dev-frame_sponge_internal_types.Params'
       produces:
       - application/json
       responses:
@@ -325,55 +338,71 @@ paths:
             $ref: '#/definitions/types.ListUserExamplesReply'
       security:
       - BearerAuth: []
-      summary: list of userExamples by query parameters
+      summary: get a list of userExample by custom conditions
       tags:
       - userExample
   /codes:
     get:
       consumes:
       - application/json
-      description: list error codes info
+      description: Returns a list of all defined HTTP error codes and their descriptions
       produces:
       - application/json
-      responses: {}
-      summary: list error codes info
+      responses:
+        "200":
+          description: List of error codes
+          schema:
+            items:
+              $ref: '#/definitions/errcode.ErrInfo'
+            type: array
+      summary: list all error codes
       tags:
       - system
   /config:
     get:
       consumes:
       - application/json
-      description: show config info
+      description: Returns the current system configuration in JSON format. This includes
+        all runtime configuration parameters.
       produces:
       - application/json
-      responses: {}
-      summary: show config info
+      responses:
+        "200":
+          description: Returns the complete system configuration
+          schema:
+            additionalProperties: true
+            type: object
+      summary: get system configuration
       tags:
       - system
   /health:
     get:
       consumes:
       - application/json
-      description: check health
+      description: Returns system health information including status and hostname
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns health status information
           schema:
             $ref: '#/definitions/handlerfunc.CheckHealthReply'
-      summary: check health
+      summary: check system health status
       tags:
       - system
   /ping:
     get:
       consumes:
       - application/json
-      description: ping
+      description: Simple ping endpoint to check if server is responsive
       produces:
       - application/json
-      responses: {}
-      summary: ping
+      responses:
+        "200":
+          description: Returns empty JSON object
+          schema:
+            $ref: '#/definitions/handlerfunc.PingReply'
+      summary: ping the server
       tags:
       - system
 schemes:

@@ -8,7 +8,7 @@
         "description": "http server api docs",
         "title": "serverNameExample api docs",
         "contact": {},
-        "version": "2.0"
+        "version": "v1.0.0"
     },
     "host": "localhost:8080",
     "paths": {
@@ -19,7 +19,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "submit information to create userExample",
+                "description": "Creates a new userExample entity using the provided data in the request body.",
                 "consumes": [
                     "application/json"
                 ],
@@ -29,7 +29,7 @@
                 "tags": [
                     "userExample"
                 ],
-                "summary": "create userExample",
+                "summary": "create a new userExample",
                 "parameters": [
                     {
                         "description": "userExample information",
@@ -58,7 +58,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "list of userExamples by paging and conditions",
+                "description": "Returns a paginated list of userExample based on query filters, including page number and size.",
                 "consumes": [
                     "application/json"
                 ],
@@ -68,7 +68,7 @@
                 "tags": [
                     "userExample"
                 ],
-                "summary": "list of userExamples by query parameters",
+                "summary": "get a list of userExample by custom conditions",
                 "parameters": [
                     {
                         "description": "query parameters",
@@ -76,7 +76,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_zhufuyi_sponge_internal_types.Params"
+                            "$ref": "#/definitions/github_com_go-dev-frame_sponge_internal_types.Params"
                         }
                     }
                 ],
@@ -97,7 +97,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "get userExample detail by id",
+                "description": "Gets detailed information of a userExample specified by the given id in the path.",
                 "consumes": [
                     "application/json"
                 ],
@@ -107,7 +107,7 @@
                 "tags": [
                     "userExample"
                 ],
-                "summary": "get userExample detail",
+                "summary": "get userExample details by id",
                 "parameters": [
                     {
                         "type": "string",
@@ -132,7 +132,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "update userExample information by id",
+                "description": "Updates the specified userExample by given id in the path, support partial update.",
                 "consumes": [
                     "application/json"
                 ],
@@ -142,7 +142,7 @@
                 "tags": [
                     "userExample"
                 ],
-                "summary": "update userExample",
+                "summary": "update a userExample by id",
                 "parameters": [
                     {
                         "type": "string",
@@ -176,7 +176,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "delete userExample by id",
+                "description": "Deletes a existing userExample identified by the given id in the path.",
                 "consumes": [
                     "application/json"
                 ],
@@ -186,7 +186,7 @@
                 "tags": [
                     "userExample"
                 ],
-                "summary": "delete userExample",
+                "summary": "delete a userExample by id",
                 "parameters": [
                     {
                         "type": "string",
@@ -208,7 +208,7 @@
         },
         "/codes": {
             "get": {
-                "description": "list error codes info",
+                "description": "Returns a list of all defined HTTP error codes and their descriptions",
                 "consumes": [
                     "application/json"
                 ],
@@ -218,13 +218,23 @@
                 "tags": [
                     "system"
                 ],
-                "summary": "list error codes info",
-                "responses": {}
+                "summary": "list all error codes",
+                "responses": {
+                    "200": {
+                        "description": "List of error codes",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/errcode.ErrInfo"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/config": {
             "get": {
-                "description": "show config info",
+                "description": "Returns the current system configuration in JSON format. This includes all runtime configuration parameters.",
                 "consumes": [
                     "application/json"
                 ],
@@ -234,13 +244,21 @@
                 "tags": [
                     "system"
                 ],
-                "summary": "show config info",
-                "responses": {}
+                "summary": "get system configuration",
+                "responses": {
+                    "200": {
+                        "description": "Returns the complete system configuration",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
             }
         },
         "/health": {
             "get": {
-                "description": "check health",
+                "description": "Returns system health information including status and hostname",
                 "consumes": [
                     "application/json"
                 ],
@@ -250,10 +268,10 @@
                 "tags": [
                     "system"
                 ],
-                "summary": "check health",
+                "summary": "check system health status",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns health status information",
                         "schema": {
                             "$ref": "#/definitions/handlerfunc.CheckHealthReply"
                         }
@@ -263,7 +281,7 @@
         },
         "/ping": {
             "get": {
-                "description": "ping",
+                "description": "Simple ping endpoint to check if server is responsive",
                 "consumes": [
                     "application/json"
                 ],
@@ -273,13 +291,31 @@
                 "tags": [
                     "system"
                 ],
-                "summary": "ping",
-                "responses": {}
+                "summary": "ping the server",
+                "responses": {
+                    "200": {
+                        "description": "Returns empty JSON object",
+                        "schema": {
+                            "$ref": "#/definitions/handlerfunc.PingReply"
+                        }
+                    }
+                }
             }
         }
     },
     "definitions": {
-        "github_com_zhufuyi_sponge_internal_types.Column": {
+        "errcode.ErrInfo": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_go-dev-frame_sponge_internal_types.Column": {
             "type": "object",
             "properties": {
                 "exp": {
@@ -287,7 +323,7 @@
                     "type": "string"
                 },
                 "logic": {
-                    "description": "logical type, defaults to and when value is null, only \u0026(and), ||(or)",
+                    "description": "logical type, default value is \"and\", support \u0026, and, ||, or",
                     "type": "string"
                 },
                 "name": {
@@ -299,14 +335,14 @@
                 }
             }
         },
-        "github_com_zhufuyi_sponge_internal_types.Params": {
+        "github_com_go-dev-frame_sponge_internal_types.Params": {
             "type": "object",
             "properties": {
                 "columns": {
                     "description": "query conditions",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_zhufuyi_sponge_internal_types.Column"
+                        "$ref": "#/definitions/github_com_go-dev-frame_sponge_internal_types.Column"
                     }
                 },
                 "limit": {
@@ -333,6 +369,9 @@
                     "type": "string"
                 }
             }
+        },
+        "handlerfunc.PingReply": {
+            "type": "object"
         },
         "types.CreateUserExampleReply": {
             "type": "object",

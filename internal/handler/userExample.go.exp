@@ -50,11 +50,11 @@ func NewUserExampleHandler() UserExampleHandler {
 	}
 }
 
-// Create a record
-// @Summary create userExample
-// @Description submit information to create userExample
+// Create a new userExample
+// @Summary create a new userExample
+// @Description Creates a new userExample entity using the provided data in the request body.
 // @Tags userExample
-// @accept json
+// @Accept json
 // @Produce json
 // @Param data body types.CreateUserExampleRequest true "userExample information"
 // @Success 200 {object} types.CreateUserExampleReply{}
@@ -88,11 +88,11 @@ func (h *userExampleHandler) Create(c *gin.Context) {
 	response.Success(c, gin.H{"id": userExample.ID})
 }
 
-// DeleteByID delete a record by id
-// @Summary delete userExample
-// @Description delete userExample by id
+// DeleteByID delete a userExample by id
+// @Summary delete a userExample by id
+// @Description Deletes a existing userExample identified by the given id in the path.
 // @Tags userExample
-// @accept json
+// @Accept json
 // @Produce json
 // @Param id path string true "id"
 // @Success 200 {object} types.DeleteUserExampleByIDReply{}
@@ -116,11 +116,11 @@ func (h *userExampleHandler) DeleteByID(c *gin.Context) {
 	response.Success(c)
 }
 
-// UpdateByID update information by id
-// @Summary update userExample
-// @Description update userExample information by id
+// UpdateByID update a userExample by id
+// @Summary update a userExample by id
+// @Description Updates the specified userExample by given id in the path, support partial update.
 // @Tags userExample
-// @accept json
+// @Accept json
 // @Produce json
 // @Param id path string true "id"
 // @Param data body types.UpdateUserExampleByIDRequest true "userExample information"
@@ -162,9 +162,9 @@ func (h *userExampleHandler) UpdateByID(c *gin.Context) {
 	response.Success(c)
 }
 
-// GetByID get a record by id
-// @Summary get userExample detail
-// @Description get userExample detail by id
+// GetByID get userExample details by id
+// @Summary get userExample details by id
+// @Description Gets detailed information of a userExample specified by the given id in the path.
 // @Tags userExample
 // @Param id path string true "id"
 // @Accept json
@@ -203,11 +203,11 @@ func (h *userExampleHandler) GetByID(c *gin.Context) {
 	response.Success(c, gin.H{"userExample": data})
 }
 
-// List of records by query parameters
-// @Summary list of userExamples by query parameters
-// @Description list of userExamples by paging and conditions
+// List get a list of userExample by custom conditions
+// @Summary get a list of userExample by custom conditions
+// @Description Returns a paginated list of userExample based on query filters, including page number and size.
 // @Tags userExample
-// @accept json
+// @Accept json
 // @Produce json
 // @Param data body types.Params true "query parameters"
 // @Success 200 {object} types.ListUserExamplesReply{}
@@ -242,9 +242,9 @@ func (h *userExampleHandler) List(c *gin.Context) {
 	})
 }
 
-// DeleteByIDs delete records by batch id
-// @Summary delete userExamples
-// @Description delete userExamples by batch id
+// DeleteByIDs delete userExample by batch id
+// @Summary delete userExample by batch id
+// @Description Deletes multiple userExample by a list of id
 // @Tags userExample
 // @Param data body types.DeleteUserExamplesByIDsRequest true "id array"
 // @Accept json
@@ -272,9 +272,9 @@ func (h *userExampleHandler) DeleteByIDs(c *gin.Context) {
 	response.Success(c)
 }
 
-// GetByCondition get a record by condition
-// @Summary get userExample by condition
-// @Description get userExample by condition
+// GetByCondition get userExample details by custom condition
+// @Summary get userExample details by custom condition
+// @Description Returns a single userExample that matches the specified filter conditions.
 // @Tags userExample
 // @Param data body types.Conditions true "query condition"
 // @Accept json
@@ -321,9 +321,9 @@ func (h *userExampleHandler) GetByCondition(c *gin.Context) {
 	response.Success(c, gin.H{"userExample": data})
 }
 
-// ListByIDs list of records by batch id
-// @Summary list of userExamples by batch id
-// @Description list of userExamples by batch id
+// ListByIDs get a list of userExample by batch id
+// @Summary get a list of userExample by batch id
+// @Description Returns a list of userExample that match the list of id.
 // @Tags userExample
 // @Param data body types.ListUserExamplesByIDsRequest true "id array"
 // @Accept json
@@ -365,11 +365,11 @@ func (h *userExampleHandler) ListByIDs(c *gin.Context) {
 	})
 }
 
-// ListByLastID get records by last id and limit
-// @Summary list of userExamples by last id and limit
-// @Description list of userExamples by last id and limit
+// ListByLastID get a list of userExample by last id
+// @Summary get a list of userExample by last id
+// @Description Returns a paginated list of userExamples starting after a given last id, useful for cursor-based pagination.
 // @Tags userExample
-// @accept json
+// @Accept json
 // @Produce json
 // @Param lastID query int false "last id, default is MaxInt32" default(0)
 // @Param limit query int false "number per page" default(10)

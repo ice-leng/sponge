@@ -56,12 +56,12 @@ func (d *userExampleDao) deleteCache(ctx context.Context, id uint64) error {
 	return nil
 }
 
-// Create a record, insert the record and the id value is written back to the table
+// Create a new userExample, insert the record and the id value is written back to the table
 func (d *userExampleDao) Create(ctx context.Context, table *model.UserExample) error {
 	return d.db.WithContext(ctx).Create(table).Error
 }
 
-// DeleteByID delete a record by id
+// DeleteByID delete a userExample by id
 func (d *userExampleDao) DeleteByID(ctx context.Context, id uint64) error {
 	err := d.db.WithContext(ctx).Where("id = ?", id).Delete(&model.UserExample{}).Error
 	if err != nil {
@@ -74,7 +74,7 @@ func (d *userExampleDao) DeleteByID(ctx context.Context, id uint64) error {
 	return nil
 }
 
-// UpdateByID update a record by id
+// UpdateByID update a userExample by id, support partial update
 func (d *userExampleDao) UpdateByID(ctx context.Context, table *model.UserExample) error {
 	err := d.updateDataByID(ctx, d.db, table)
 
@@ -121,7 +121,7 @@ func (d *userExampleDao) updateDataByID(ctx context.Context, db *gorm.DB, table 
 	return db.WithContext(ctx).Model(table).Updates(update).Error
 }
 
-// GetByID get a record by id
+// GetByID get userExample details by id
 func (d *userExampleDao) GetByID(ctx context.Context, id uint64) (*model.UserExample, error) {
 	// no cache
 	if d.cache == nil {
@@ -175,7 +175,7 @@ func (d *userExampleDao) GetByID(ctx context.Context, id uint64) (*model.UserExa
 	return nil, err
 }
 
-// GetByColumns get paging records by column information.
+// GetByColumns get a list of userExample by custom conditions.
 // For more details, please refer to https://go-sponge.com/component/custom-page-query.html
 func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params) ([]*model.UserExample, int64, error) {
 	queryStr, args, err := params.ConvertToGormConditions(query.WithWhitelistNames(model.UserExampleColumnNames))

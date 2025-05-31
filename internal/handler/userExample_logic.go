@@ -36,7 +36,7 @@ func NewUserExamplePbHandler() serverNameExampleV1.UserExampleLogicer {
 	}
 }
 
-// Create a record
+// Create a new userExample
 func (h *userExamplePbHandler) Create(ctx context.Context, req *serverNameExampleV1.CreateUserExampleRequest) (*serverNameExampleV1.CreateUserExampleReply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -60,7 +60,7 @@ func (h *userExamplePbHandler) Create(ctx context.Context, req *serverNameExampl
 	return &serverNameExampleV1.CreateUserExampleReply{Id: userExample.ID}, nil
 }
 
-// DeleteByID delete a record by id
+// DeleteByID delete a userExample by id
 func (h *userExamplePbHandler) DeleteByID(ctx context.Context, req *serverNameExampleV1.DeleteUserExampleByIDRequest) (*serverNameExampleV1.DeleteUserExampleByIDReply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -77,7 +77,7 @@ func (h *userExamplePbHandler) DeleteByID(ctx context.Context, req *serverNameEx
 	return &serverNameExampleV1.DeleteUserExampleByIDReply{}, nil
 }
 
-// UpdateByID update a record by id
+// UpdateByID update a userExample by id
 func (h *userExamplePbHandler) UpdateByID(ctx context.Context, req *serverNameExampleV1.UpdateUserExampleByIDRequest) (*serverNameExampleV1.UpdateUserExampleByIDReply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -102,7 +102,7 @@ func (h *userExamplePbHandler) UpdateByID(ctx context.Context, req *serverNameEx
 	return &serverNameExampleV1.UpdateUserExampleByIDReply{}, nil
 }
 
-// GetByID get a record by id
+// GetByID get userExample details by id
 func (h *userExamplePbHandler) GetByID(ctx context.Context, req *serverNameExampleV1.GetUserExampleByIDRequest) (*serverNameExampleV1.GetUserExampleByIDReply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -131,7 +131,7 @@ func (h *userExamplePbHandler) GetByID(ctx context.Context, req *serverNameExamp
 	}, nil
 }
 
-// List of records by query parameters
+// List get a list of userExample by custom conditions
 func (h *userExamplePbHandler) List(ctx context.Context, req *serverNameExampleV1.ListUserExampleRequest) (*serverNameExampleV1.ListUserExampleReply, error) {
 	err := req.Validate()
 	if err != nil {
