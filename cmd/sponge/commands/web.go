@@ -23,8 +23,7 @@ func GenWebCommand() *cobra.Command {
 		generate.HandlerCommand(),
 		generate.HTTPCommand(),
 		generate.HTTPPbCommand(),
-		generate.ConvertSwagJSONCommand("web"),
-		generate.ConvertSwagger2ToOpenAPI3Command(),
+		generate.HandleSwaggerJSONCommand(),
 		generate.HandlerPbCommand(),
 	)
 
