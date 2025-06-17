@@ -58,8 +58,8 @@ func HandleSwaggerJSONCommand() *cobra.Command {
 				if err = handleSwagger2ToOpenAPI3Action(jsonFile); err != nil {
 					return err
 				}
-				outputJSONFile, OutputYamlFile := getOutputFile(jsonFile)
-				fmt.Printf("Successfully convert swagger2.0 to openapi3.0, output: %s, %s\n", outputJSONFile, OutputYamlFile)
+				outputJSONFile, outputYamlFile := getOutputFile(jsonFile)
+				fmt.Printf("Successfully convert swagger2.0 to openapi3.0, output: %s, %s\n", outputJSONFile, outputYamlFile)
 			}
 
 			if enableTransformIntegerToString {
@@ -69,7 +69,7 @@ func HandleSwaggerJSONCommand() *cobra.Command {
 				fmt.Printf("Successfully transform 64-bit integer to string in %s fields\n", jsonFile)
 			}
 
-			if enableUniformResponse == false && enableConvertToOpenAPI3 == false && enableTransformIntegerToString == false {
+			if enableUniformResponse == false && enableConvertToOpenAPI3 == false && enableTransformIntegerToString == false { //nolint
 				fmt.Println("No action specified, please use 'sponge web swagger -h' to see available options.")
 			}
 
@@ -87,6 +87,7 @@ func HandleSwaggerJSONCommand() *cobra.Command {
 
 // -------------------------------------------------------------------------------------------
 
+// nolint
 func handleStandardizeResponseAction(inputPath string) error {
 	outputPath := inputPath
 	data, err := os.ReadFile(inputPath)
@@ -131,7 +132,7 @@ func handleStandardizeResponseAction(inputPath string) error {
 					continue
 				}
 
-				if _, defaultExists := responses["default"]; defaultExists {
+				if _, defaultExists := responses["default"]; defaultExists { //nolint
 					delete(responses, "default")
 				}
 
@@ -144,31 +145,31 @@ func handleStandardizeResponseAction(inputPath string) error {
 					continue
 				}
 
-				var newHttpResponseDefName string
-				var dataSchemaForNewHttpResponseDef interface{}
+				var newHTTPResponseDefName string
+				var dataSchemaForNewHTTPResponseDef interface{}
 
 				schemaUntyped, schemaExistsIn200 := response200["schema"]
 
 				if !schemaExistsIn200 {
 					baseName := generateBaseNameForNewDefinition(pathKey, methodKey, methodItemMap)
-					newHttpResponseDefName = adjustHttpResponseName(baseName)
-					dataSchemaForNewHttpResponseDef = map[string]interface{}{"type": "object", "description": "Original data schema was not present."}
-					response200["schema"] = map[string]interface{}{"$ref": "#/definitions/" + newHttpResponseDefName}
+					newHTTPResponseDefName = adjustHTTPResponseName(baseName)
+					dataSchemaForNewHTTPResponseDef = map[string]interface{}{"type": "object", "description": "Original data schema was not present."}
+					response200["schema"] = map[string]interface{}{"$ref": "#/definitions/" + newHTTPResponseDefName}
 				} else {
 					currentSchemaMap, schemaIsMap := schemaUntyped.(map[string]interface{})
 					if !schemaIsMap {
 						baseName := generateBaseNameForNewDefinition(pathKey, methodKey, methodItemMap)
-						adjustHttpResponseName(baseName)
-						dataSchemaForNewHttpResponseDef = map[string]interface{}{
+						adjustHTTPResponseName(baseName)
+						dataSchemaForNewHTTPResponseDef = map[string]interface{}{
 							"type":        "object",
 							"description": "Original schema was not a JSON object/map.",
 							// Optionally, you could try to embed schemaUntyped here if it's simple enough
 							// "originalValue": schemaUntyped,
 						}
-						response200["schema"] = map[string]interface{}{"$ref": "#/definitions/" + newHttpResponseDefName}
+						response200["schema"] = map[string]interface{}{"$ref": "#/definitions/" + newHTTPResponseDefName}
 					} else {
 						// Schema is a map, proceed with deep copy and ref checking
-						copiedSchemaInterface, err := deepCopy(currentSchemaMap)
+						copiedSchemaInterface, err := deepCopy(currentSchemaMap) //nolint
 						if err != nil {
 							return fmt.Errorf("failed to deep copy schema for %s %s: %w", strings.ToUpper(methodKey), pathKey, err)
 						}
@@ -189,30 +190,30 @@ func handleStandardizeResponseAction(inputPath string) error {
 						}
 
 						if isValidRef {
-							newHttpResponseDefName = adjustHttpResponseName(originalDefNameFromRef)
-							dataSchemaForNewHttpResponseDef = map[string]interface{}{"$ref": refValue}
-							if isHttpResponseStructure(definitions, originalDefNameFromRef) {
+							newHTTPResponseDefName = adjustHTTPResponseName(originalDefNameFromRef)
+							dataSchemaForNewHTTPResponseDef = map[string]interface{}{"$ref": refValue}
+							if isHTTPResponseStructure(definitions, originalDefNameFromRef) {
 								continue
 							}
-							response200["schema"] = map[string]interface{}{"$ref": "#/definitions/" + newHttpResponseDefName}
+							response200["schema"] = map[string]interface{}{"$ref": "#/definitions/" + newHTTPResponseDefName}
 						} else {
-							newHttpResponseDefName = "emptyHTTPResponse"
-							dataSchemaForNewHttpResponseDef = originalSchemaContent // Embed the deep copied original schema
-							if isHttpResponseStructure(definitions, originalDefNameFromRef) {
+							newHTTPResponseDefName = "emptyHTTPResponse"
+							dataSchemaForNewHTTPResponseDef = originalSchemaContent // Embed the deep copied original schema
+							if isHTTPResponseStructure(definitions, originalDefNameFromRef) {
 								continue
 							}
-							response200["schema"] = map[string]interface{}{"$ref": "#/definitions/" + newHttpResponseDefName}
+							response200["schema"] = map[string]interface{}{"$ref": "#/definitions/" + newHTTPResponseDefName}
 						}
 					}
 				}
 
-				if newHttpResponseDefName != "" {
-					definitions[newHttpResponseDefName] = map[string]interface{}{
+				if newHTTPResponseDefName != "" {
+					definitions[newHTTPResponseDefName] = map[string]interface{}{
 						"type": "object",
 						"properties": map[string]interface{}{
 							"code": map[string]interface{}{"type": "integer", "format": "int32", "description": "Business status code"},
 							"msg":  map[string]interface{}{"type": "string", "description": "Response message description"},
-							"data": dataSchemaForNewHttpResponseDef,
+							"data": dataSchemaForNewHTTPResponseDef,
 						},
 						//"required": []string{"code", "msg","data"},
 					}
@@ -242,7 +243,7 @@ func handleStandardizeResponseAction(inputPath string) error {
 	return nil
 }
 
-func adjustHttpResponseName(name string) string {
+func adjustHTTPResponseName(name string) string {
 	suffixes := []string{"Response", "Resp", "Res", "Reply", "Rep", "Request", "Req"}
 	hrName := "HTTPResponse"
 
@@ -259,13 +260,13 @@ func adjustHttpResponseName(name string) string {
 	return name + hrName
 }
 
-func isHttpResponseStructure(definitions map[string]interface{}, name string) bool {
+func isHTTPResponseStructure(definitions map[string]interface{}, name string) bool {
 	def, ok := definitions[name].(map[string]interface{})
 	if !ok {
 		return false
 	}
 
-	if defType, ok := def["type"].(string); !ok || defType != "object" {
+	if defType, ok := def["type"].(string); !ok || defType != "object" { //nolint
 		return false
 	}
 	properties, ok := def["properties"].(map[string]interface{})
@@ -284,7 +285,7 @@ var topLevelSortKeys = []string{
 	"securityDefinitions", "security", "externalDocs",
 }
 
-// KeyValue represents a key-value pair for ordered JSON marshalling
+// KeyValue represents a key-value pair for ordered JSON marshaling
 type KeyValue struct {
 	Key   string
 	Value interface{}
@@ -328,12 +329,10 @@ func convertToOrderedMap(data interface{}, preferredKeyOrder []string) interface
 		om := make(OrderedMap, 0, len(v))
 		processedKeys := make(map[string]bool)
 
-		if preferredKeyOrder != nil {
-			for _, key := range preferredKeyOrder {
-				if val, ok := v[key]; ok {
-					om = append(om, KeyValue{Key: key, Value: convertToOrderedMap(val, nil)})
-					processedKeys[key] = true
-				}
+		for _, key := range preferredKeyOrder {
+			if val, ok := v[key]; ok {
+				om = append(om, KeyValue{Key: key, Value: convertToOrderedMap(val, nil)})
+				processedKeys[key] = true
 			}
 		}
 
@@ -377,11 +376,11 @@ func deepCopy(source interface{}) (interface{}, error) {
 }
 
 func generateBaseNameForNewDefinition(pathKey, methodKey string, methodItem map[string]interface{}) string {
-	if opId, ok := methodItem["operationId"].(string); ok && opId != "" {
-		if len(opId) > 0 {
-			return strings.ToUpper(string(opId[0])) + opId[1:]
+	if opID, ok := methodItem["operationId"].(string); ok && opID != "" {
+		if len(opID) > 0 {
+			return strings.ToUpper(string(opID[0])) + opID[1:]
 		}
-		return "UnnamedOperation" // Should be rare if opId is non-empty
+		return "UnnamedOperation" // Should be rare if opID is non-empty
 	}
 
 	methodNamePart := ""
@@ -461,7 +460,6 @@ func getOutputFile(filePath string) (yamlFile string, jsonFile string) {
 	var suffix string
 	if strings.HasSuffix(filePath, "swagger.json") {
 		suffix = "swagger.json"
-
 	} else {
 		suffix = gofile.GetFilename(filePath)
 	}
