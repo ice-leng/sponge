@@ -41,7 +41,7 @@ func NewUserExampleServer() serverNameExampleV1.UserExampleServer {
 	collectionName := new(model.UserExample).TableName()
 	return &userExample{
 		iDao: dao.NewUserExampleDao(
-			database.GetDB().Collection(collectionName),
+			database.GetDB().Collection(collectionName), // todo show db driver name here
 			cache.NewUserExampleCache(database.GetCacheType()),
 		),
 	}

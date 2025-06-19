@@ -44,7 +44,7 @@ func NewUserExampleHandler() UserExampleHandler {
 	collectionName := new(model.UserExample).TableName()
 	return &userExampleHandler{
 		iDao: dao.NewUserExampleDao(
-			database.GetDB().Collection(collectionName),
+			database.GetDB().Collection(collectionName), // todo show db driver name here
 			cache.NewUserExampleCache(database.GetCacheType()),
 		),
 	}
