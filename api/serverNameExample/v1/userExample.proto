@@ -38,7 +38,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   }
 };
 
-service userExample {
+service UserExample {
   // create a new userExample
   rpc Create(CreateUserExampleRequest) returns (CreateUserExampleReply) {
     option (google.api.http) = {

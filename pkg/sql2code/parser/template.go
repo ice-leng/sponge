@@ -104,7 +104,7 @@ import "validate/validate.proto";
 
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
-service {{.TName}} {
+service {{.TableName}} {
   // create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {}
 
@@ -227,7 +227,7 @@ import "validate/validate.proto";
 
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
-service {{.TName}} {
+service {{.TableName}} {
   // create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {}
 
@@ -345,7 +345,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   }
 };
 
-service {{.TName}} {
+service {{.TableName}} {
   // create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {
     option (google.api.http) = {
@@ -567,7 +567,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   }
 };
 
-service {{.TName}} {
+service {{.TableName}} {
   // create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {
     option (google.api.http) = {
