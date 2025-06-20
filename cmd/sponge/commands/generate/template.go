@@ -279,8 +279,8 @@ func NewCenter(configFile string) (*Center, error) {
 
   checkResult $?
 
-  sponge web swagger2-to-openapi3 --file=docs/apis.swagger.json > /dev/null 2>&1
-  sponge web swagger --file=docs/apis.swagger.json > /dev/null 2>&1
+  # handle apis.swagger.json
+  sponge web swagger --enable-standardize-response --enable-to-openapi3 --enable-integer-to-string --file=docs/apis.swagger.json > /dev/null
 
   moduleName=$(cat docs/gen.info | head -1 | cut -d , -f 1)
   serverName=$(cat docs/gen.info | head -1 | cut -d , -f 2)
@@ -308,8 +308,8 @@ func NewCenter(configFile string) (*Center, error) {
 
   checkResult $?
 
-  sponge web swagger2-to-openapi3 --file=docs/apis.swagger.json > /dev/null 2>&1
-  sponge web swagger --file=docs/apis.swagger.json > /dev/null 2>&1
+  # handle apis.swagger.json
+  sponge web swagger --enable-standardize-response --enable-to-openapi3 --enable-integer-to-string --file=docs/apis.swagger.json > /dev/null
 
   moduleName=$(cat docs/gen.info | head -1 | cut -d , -f 1)
   serverName=$(cat docs/gen.info | head -1 | cut -d , -f 2)
@@ -337,8 +337,8 @@ func NewCenter(configFile string) (*Center, error) {
 
   checkResult $?
 
-  sponge web swagger2-to-openapi3 --file=docs/apis.swagger.json > /dev/null 2>&1
-  sponge web swagger --file=docs/apis.swagger.json > /dev/null 2>&1
+  # handle apis.swagger.json
+  sponge web swagger --enable-standardize-response --enable-to-openapi3 --enable-integer-to-string --file=docs/apis.swagger.json > /dev/null
 
   moduleName=$(cat docs/gen.info | head -1 | cut -d , -f 1)
   serverName=$(cat docs/gen.info | head -1 | cut -d , -f 2)

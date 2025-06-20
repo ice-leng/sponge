@@ -201,7 +201,7 @@ function generateBySpecifiedProto(){
   checkResult $?
 
   # handle apis.swagger.json
-  sponge web swagger --enable-standardize-response --enable-to-openapi3 --enable-integer-to-string --file=docs/apis.swagger.json > /dev/null 2>&1
+  sponge web swagger --enable-standardize-response --enable-to-openapi3 --enable-integer-to-string --file=docs/apis.swagger.json > /dev/null
 
   # A total of four files are generated: the registration route file *_router.pb.go (saved in the same directory as the protobuf file),
   # the injection route file *_router.go (saved in internal/routers by default), the logic code template file *.go (saved in internal/service by default),
