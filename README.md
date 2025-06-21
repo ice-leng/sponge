@@ -17,7 +17,7 @@
 
 **Sponge** is a powerful and easy-to-use `Go` development framework. Its core concept is to reverse-generate modular code by parsing `SQL`, `Protobuf`, and `JSON` files. These modular components can be flexibly combined into various types of complete backend services.
 
-Sponge provides a one-stop project development solution with outstanding engineering capabilities. It covers code generation, development, testing, API documentation, and deployment, enabling developers to effortlessly build stable, reliable, and high-performance backend service systems (including RESTful API, gRPC, HTTP+gRPC, and gRPC Gateway, etc) with a low-code approach.
+Sponge provides a one-stop project development solution. It covers code generation, development, testing, API documentation, and deployment, enabling developers to effortlessly build stable, reliable, and high-performance backend service systems (including RESTful API, gRPC, HTTP+gRPC, and gRPC Gateway, etc.) with a low-code approach.
 
 <br>
 
@@ -61,7 +61,7 @@ In addition, developers can generate business-specific code by customizing templ
 
 <br>
 
-### Quick Start
+### Getting Started
 
 1. **Install sponge**
 
@@ -85,7 +85,7 @@ In addition, developers can generate business-specific code by customizing templ
 
 <br>
 
-### Main Features
+### Components
 
 Sponge has built-in rich components (for on-demand use):
 
@@ -101,6 +101,7 @@ Sponge has built-in rich components (for on-demand use):
 | Authentication [jwt](https://github.com/golang-jwt/jwt) | [jwt example](https://github.com/go-dev-frame/sponge/blob/main/pkg/jwt/README.md#example-of-use)<br>[gin example](https://github.com/go-dev-frame/sponge/blob/main/pkg/gin/middleware/README.md#jwt-authorization-middleware)<br>[gRPC example](https://github.com/go-dev-frame/sponge/blob/main/pkg/grpc/interceptor/README.md#jwt-authentication-interceptor) |
 | Parameter [validator](https://github.com/go-playground/validator), [protoc-gen-validate](https://github.com/bufbuild/protoc-gen-validate) | [validator example](https://github.com/go-dev-frame/sponge/blob/main/internal/types/userExample_types.go#L17)<br>[protoc-gen-validate example](https://github.com/go-dev-frame/sponge/blob/main/api/serverNameExample/v1/userExample.proto#L156) |
 | Websocket [gorilla/websocket](https://github.com/gorilla/websocket) | [example](https://github.com/go-dev-frame/sponge/blob/main/pkg/ws/README.md#example-of-use) |
+| [SSE](https://html.spec.whatwg.org/multipage/server-sent-events.html) | [example](https://github.com/go-dev-frame/sponge/blob/main/pkg/sse/README.md#example-of-use) |
 | Crontab [cron](https://github.com/robfig/cron) | [example](https://github.com/go-dev-frame/sponge/blob/main/pkg/gocron/README.md#example-of-use) |
 | Message Queue [rabbitmq](https://github.com/rabbitmq/amqp091-go), [kafka](https://github.com/IBM/sarama) | [rabbitmq example](https://github.com/go-dev-frame/sponge/blob/main/pkg/rabbitmq/README.md#example-of-use)<br>[kafka example](https://github.com/go-dev-frame/sponge/blob/main/pkg/kafka/README.md#example-of-use) |
 | Distributed transaction manager [dtm](https://github.com/dtm-labs/dtm) | [dtm service discovery example](https://github.com/go-dev-frame/sponge_examples/blob/main/_11_sponge-dtm-service-registration-discovery/internal/rpcclient/dtmservice.go#L31)<br>[dtm flash sale example](https://github.com/go-dev-frame/sponge_examples/blob/main/_12_sponge-dtm-flashSale/grpc%2Bhttp/internal/service/flashSale.go#L67) |
@@ -123,7 +124,7 @@ Sponge has built-in rich components (for on-demand use):
 
 ### Code Generation Engine
 
-**Sponge** offers powerful code generation capabilities, supporting both `built-in templates` and `custom templates` to quickly generate the code required for your project. It also integrates an `AI assistant` to help generate business logic code.
+**Sponge** provides powerful code generation capabilities, supporting both `built-in templates` and `custom templates` to quickly generate the code required for your project. It also integrates an `AI assistant` to help generate business logic code.
 
 1. Sponge generates a code framework based on built-in templates, as shown in the diagram below:
 
