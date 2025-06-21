@@ -38,26 +38,26 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   }
 };
 
-service UserExample {
-  // create a new userExample
+service userExample {
+  // Create a new userExample
   rpc Create(CreateUserExampleRequest) returns (CreateUserExampleReply) {
     option (google.api.http) = {
       post: "/api/v1/userExample"
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "create a new userExample";
+      summary: "Create a new userExample";
       description: "Creates a new userExample entity using the provided data in the request body.";
     };
   }
 
-  // delete a userExample by id
+  // Delete a userExample by id
   rpc DeleteByID(DeleteUserExampleByIDRequest) returns (DeleteUserExampleByIDReply) {
     option (google.api.http) = {
       delete: "/api/v1/userExample/{id}"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "delete a userExample by id";
+      summary: "Delete a userExample by id";
       description: "Deletes a existing userExample identified by the given id in the path.";
       //security: {
       //  security_requirement: {
@@ -68,14 +68,14 @@ service UserExample {
     };
   }
 
-  // update a userExample by id
+  // Update a userExample by id
   rpc UpdateByID(UpdateUserExampleByIDRequest) returns (UpdateUserExampleByIDReply) {
     option (google.api.http) = {
       put: "/api/v1/userExample/{id}"
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "update a userExample by id";
+      summary: "Update a userExample by id";
       description: "Updates the specified userExample with new data provided in the request body. The target is identified by id in the path.";
       //security: {
       //  security_requirement: {
@@ -86,13 +86,13 @@ service UserExample {
     };
   }
 
-  // get userExample details by id
+  // Get a userExample by id
   rpc GetByID(GetUserExampleByIDRequest) returns (GetUserExampleByIDReply) {
     option (google.api.http) = {
       get: "/api/v1/userExample/{id}"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "get userExample details by id";
+      summary: "Get a userExample by id";
       description: "Gets detailed information of a userExample specified by the given id in the path.";
       //security: {
       //  security_requirement: {

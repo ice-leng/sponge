@@ -104,32 +104,32 @@ import "validate/validate.proto";
 
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
-service {{.TableName}} {
-  // create a new {{.TName}}
+service {{.TName}} {
+  // Create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {}
 
-  // delete a {{.TName}} by id
+  // Delete a {{.TName}} by id
   rpc DeleteByID(Delete{{.TableName}}ByIDRequest) returns (Delete{{.TableName}}ByIDReply) {}
 
-  // update a {{.TName}} by id
+  // Update a {{.TName}} by id
   rpc UpdateByID(Update{{.TableName}}ByIDRequest) returns (Update{{.TableName}}ByIDReply) {}
 
-  // get {{.TName}} details by id
+  // Get a {{.TName}} by id
   rpc GetByID(Get{{.TableName}}ByIDRequest) returns (Get{{.TableName}}ByIDReply) {}
 
-  // get a list of {{.TName}} by custom conditions
+  // Get a paginated list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {}
 
-  // delete {{.TName}} by batch id
+  // Batch delete {{.TName}} by ids
   rpc DeleteByIDs(Delete{{.TableName}}ByIDsRequest) returns (Delete{{.TableName}}ByIDsReply) {}
 
-  // get {{.TName}} details by custom condition
+  // Get a {{.TName}} by custom condition
   rpc GetByCondition(Get{{.TableName}}ByConditionRequest) returns (Get{{.TableName}}ByConditionReply) {}
 
-  // get a list of {{.TName}} by batch id
+  // Batch get {{.TName}} by ids
   rpc ListByIDs(List{{.TableName}}ByIDsRequest) returns (List{{.TableName}}ByIDsReply) {}
 
-  // get a list of {{.TName}} by last id
+  // Get a paginated list of {{.TName}} by last id
   rpc ListByLastID(List{{.TableName}}ByLastIDRequest) returns (List{{.TableName}}ByLastIDReply) {}
 }
 
@@ -227,20 +227,20 @@ import "validate/validate.proto";
 
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
-service {{.TableName}} {
-  // create a new {{.TName}}
+service {{.TName}} {
+  // Create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {}
 
-  // delete a {{.TName}} by id
+  // Delete a {{.TName}} by id
   rpc DeleteByID(Delete{{.TableName}}ByIDRequest) returns (Delete{{.TableName}}ByIDReply) {}
 
-  // update a {{.TName}} by id
+  // Update a {{.TName}} by id
   rpc UpdateByID(Update{{.TableName}}ByIDRequest) returns (Update{{.TableName}}ByIDReply) {}
 
-  // get {{.TName}} details by id
+  // Get a {{.TName}} by id
   rpc GetByID(Get{{.TableName}}ByIDRequest) returns (Get{{.TableName}}ByIDReply) {}
 
-  // get a list of {{.TName}} by custom conditions
+  // Get a paginated list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {}
 }
 
@@ -345,8 +345,8 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   }
 };
 
-service {{.TableName}} {
-  // create a new {{.TName}}
+service {{.TName}} {
+  // Create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}"
@@ -354,14 +354,14 @@ service {{.TableName}} {
     };
   }
 
-  // delete a {{.TName}} by id
+  // Delete a {{.TName}} by id
   rpc DeleteByID(Delete{{.TableName}}ByIDRequest) returns (Delete{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       delete: "/api/v1/{{.TName}}/{id}"
     };
   }
 
-  // update a {{.TName}} by id
+  // Update a {{.TName}} by id
   rpc UpdateByID(Update{{.TableName}}ByIDRequest) returns (Update{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       put: "/api/v1/{{.TName}}/{id}"
@@ -369,14 +369,14 @@ service {{.TableName}} {
     };
   }
 
-  // get {{.TName}} details by id
+  // Get a {{.TName}} by id
   rpc GetByID(Get{{.TableName}}ByIDRequest) returns (Get{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/{id}"
     };
   }
 
-  // get a list of {{.TName}} by custom conditions
+  // Get a paginated list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/list"
@@ -384,7 +384,7 @@ service {{.TableName}} {
     };
   }
 
-  // delete {{.TName}} by batch id
+  // Batch delete {{.TName}} by ids
   rpc DeleteByIDs(Delete{{.TableName}}ByIDsRequest) returns (Delete{{.TableName}}ByIDsReply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/delete/ids"
@@ -392,7 +392,7 @@ service {{.TableName}} {
     };
   }
 
-  // get {{.TName}} details by custom condition
+  // Get a {{.TName}} by custom condition
   rpc GetByCondition(Get{{.TableName}}ByConditionRequest) returns (Get{{.TableName}}ByConditionReply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/condition"
@@ -400,7 +400,7 @@ service {{.TableName}} {
     };
   }
 
-  // get a list of {{.TName}} by batch id
+  // Batch get {{.TName}} by ids
   rpc ListByIDs(List{{.TableName}}ByIDsRequest) returns (List{{.TableName}}ByIDsReply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/list/ids"
@@ -408,7 +408,7 @@ service {{.TableName}} {
     };
   }
 
-  // get a list of {{.TName}} by last id
+  // Get a paginated list of {{.TName}} by last id
   rpc ListByLastID(List{{.TableName}}ByLastIDRequest) returns (List{{.TableName}}ByLastIDReply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/list"
@@ -567,8 +567,8 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   }
 };
 
-service {{.TableName}} {
-  // create a new {{.TName}}
+service {{.TName}} {
+  // Create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}"
@@ -576,14 +576,14 @@ service {{.TableName}} {
     };
   }
 
-  // delete a {{.TName}} by id
+  // Delete a {{.TName}} by id
   rpc DeleteByID(Delete{{.TableName}}ByIDRequest) returns (Delete{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       delete: "/api/v1/{{.TName}}/{id}"
     };
   }
 
-  // update a {{.TName}} by id
+  // Update a {{.TName}} by id
   rpc UpdateByID(Update{{.TableName}}ByIDRequest) returns (Update{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       put: "/api/v1/{{.TName}}/{id}"
@@ -591,14 +591,14 @@ service {{.TableName}} {
     };
   }
 
-  // get {{.TName}} details by id
+  // Get a {{.TName}} by id
   rpc GetByID(Get{{.TableName}}ByIDRequest) returns (Get{{.TableName}}ByIDReply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/{id}"
     };
   }
 
-  // get a list of {{.TName}} by custom conditions
+  // Get a paginated list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/list"
