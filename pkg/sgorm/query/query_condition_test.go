@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -63,8 +64,7 @@ func TestParams_ConvertToGormConditions(t *testing.T) {
 					{
 						Name:  "name",
 						Value: "ZhangSan",
-						//Exp:   "neq",
-						Exp: "!=",
+						Exp:   "!=",
 					},
 				},
 			},
@@ -79,8 +79,7 @@ func TestParams_ConvertToGormConditions(t *testing.T) {
 					{
 						Name:  "age",
 						Value: 20,
-						//Exp:   Gt,
-						Exp: ">",
+						Exp:   ">",
 					},
 				},
 			},
@@ -95,8 +94,7 @@ func TestParams_ConvertToGormConditions(t *testing.T) {
 					{
 						Name:  "age",
 						Value: 20,
-						//Exp:   Gte,
-						Exp: ">=",
+						Exp:   ">=",
 					},
 				},
 			},
@@ -111,8 +109,7 @@ func TestParams_ConvertToGormConditions(t *testing.T) {
 					{
 						Name:  "age",
 						Value: 20,
-						//Exp:   Lt,
-						Exp: "<",
+						Exp:   "<",
 					},
 				},
 			},
@@ -127,13 +124,42 @@ func TestParams_ConvertToGormConditions(t *testing.T) {
 					{
 						Name:  "age",
 						Value: 20,
-						//Exp:   Lte,
-						Exp: "<=",
+						Exp:   "<=",
 					},
 				},
 			},
 			want:    "age <= ?",
 			want1:   []interface{}{20},
+			wantErr: false,
+		},
+		{
+			name: "1 column lte (int)",
+			args: args{
+				columns: []Column{
+					{
+						Name:  "age",
+						Value: "20",
+						Exp:   "<=",
+					},
+				},
+			},
+			want:    "age <= ?",
+			want1:   []interface{}{20},
+			wantErr: false,
+		},
+		{
+			name: "1 column lte (string)",
+			args: args{
+				columns: []Column{
+					{
+						Name:  "age",
+						Value: "\"20\"",
+						Exp:   "<=",
+					},
+				},
+			},
+			want:    "age <= ?",
+			want1:   []interface{}{"20"},
 			wantErr: false,
 		},
 		{
@@ -197,7 +223,7 @@ func TestParams_ConvertToGormConditions(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "1 column IN",
+			name: "1 column IN (string)",
 			args: args{
 				columns: []Column{
 					{
@@ -209,6 +235,51 @@ func TestParams_ConvertToGormConditions(t *testing.T) {
 			},
 			want:    "name IN (?)",
 			want1:   []interface{}{[]interface{}{"ab", "cd", "ef"}},
+			wantErr: false,
+		},
+		{
+			name: "1 column IN (int)",
+			args: args{
+				columns: []Column{
+					{
+						Name:  "age",
+						Value: "10,20,30",
+						Exp:   In,
+					},
+				},
+			},
+			want:    "age IN (?)",
+			want1:   []interface{}{[]interface{}{10, 20, 30}},
+			wantErr: false,
+		},
+		{
+			name: "1 column IN (string)",
+			args: args{
+				columns: []Column{
+					{
+						Name:  "age",
+						Exp:   In,
+						Value: "'10', '20', \"30\"",
+					},
+				},
+			},
+			want:    "age IN (?)",
+			want1:   []interface{}{[]interface{}{"10", "20", "30"}},
+			wantErr: false,
+		},
+		{
+			name: "1 column IN ([]interface{})",
+			args: args{
+				columns: []Column{
+					{
+						Name:  "age",
+						Exp:   In,
+						Value: []interface{}{10, 20, 30},
+					},
+				},
+			},
+			want:    "age IN (?)",
+			want1:   []interface{}{[]interface{}{10, 20, 30}},
 			wantErr: false,
 		},
 		{
@@ -493,13 +564,13 @@ func TestParams_ConvertToGormConditions(t *testing.T) {
 					{
 						Name:  "created_at",
 						Exp:   ">=",
-						Value: "2025-01-01",
+						Value: "2021-01-01",
 						Logic: "and",
 					},
 					{
 						Name:  "created_at",
-						Exp:   "<=",
-						Value: "2025-12-31",
+						Exp:   "<",
+						Value: "2021-01-02",
 						Logic: "and",
 					},
 					{
@@ -516,8 +587,8 @@ func TestParams_ConvertToGormConditions(t *testing.T) {
 					},
 				},
 			},
-			want:    "created_at >= ? AND created_at <= ? AND  ( username LIKE ? OR nickname LIKE ? ) ",
-			want1:   []interface{}{"2025-01-01", "2025-12-31", "Li%", "%Si"},
+			want:    "created_at >= ? AND created_at < ? AND  ( username LIKE ? OR nickname LIKE ? ) ",
+			want1:   []interface{}{time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(2021, 1, 2, 0, 0, 0, 0, time.UTC), "Li%", "%Si"},
 			wantErr: false,
 		},
 		{
@@ -539,18 +610,81 @@ func TestParams_ConvertToGormConditions(t *testing.T) {
 					{
 						Name:  "created_at",
 						Exp:   ">=",
-						Value: "2025-01-01",
+						Value: "2021-01-01",
 						Logic: "and",
 					},
 					{
 						Name:  "created_at",
-						Exp:   "<=",
-						Value: "2025-12-31",
+						Exp:   "<",
+						Value: "2021-01-02",
 					},
 				},
 			},
-			want:    " ( username LIKE ? OR nickname LIKE ? )  AND created_at >= ? AND created_at <= ?",
-			want1:   []interface{}{"Li%", "%Si", "2025-01-01", "2025-12-31"},
+			want:    " ( username LIKE ? OR nickname LIKE ? )  AND created_at >= ? AND created_at < ?",
+			want1:   []interface{}{"Li%", "%Si", time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(2021, 1, 2, 0, 0, 0, 0, time.UTC)},
+			wantErr: false,
+		},
+
+		// --------------------------- datetime condition  ------------------------------
+
+		{
+			name: "datetime condition",
+			args: args{
+				columns: []Column{
+					{
+						Name:  "created_at",
+						Exp:   ">=",
+						Value: "2021-01-01 00:00:00",
+					},
+					{
+						Name:  "created_at",
+						Exp:   "<",
+						Value: "2021-01-02 00:00:00",
+					},
+				},
+			},
+			want:    "created_at >= ? AND created_at < ?",
+			want1:   []interface{}{time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(2021, 1, 2, 0, 0, 0, 0, time.UTC)},
+			wantErr: false,
+		},
+		{
+			name: "datetime condition with timezone",
+			args: args{
+				columns: []Column{
+					{
+						Name:  "created_at",
+						Exp:   ">=",
+						Value: "2021-01-01T00:00:00+06:00",
+					},
+					{
+						Name:  "created_at",
+						Exp:   "<",
+						Value: "2021-01-02T00:00:00+06:00",
+					},
+				},
+			},
+			want:    "created_at >= ? AND created_at < ?",
+			want1:   []interface{}{time.Date(2021, 1, 1, 0, 0, 0, 0, time.FixedZone("", 6*3600)), time.Date(2021, 1, 2, 0, 0, 0, 0, time.FixedZone("", 6*3600))},
+			wantErr: false,
+		},
+		{
+			name: "datetime condition with timezone 2",
+			args: args{
+				columns: []Column{
+					{
+						Name:  "created_at",
+						Exp:   ">=",
+						Value: "2021-01-01T00:00:00+07:00",
+					},
+					{
+						Name:  "created_at",
+						Exp:   "<",
+						Value: "2021-01-02T00:00:00+07:00",
+					},
+				},
+			},
+			want:    "created_at >= ? AND created_at < ?",
+			want1:   []interface{}{time.Date(2021, 1, 1, 0, 0, 0, 0, time.FixedZone("", 7*3600)), time.Date(2021, 1, 2, 0, 0, 0, 0, time.FixedZone("", 7*3600))},
 			wantErr: false,
 		},
 
@@ -698,4 +832,159 @@ func TestConditions_ConvertToGorm_Error(t *testing.T) {
 	_, _, err = c.ConvertToGorm(WithValidateFn(fn))
 	t.Log(err)
 	assert.Error(t, err)
+}
+
+func Test_convertValue(t *testing.T) {
+	type args struct {
+		v interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want interface{}
+	}{
+		{
+			name: "string 1",
+			args: args{
+				v: "foo",
+			},
+			want: "foo",
+		},
+		{
+			name: "string 2",
+			args: args{
+				v: "'123'",
+			},
+			want: "'123'",
+		},
+		{
+			name: "string 3",
+			args: args{
+				v: "\"123\"",
+			},
+			want: "123",
+		},
+		{
+			name: "int 1",
+			args: args{
+				v: "123",
+			},
+			want: 123,
+		},
+		{
+			name: "int 2",
+			args: args{
+				v: 123,
+			},
+			want: 123,
+		},
+		{
+			name: "float",
+			args: args{
+				v: 123.456,
+			},
+			want: 123.456,
+		},
+		{
+			name: "float string",
+			args: args{
+				v: "123.456",
+			},
+			want: 123.456,
+		},
+		{
+			name: "bool",
+			args: args{
+				v: true,
+			},
+			want: true,
+		},
+		{
+			name: "bool string",
+			args: args{
+				v: "true",
+			},
+			want: true,
+		},
+		{
+			name: "datetime 1",
+			args: args{
+				v: "2023-05-15T14:30:00Z",
+			},
+			want: time.Date(2023, 5, 15, 14, 30, 0, 0, time.UTC),
+		},
+		{
+			name: "datetime 2",
+			args: args{
+				v: "2023-05-15T14:30:00+07:00",
+			},
+			want: time.Date(2023, 5, 15, 14, 30, 0, 0, time.FixedZone("UTC+7", 25200)),
+		},
+		{
+			name: "datetime 3",
+			args: args{
+				v: "2023-05-15T14:30:00.123Z",
+			},
+			want: time.Date(2023, 5, 15, 14, 30, 0, 123000000, time.UTC),
+		},
+		{
+			name: "datetime 4",
+			args: args{
+				v: "2023-05-15T14:30:00+0700",
+			},
+			want: time.Date(2023, 5, 15, 14, 30, 0, 0, time.FixedZone("UTC+7", 25200)),
+		},
+		{
+			name: "datetime 5",
+			args: args{
+				v: "2023-05-15T14:30:00.123+07:00",
+			},
+			want: time.Date(2023, 5, 15, 14, 30, 0, 123000000, time.FixedZone("UTC+7", 25200)),
+		},
+		{
+			name: "datetime 6",
+			args: args{
+				v: "2023-05-15",
+			},
+			want: time.Date(2023, 5, 15, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "datetime 7",
+			args: args{
+				v: "2023-05-15 14:30:00",
+			},
+			want: time.Date(2023, 5, 15, 14, 30, 0, 0, time.UTC),
+		},
+		{
+			name: "datetime 8",
+			args: args{
+				v: "2023-05-15 14:30:00.123",
+			},
+			want: time.Date(2023, 5, 15, 14, 30, 0, 123000000, time.UTC),
+		},
+		{
+			name: "datetime 9",
+			args: args{
+				v: "2023-05-15 14:30:00 +07:00",
+			},
+			want: time.Date(2023, 5, 15, 14, 30, 0, 0, time.FixedZone("UTC+7", 25200)),
+		},
+		{
+			name: "datetime 10",
+			args: args{
+				v: "2023-05-15 14:30:00.123 +07:00",
+			},
+			want: time.Date(2023, 5, 15, 14, 30, 0, 123000000, time.FixedZone("UTC+7", 25200)),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := convertValue(tt.args.v)
+			if dt, ok := got.(time.Time); ok {
+				assert.Equal(t, tt.want.(time.Time).In(time.UTC), dt.In(time.UTC))
+			} else {
+				assert.Equalf(t, tt.want, got, "convertValue(%v)", tt.args.v)
+			}
+		})
+	}
 }

@@ -3,7 +3,9 @@ package query
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -160,15 +162,27 @@ func (c *Column) checkExp() (string, error) {
 			}
 		case " IN ", " NOT IN ":
 			val, ok1 := c.Value.(string)
-			if !ok1 {
-				return symbol, fmt.Errorf("invalid value type '%s'", c.Value)
+			if ok1 {
+				values := []interface{}{}
+				ss := strings.Split(val, ",")
+				for _, s := range ss {
+					s = strings.TrimSpace(s)
+					if strings.HasPrefix(s, "\"") {
+						values = append(values, strings.Trim(s, "\""))
+						continue
+					} else if strings.HasPrefix(s, "'") {
+						values = append(values, strings.Trim(s, "'"))
+						continue
+					}
+					value, err := strconv.Atoi(s)
+					if err == nil {
+						values = append(values, value)
+					} else {
+						values = append(values, s)
+					}
+				}
+				c.Value = values
 			}
-			iVal := []interface{}{}
-			ss := strings.Split(val, ",")
-			for _, s := range ss {
-				iVal = append(iVal, s)
-			}
-			c.Value = iVal
 			symbol = "(?)"
 		case " IS NULL ", " IS NOT NULL ":
 			c.Value = nil
@@ -238,6 +252,8 @@ func (p *Params) ConvertToGormConditions(opts ...RulerOption) (string, []interfa
 			if v != " IS NULL " && v != " IS NOT NULL " {
 				return "", nil, fmt.Errorf("field 'value' cannot be nil")
 			}
+		} else {
+			column.Value = convertValue(column.Value)
 		}
 
 		// check exp
@@ -285,6 +301,61 @@ func (p *Params) ConvertToGormConditions(opts ...RulerOption) (string, []interfa
 
 	return str, args, nil
 }
+
+// if the value is a string or an integer, if true means it is a string, otherwise it is an integer
+func convertValue(v interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return v
+	}
+
+	s = strings.TrimSpace(s)
+	if strings.HasPrefix(s, "\"") {
+		s2 := strings.Trim(s, "\"")
+		if _, err := strconv.Atoi(s2); err == nil {
+			return s2
+		}
+		return s
+	}
+	intVal, err := strconv.Atoi(s)
+	if err == nil {
+		return intVal
+	}
+	boolVal, err := strconv.ParseBool(s)
+	if err == nil {
+		return boolVal
+	}
+	floatVal, err := strconv.ParseFloat(s, 64)
+	if err == nil {
+		return floatVal
+	}
+
+	// try to parse as RFC3339
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return t
+	}
+	// support other formats
+	layouts := []string{
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02T15:04:05Z0700",
+		"2006-01-02T15:04:05.999999999Z0700",
+		"2006-01-02T15:04:05.999999999Z07:00",
+		"2006-01-02",
+		"2006-01-02 15:04:05",
+		"2006-01-02 15:04:05.999999999",
+		"2006-01-02 15:04:05 -07:00",
+		"2006-01-02 15:04:05.999999999 -07:00",
+	}
+	for _, layout := range layouts {
+		t, err := time.Parse(layout, s)
+		if err == nil {
+			return t
+		}
+	}
+	return v
+}
+
+// -------------------------------------------------------------------------------------------
 
 // Conditions query conditions
 type Conditions struct {
