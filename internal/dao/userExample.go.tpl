@@ -125,7 +125,7 @@ func (d *{{.TableNameCamelFCL}}Dao) updateDataBy{{.ColumnNameCamel}}(ctx context
 	return db.WithContext(ctx).Model(table).Updates(update).Error
 }
 
-// GetBy{{.ColumnNameCamel}} get {{.TableNameCamelFCL}} details by {{.ColumnNameCamelFCL}}
+// GetBy{{.ColumnNameCamel}} get a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 func (d *{{.TableNameCamelFCL}}Dao) GetBy{{.ColumnNameCamel}}(ctx context.Context, {{.ColumnNameCamelFCL}} {{.GoType}}) (*model.{{.TableNameCamel}}, error) {
 	// no cache
 	if d.cache == nil {
@@ -181,7 +181,7 @@ func (d *{{.TableNameCamelFCL}}Dao) GetBy{{.ColumnNameCamel}}(ctx context.Contex
 	return nil, err
 }
 
-// GetByColumns get a list of {{.TableNameCamelFCL}} by custom conditions.
+// GetByColumns get a paginated list of {{.TableNamePluralCamelFCL}} by custom conditions.
 // For more details, please refer to https://go-sponge.com/component/custom-page-query.html
 func (d *{{.TableNameCamelFCL}}Dao) GetByColumns(ctx context.Context, params *query.Params) ([]*model.{{.TableNameCamel}}, int64, error) {
 	if params.Sort == "" {

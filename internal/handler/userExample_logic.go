@@ -102,7 +102,7 @@ func (h *userExamplePbHandler) UpdateByID(ctx context.Context, req *serverNameEx
 	return &serverNameExampleV1.UpdateUserExampleByIDReply{}, nil
 }
 
-// GetByID get userExample details by id
+// GetByID get a userExample by id
 func (h *userExamplePbHandler) GetByID(ctx context.Context, req *serverNameExampleV1.GetUserExampleByIDRequest) (*serverNameExampleV1.GetUserExampleByIDReply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -131,7 +131,7 @@ func (h *userExamplePbHandler) GetByID(ctx context.Context, req *serverNameExamp
 	}, nil
 }
 
-// List get a list of userExample by custom conditions
+// List get a paginated list of userExamples by custom conditions
 func (h *userExamplePbHandler) List(ctx context.Context, req *serverNameExampleV1.ListUserExampleRequest) (*serverNameExampleV1.ListUserExampleReply, error) {
 	err := req.Validate()
 	if err != nil {

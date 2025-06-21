@@ -127,7 +127,7 @@ func (d *userExampleDao) updateDataByID(ctx context.Context, db *gorm.DB, table 
 	return db.WithContext(ctx).Model(table).Updates(update).Error
 }
 
-// GetByID get userExample details by id
+// GetByID get a userExample by id
 func (d *userExampleDao) GetByID(ctx context.Context, id uint64) (*model.UserExample, error) {
 	// no cache
 	if d.cache == nil {
@@ -181,7 +181,7 @@ func (d *userExampleDao) GetByID(ctx context.Context, id uint64) (*model.UserExa
 	return nil, err
 }
 
-// GetByColumns get a list of userExample by custom conditions.
+// GetByColumns get a paginated list of userExamples by custom conditions.
 // For more details, please refer to https://go-sponge.com/component/custom-page-query.html
 func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params) ([]*model.UserExample, int64, error) {
 	queryStr, args, err := params.ConvertToGormConditions(query.WithWhitelistNames(model.UserExampleColumnNames))
@@ -210,7 +210,7 @@ func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params)
 	return records, total, err
 }
 
-// DeleteByIDs delete userExample by batch id
+// DeleteByIDs batch delete userExample by ids
 func (d *userExampleDao) DeleteByIDs(ctx context.Context, ids []uint64) error {
 	err := d.db.WithContext(ctx).Where("id IN (?)", ids).Delete(&model.UserExample{}).Error
 	if err != nil {
@@ -225,7 +225,7 @@ func (d *userExampleDao) DeleteByIDs(ctx context.Context, ids []uint64) error {
 	return nil
 }
 
-// GetByCondition get userExample details by custom condition
+// GetByCondition get a userExample by custom condition
 // For more details, please refer to https://go-sponge.com/component/custom-page-query.html#_2-condition-parameters-optional
 func (d *userExampleDao) GetByCondition(ctx context.Context, c *query.Conditions) (*model.UserExample, error) {
 	queryStr, args, err := c.ConvertToGorm(query.WithWhitelistNames(model.UserExampleColumnNames))
@@ -242,7 +242,7 @@ func (d *userExampleDao) GetByCondition(ctx context.Context, c *query.Conditions
 	return table, nil
 }
 
-// GetByIDs get a list of userExample by batch id
+// GetByIDs Batch get userExample by ids
 func (d *userExampleDao) GetByIDs(ctx context.Context, ids []uint64) (map[uint64]*model.UserExample, error) {
 	// no cache
 	if d.cache == nil {
@@ -316,7 +316,7 @@ func (d *userExampleDao) GetByIDs(ctx context.Context, ids []uint64) (map[uint64
 	return itemMap, nil
 }
 
-// GetByLastID get a list of userExample by last id
+// GetByLastID Get a paginated list of userExamples by last id
 func (d *userExampleDao) GetByLastID(ctx context.Context, lastID uint64, limit int, sort string) ([]*model.UserExample, error) {
 	page := query.NewPage(0, limit, sort)
 

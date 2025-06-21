@@ -121,7 +121,7 @@ func (d *userExampleDao) updateDataByID(ctx context.Context, db *gorm.DB, table 
 	return db.WithContext(ctx).Model(table).Updates(update).Error
 }
 
-// GetByID get userExample details by id
+// GetByID get a userExample by id
 func (d *userExampleDao) GetByID(ctx context.Context, id uint64) (*model.UserExample, error) {
 	// no cache
 	if d.cache == nil {
@@ -175,7 +175,7 @@ func (d *userExampleDao) GetByID(ctx context.Context, id uint64) (*model.UserExa
 	return nil, err
 }
 
-// GetByColumns get a list of userExample by custom conditions.
+// GetByColumns get a paginated list of userExamples by custom conditions.
 // For more details, please refer to https://go-sponge.com/component/custom-page-query.html
 func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params) ([]*model.UserExample, int64, error) {
 	queryStr, args, err := params.ConvertToGormConditions(query.WithWhitelistNames(model.UserExampleColumnNames))

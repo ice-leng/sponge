@@ -29,7 +29,7 @@
                 "tags": [
                     "userExample"
                 ],
-                "summary": "create a new userExample",
+                "summary": "Create a new userExample",
                 "parameters": [
                     {
                         "description": "userExample information",
@@ -68,7 +68,7 @@
                 "tags": [
                     "userExample"
                 ],
-                "summary": "get a list of userExample by custom conditions",
+                "summary": "Get a paginated list of userExamples by custom conditions",
                 "parameters": [
                     {
                         "description": "query parameters",
@@ -107,7 +107,7 @@
                 "tags": [
                     "userExample"
                 ],
-                "summary": "get userExample details by id",
+                "summary": "Get a userExample by id",
                 "parameters": [
                     {
                         "type": "string",
@@ -142,7 +142,7 @@
                 "tags": [
                     "userExample"
                 ],
-                "summary": "update a userExample by id",
+                "summary": "Update a userExample by id",
                 "parameters": [
                     {
                         "type": "string",
@@ -186,7 +186,7 @@
                 "tags": [
                     "userExample"
                 ],
-                "summary": "delete a userExample by id",
+                "summary": "Delete a userExample by id",
                 "parameters": [
                     {
                         "type": "string",

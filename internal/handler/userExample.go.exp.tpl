@@ -51,7 +51,7 @@ func New{{.TableNameCamel}}Handler() {{.TableNameCamel}}Handler {
 }
 
 // Create a new {{.TableNameCamelFCL}}
-// @Summary create a new {{.TableNameCamelFCL}}
+// @Summary Create a new {{.TableNameCamelFCL}}
 // @Description Creates a new {{.TableNameCamelFCL}} entity using the provided data in the request body.
 // @Tags {{.TableNameCamelFCL}}
 // @Accept json
@@ -89,7 +89,7 @@ func (h *{{.TableNameCamelFCL}}Handler) Create(c *gin.Context) {
 }
 
 // DeleteBy{{.ColumnNameCamel}} delete a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
-// @Summary delete a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
+// @Summary Delete a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 // @Description Deletes a existing {{.TableNameCamelFCL}} identified by the given {{.ColumnNameCamelFCL}} in the path.
 // @Tags {{.TableNameCamelFCL}}
 // @Accept json
@@ -117,7 +117,7 @@ func (h *{{.TableNameCamelFCL}}Handler) DeleteBy{{.ColumnNameCamel}}(c *gin.Cont
 }
 
 // UpdateBy{{.ColumnNameCamel}} update a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
-// @Summary update a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
+// @Summary Update a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 // @Description Updates the specified {{.TableNameCamelFCL}} by given {{.ColumnNameCamelFCL}} in the path, support partial update.
 // @Tags {{.TableNameCamelFCL}}
 // @Accept json
@@ -162,8 +162,8 @@ func (h *{{.TableNameCamelFCL}}Handler) UpdateBy{{.ColumnNameCamel}}(c *gin.Cont
 	response.Success(c)
 }
 
-// GetBy{{.ColumnNameCamel}} get {{.TableNameCamelFCL}} details by {{.ColumnNameCamelFCL}}
-// @Summary get {{.TableNameCamelFCL}} details by {{.ColumnNameCamelFCL}}
+// GetBy{{.ColumnNameCamel}} get a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
+// @Summary Get a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 // @Description Gets detailed information of a {{.TableNameCamelFCL}} specified by the given {{.ColumnNameCamelFCL}} in the path.
 // @Tags {{.TableNameCamelFCL}}
 // @Param {{.ColumnNameCamelFCL}} path string true "{{.ColumnNameCamelFCL}}"
@@ -203,8 +203,8 @@ func (h *{{.TableNameCamelFCL}}Handler) GetBy{{.ColumnNameCamel}}(c *gin.Context
 	response.Success(c, gin.H{"{{.TableNameCamelFCL}}": data})
 }
 
-// List get a list of {{.TableNamePluralCamelFCL}} by custom conditions
-// @Summary get a list of {{.TableNamePluralCamelFCL}} by custom conditions
+// List get a paginated list of {{.TableNamePluralCamelFCL}} by custom conditions
+// @Summary Get a paginated list of {{.TableNamePluralCamelFCL}} by custom conditions
 // @Description Returns a paginated list of {{.TableNamePluralCamelFCL}} based on query filters, including page number and size.
 // @Tags {{.TableNameCamelFCL}}
 // @Accept json
@@ -242,8 +242,8 @@ func (h *{{.TableNameCamelFCL}}Handler) List(c *gin.Context) {
 	})
 }
 
-// DeleteBy{{.ColumnNamePluralCamel}} delete {{.TableNamePluralCamelFCL}} by batch {{.ColumnNameCamelFCL}}
-// @Summary delete {{.TableNamePluralCamelFCL}} by batch {{.ColumnNameCamelFCL}}
+// DeleteBy{{.ColumnNamePluralCamel}} batch delete {{.TableNamePluralCamelFCL}} by {{.ColumnNamePluralCamelFCL}}
+// @Summary Batch delete {{.TableNamePluralCamelFCL}} by {{.ColumnNamePluralCamelFCL}}
 // @Description Deletes multiple {{.TableNamePluralCamelFCL}} by a list of {{.ColumnNameCamelFCL}}
 // @Tags {{.TableNameCamelFCL}}
 // @Param data body types.Delete{{.TableNamePluralCamel}}By{{.ColumnNamePluralCamel}}Request true "{{.ColumnNameCamelFCL}} array"
@@ -272,8 +272,8 @@ func (h *{{.TableNameCamelFCL}}Handler) DeleteBy{{.ColumnNamePluralCamel}}(c *gi
 	response.Success(c)
 }
 
-// GetByCondition get {{.TableNameCamelFCL}} details by custom condition
-// @Summary get {{.TableNameCamelFCL}} details by custom condition
+// GetByCondition get a {{.TableNameCamelFCL}} by custom condition
+// @Summary Get a {{.TableNameCamelFCL}} by custom condition
 // @Description Returns a single {{.TableNameCamelFCL}} that matches the specified filter conditions.
 // @Tags {{.TableNameCamelFCL}}
 // @Param data body types.Conditions true "query condition"
@@ -321,8 +321,8 @@ func (h *{{.TableNameCamelFCL}}Handler) GetByCondition(c *gin.Context) {
 	response.Success(c, gin.H{"{{.TableNameCamelFCL}}": data})
 }
 
-// ListBy{{.ColumnNamePluralCamel}} get a list of {{.TableNamePluralCamelFCL}} by batch {{.ColumnNameCamelFCL}}
-// @Summary get a list of {{.TableNamePluralCamelFCL}} by batch {{.ColumnNameCamelFCL}}
+// ListBy{{.ColumnNamePluralCamel}} batch get {{.TableNamePluralCamelFCL}} by {{.ColumnNamePluralCamelFCL}}
+// @Summary Batch get {{.TableNamePluralCamelFCL}} by {{.ColumnNamePluralCamelFCL}}
 // @Description Returns a list of {{.TableNamePluralCamelFCL}} that match the list of {{.ColumnNameCamelFCL}}.
 // @Tags {{.TableNameCamelFCL}}
 // @Param data body types.List{{.TableNamePluralCamel}}By{{.ColumnNamePluralCamel}}Request true "{{.ColumnNameCamelFCL}} array"
@@ -365,8 +365,8 @@ func (h *{{.TableNameCamelFCL}}Handler) ListBy{{.ColumnNamePluralCamel}}(c *gin.
 	})
 }
 
-// ListByLast{{.ColumnNameCamel}} get a list of {{.TableNamePluralCamelFCL}} by last {{.ColumnNameCamelFCL}}
-// @Summary get a list of {{.TableNamePluralCamelFCL}} by last {{.ColumnNameCamelFCL}}
+// ListByLast{{.ColumnNameCamel}} get a paginated list of {{.TableNamePluralCamelFCL}} by last {{.ColumnNameCamelFCL}}
+// @Summary Get a paginated list of {{.TableNamePluralCamelFCL}} by last {{.ColumnNameCamelFCL}}
 // @Description Returns a paginated list of {{.TableNamePluralCamelFCL}} starting after a given last {{.ColumnNameCamelFCL}}, useful for cursor-based pagination.
 // @Tags {{.TableNameCamelFCL}}
 // @Accept json

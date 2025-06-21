@@ -45,7 +45,7 @@ func New{{.TableNameCamel}}Handler() {{.TableNameCamel}}Handler {
 }
 
 // Create a new {{.TableNameCamelFCL}}
-// @Summary create a new {{.TableNameCamelFCL}}
+// @Summary Create a new {{.TableNameCamelFCL}}
 // @Description Creates a new {{.TableNameCamelFCL}} entity using the provided data in the request body.
 // @Tags {{.TableNameCamelFCL}}
 // @Accept json
@@ -83,7 +83,7 @@ func (h *{{.TableNameCamelFCL}}Handler) Create(c *gin.Context) {
 }
 
 // DeleteBy{{.ColumnNameCamel}} delete a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
-// @Summary delete a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
+// @Summary Delete a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 // @Description Deletes a existing {{.TableNameCamelFCL}} identified by the given {{.ColumnNameCamelFCL}} in the path.
 // @Tags {{.TableNameCamelFCL}}
 // @Accept json
@@ -111,7 +111,7 @@ func (h *{{.TableNameCamelFCL}}Handler) DeleteBy{{.ColumnNameCamel}}(c *gin.Cont
 }
 
 // UpdateBy{{.ColumnNameCamel}} update a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
-// @Summary update a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
+// @Summary Update a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 // @Description Updates the specified {{.TableNameCamelFCL}} by given {{.ColumnNameCamelFCL}} in the path, support partial update.
 // @Tags {{.TableNameCamelFCL}}
 // @Accept json
@@ -156,8 +156,8 @@ func (h *{{.TableNameCamelFCL}}Handler) UpdateBy{{.ColumnNameCamel}}(c *gin.Cont
 	response.Success(c)
 }
 
-// GetBy{{.ColumnNameCamel}} get {{.TableNameCamelFCL}} details by {{.ColumnNameCamelFCL}}
-// @Summary get {{.TableNameCamelFCL}} details by {{.ColumnNameCamelFCL}}
+// GetBy{{.ColumnNameCamel}} get a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
+// @Summary Get a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 // @Description Gets detailed information of a {{.TableNameCamelFCL}} specified by the given {{.ColumnNameCamelFCL}} in the path.
 // @Tags {{.TableNameCamelFCL}}
 // @Param {{.ColumnNameCamelFCL}} path string true "{{.ColumnNameCamelFCL}}"
@@ -197,8 +197,8 @@ func (h *{{.TableNameCamelFCL}}Handler) GetBy{{.ColumnNameCamel}}(c *gin.Context
 	response.Success(c, gin.H{"{{.TableNameCamelFCL}}": data})
 }
 
-// List get a list of {{.TableNamePluralCamelFCL}} by custom conditions
-// @Summary get a list of {{.TableNamePluralCamelFCL}} by custom conditions
+// List get a paginated list of {{.TableNamePluralCamelFCL}} by custom conditions
+// @Summary Get a paginated list of {{.TableNamePluralCamelFCL}} by custom conditions
 // @Description Returns a paginated list of {{.TableNamePluralCamelFCL}} based on query filters, including page number and size.
 // @Tags {{.TableNameCamelFCL}}
 // @Accept json

@@ -131,7 +131,7 @@ func (d *{{.TableNameCamelFCL}}Dao) updateDataBy{{.ColumnNameCamel}}(ctx context
 	return db.WithContext(ctx).Model(table).Updates(update).Error
 }
 
-// GetBy{{.ColumnNameCamel}} get {{.TableNameCamelFCL}} details by {{.ColumnNameCamelFCL}}
+// GetBy{{.ColumnNameCamel}} get a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 func (d *{{.TableNameCamelFCL}}Dao) GetBy{{.ColumnNameCamel}}(ctx context.Context, {{.ColumnNameCamelFCL}} {{.GoType}}) (*model.{{.TableNameCamel}}, error) {
 	// no cache
 	if d.cache == nil {
@@ -187,7 +187,7 @@ func (d *{{.TableNameCamelFCL}}Dao) GetBy{{.ColumnNameCamel}}(ctx context.Contex
 	return nil, err
 }
 
-// GetByColumns get a list of {{.TableNameCamelFCL}} by custom conditions.
+// GetByColumns get a paginated list of {{.TableNamePluralCamelFCL}} by custom conditions.
 // For more details, please refer to https://go-sponge.com/component/custom-page-query.html
 func (d *{{.TableNameCamelFCL}}Dao) GetByColumns(ctx context.Context, params *query.Params) ([]*model.{{.TableNameCamel}}, int64, error) {
 	if params.Sort == "" {
@@ -219,7 +219,7 @@ func (d *{{.TableNameCamelFCL}}Dao) GetByColumns(ctx context.Context, params *qu
 	return records, total, err
 }
 
-// DeleteBy{{.ColumnNamePluralCamel}} delete {{.TableNameCamelFCL}} by batch {{.ColumnNameCamelFCL}}
+// DeleteBy{{.ColumnNamePluralCamel}} batch delete {{.TableNamePluralCamelFCL}} by {{.ColumnNamePluralCamelFCL}}
 func (d *{{.TableNameCamelFCL}}Dao) DeleteBy{{.ColumnNamePluralCamel}}(ctx context.Context, {{.ColumnNamePluralCamelFCL}} []{{.GoType}}) error {
 	err := d.db.WithContext(ctx).Where("{{.ColumnName}} IN (?)", {{.ColumnNamePluralCamelFCL}}).Delete(&model.{{.TableNameCamel}}{}).Error
 	if err != nil {
@@ -234,7 +234,7 @@ func (d *{{.TableNameCamelFCL}}Dao) DeleteBy{{.ColumnNamePluralCamel}}(ctx conte
 	return nil
 }
 
-// GetByCondition get {{.TableNameCamelFCL}} details by custom condition
+// GetByCondition get a {{.TableNameCamelFCL}} by custom condition
 // For more details, please refer to https://go-sponge.com/component/custom-page-query.html#_2-condition-parameters-optional
 func (d *{{.TableNameCamelFCL}}Dao) GetByCondition(ctx context.Context, c *query.Conditions) (*model.{{.TableNameCamel}}, error) {
 	queryStr, args, err := c.ConvertToGorm(query.WithWhitelistNames(model.{{.TableNameCamel}}ColumnNames))
@@ -251,7 +251,7 @@ func (d *{{.TableNameCamelFCL}}Dao) GetByCondition(ctx context.Context, c *query
 	return table, nil
 }
 
-// GetBy{{.ColumnNamePluralCamel}} get a list of {{.TableNameCamelFCL}} by batch {{.ColumnNameCamelFCL}}
+// GetBy{{.ColumnNamePluralCamel}} batch get {{.TableNamePluralCamelFCL}} by {{.ColumnNamePluralCamelFCL}}
 func (d *{{.TableNameCamelFCL}}Dao) GetBy{{.ColumnNamePluralCamel}}(ctx context.Context, {{.ColumnNamePluralCamelFCL}} []{{.GoType}}) (map[{{.GoType}}]*model.{{.TableNameCamel}}, error) {
 	// no cache
 	if d.cache == nil {
@@ -326,7 +326,7 @@ func (d *{{.TableNameCamelFCL}}Dao) GetBy{{.ColumnNamePluralCamel}}(ctx context.
 	return itemMap, nil
 }
 
-// GetByLast{{.ColumnNameCamel}} get a list of {{.TableNameCamelFCL}} by last {{.ColumnNameCamelFCL}}
+// GetByLast{{.ColumnNameCamel}} get a paginated list of {{.TableNamePluralCamelFCL}} by last {{.ColumnNameCamelFCL}}
 func (d *{{.TableNameCamelFCL}}Dao) GetByLast{{.ColumnNameCamel}}(ctx context.Context, last{{.ColumnNameCamel}} {{.GoType}}, limit int, sort string) ([]*model.{{.TableNameCamel}}, error) {
 	if sort == "" {
 		sort = "-{{.ColumnName}}"

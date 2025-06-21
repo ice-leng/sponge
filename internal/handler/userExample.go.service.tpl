@@ -35,12 +35,12 @@ func (h *{{.TableNameCamelFCL}}Handler) UpdateBy{{.ColumnNameCamel}}(ctx context
 	return h.server.UpdateBy{{.ColumnNameCamel}}(ctx, req)
 }
 
-// GetBy{{.ColumnNameCamel}} get {{.TableNameCamelFCL}} details by {{.ColumnNameCamelFCL}}
+// GetBy{{.ColumnNameCamel}} get a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 func (h *{{.TableNameCamelFCL}}Handler) GetBy{{.ColumnNameCamel}}(ctx context.Context, req *serverNameExampleV1.Get{{.TableNameCamel}}By{{.ColumnNameCamel}}Request) (*serverNameExampleV1.Get{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply, error) {
 	return h.server.GetBy{{.ColumnNameCamel}}(ctx, req)
 }
 
-// List get a list of {{.TableNameCamelFCL}} by custom conditions
+// List get a paginated list of {{.TableNamePluralCamelFCL}} by custom conditions
 func (h *{{.TableNameCamelFCL}}Handler) List(ctx context.Context, req *serverNameExampleV1.List{{.TableNameCamel}}Request) (*serverNameExampleV1.List{{.TableNameCamel}}Reply, error) {
 	return h.server.List(ctx, req)
 }

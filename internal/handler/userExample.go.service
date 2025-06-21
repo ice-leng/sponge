@@ -35,12 +35,12 @@ func (h *userExampleHandler) UpdateByID(ctx context.Context, req *serverNameExam
 	return h.server.UpdateByID(ctx, req)
 }
 
-// GetByID get userExample details by id
+// GetByID get a userExample by id
 func (h *userExampleHandler) GetByID(ctx context.Context, req *serverNameExampleV1.GetUserExampleByIDRequest) (*serverNameExampleV1.GetUserExampleByIDReply, error) {
 	return h.server.GetByID(ctx, req)
 }
 
-// List get a list of userExample by custom conditions
+// List get a paginated list of userExamples by custom conditions
 func (h *userExampleHandler) List(ctx context.Context, req *serverNameExampleV1.ListUserExampleRequest) (*serverNameExampleV1.ListUserExampleReply, error) {
 	return h.server.List(ctx, req)
 }

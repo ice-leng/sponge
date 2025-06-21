@@ -116,7 +116,7 @@ func (s *{{.TableNameCamelFCL}}) UpdateBy{{.ColumnNameCamel}}(ctx context.Contex
 	return &serverNameExampleV1.Update{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply{}, nil
 }
 
-// GetBy{{.ColumnNameCamel}} get {{.TableNameCamelFCL}} details by {{.ColumnNameCamelFCL}}
+// GetBy{{.ColumnNameCamel}} get a {{.TableNameCamelFCL}} by {{.ColumnNameCamelFCL}}
 func (s *{{.TableNameCamelFCL}}) GetBy{{.ColumnNameCamel}}(ctx context.Context, req *serverNameExampleV1.Get{{.TableNameCamel}}By{{.ColumnNameCamel}}Request) (*serverNameExampleV1.Get{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -144,7 +144,7 @@ func (s *{{.TableNameCamelFCL}}) GetBy{{.ColumnNameCamel}}(ctx context.Context, 
 	return &serverNameExampleV1.Get{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply{ {{.TableNameCamel}}: data}, nil
 }
 
-// List get a list of {{.TableNameCamelFCL}} by custom conditions
+// List get a paginated list of {{.TableNamePluralCamelFCL}} by custom conditions
 func (s *{{.TableNameCamelFCL}}) List(ctx context.Context, req *serverNameExampleV1.List{{.TableNameCamel}}Request) (*serverNameExampleV1.List{{.TableNameCamel}}Reply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -186,7 +186,7 @@ func (s *{{.TableNameCamelFCL}}) List(ctx context.Context, req *serverNameExampl
 	}, nil
 }
 
-// DeleteBy{{.ColumnNamePluralCamel}} delete {{.TableNameCamelFCL}} by batch {{.ColumnNameCamelFCL}}
+// DeleteBy{{.ColumnNamePluralCamel}} batch delete {{.TableNamePluralCamelFCL}} by {{.ColumnNamePluralCamelFCL}}
 func (s *{{.TableNameCamelFCL}}) DeleteBy{{.ColumnNamePluralCamel}}(ctx context.Context, req *serverNameExampleV1.Delete{{.TableNameCamel}}By{{.ColumnNamePluralCamel}}Request) (*serverNameExampleV1.Delete{{.TableNameCamel}}By{{.ColumnNamePluralCamel}}Reply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -204,7 +204,7 @@ func (s *{{.TableNameCamelFCL}}) DeleteBy{{.ColumnNamePluralCamel}}(ctx context.
 	return &serverNameExampleV1.Delete{{.TableNameCamel}}By{{.ColumnNamePluralCamel}}Reply{}, nil
 }
 
-// GetByCondition get {{.TableNameCamelFCL}} details by custom condition
+// GetByCondition get a {{.TableNameCamelFCL}} by custom condition
 func (s *{{.TableNameCamelFCL}}) GetByCondition(ctx context.Context, req *serverNameExampleV1.Get{{.TableNameCamel}}ByConditionRequest) (*serverNameExampleV1.Get{{.TableNameCamel}}ByConditionReply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -246,7 +246,7 @@ func (s *{{.TableNameCamelFCL}}) GetByCondition(ctx context.Context, req *server
 	}, nil
 }
 
-// ListBy{{.ColumnNamePluralCamel}} get a list of {{.TableNameCamelFCL}} by batch {{.ColumnNameCamelFCL}}
+// ListBy{{.ColumnNamePluralCamel}} batch get {{.TableNamePluralCamelFCL}} by {{.ColumnNamePluralCamelFCL}}
 func (s *{{.TableNameCamelFCL}}) ListBy{{.ColumnNamePluralCamel}}(ctx context.Context, req *serverNameExampleV1.List{{.TableNameCamel}}By{{.ColumnNamePluralCamel}}Request) (*serverNameExampleV1.List{{.TableNameCamel}}By{{.ColumnNamePluralCamel}}Reply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -276,7 +276,7 @@ func (s *{{.TableNameCamelFCL}}) ListBy{{.ColumnNamePluralCamel}}(ctx context.Co
 	return &serverNameExampleV1.List{{.TableNameCamel}}By{{.ColumnNamePluralCamel}}Reply{ {{.TableNamePluralCamel}}: {{.TableNamePluralCamelFCL}} }, nil
 }
 
-// ListByLast{{.ColumnNameCamel}} get a list of {{.TableNameCamelFCL}} by last {{.ColumnNameCamelFCL}}
+// ListByLast{{.ColumnNameCamel}} get a paginated list of {{.TableNamePluralCamelFCL}} by last {{.ColumnNameCamelFCL}}
 func (s *{{.TableNameCamelFCL}}) ListByLast{{.ColumnNameCamel}}(ctx context.Context, req *serverNameExampleV1.List{{.TableNameCamel}}ByLast{{.ColumnNameCamel}}Request) (*serverNameExampleV1.List{{.TableNameCamel}}ByLast{{.ColumnNameCamel}}Reply, error) {
 	err := req.Validate()
 	if err != nil {

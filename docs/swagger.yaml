@@ -237,7 +237,7 @@ paths:
             $ref: '#/definitions/types.CreateUserExampleReply'
       security:
       - BearerAuth: []
-      summary: create a new userExample
+      summary: Create a new userExample
       tags:
       - userExample
   /api/v1/userExample/{id}:
@@ -261,7 +261,7 @@ paths:
             $ref: '#/definitions/types.DeleteUserExampleByIDReply'
       security:
       - BearerAuth: []
-      summary: delete a userExample by id
+      summary: Delete a userExample by id
       tags:
       - userExample
     get:
@@ -284,7 +284,7 @@ paths:
             $ref: '#/definitions/types.GetUserExampleByIDReply'
       security:
       - BearerAuth: []
-      summary: get userExample details by id
+      summary: Get a userExample by id
       tags:
       - userExample
     put:
@@ -313,7 +313,7 @@ paths:
             $ref: '#/definitions/types.UpdateUserExampleByIDReply'
       security:
       - BearerAuth: []
-      summary: update a userExample by id
+      summary: Update a userExample by id
       tags:
       - userExample
   /api/v1/userExample/list:
@@ -338,7 +338,7 @@ paths:
             $ref: '#/definitions/types.ListUserExamplesReply'
       security:
       - BearerAuth: []
-      summary: get a list of userExample by custom conditions
+      summary: Get a paginated list of userExamples by custom conditions
       tags:
       - userExample
   /codes:

@@ -45,7 +45,7 @@ func NewUserExampleHandler() UserExampleHandler {
 }
 
 // Create a new userExample
-// @Summary create a new userExample
+// @Summary Create a new userExample
 // @Description Creates a new userExample entity using the provided data in the request body.
 // @Tags userExample
 // @Accept json
@@ -83,7 +83,7 @@ func (h *userExampleHandler) Create(c *gin.Context) {
 }
 
 // DeleteByID delete a userExample by id
-// @Summary delete a userExample by id
+// @Summary Delete a userExample by id
 // @Description Deletes a existing userExample identified by the given id in the path.
 // @Tags userExample
 // @Accept json
@@ -106,7 +106,7 @@ func (h *userExampleHandler) DeleteByID(c *gin.Context) {
 }
 
 // UpdateByID update a userExample by id
-// @Summary update a userExample by id
+// @Summary Update a userExample by id
 // @Description Updates the specified userExample by given id in the path, support partial update.
 // @Tags userExample
 // @Accept json
@@ -151,8 +151,8 @@ func (h *userExampleHandler) UpdateByID(c *gin.Context) {
 	response.Success(c)
 }
 
-// GetByID get userExample details by id
-// @Summary get userExample details by id
+// GetByID get a userExample by id
+// @Summary Get a userExample by id
 // @Description Gets detailed information of a userExample specified by the given id in the path.
 // @Tags userExample
 // @Param id path string true "id"
@@ -188,8 +188,8 @@ func (h *userExampleHandler) GetByID(c *gin.Context) {
 	response.Success(c, gin.H{"userExample": data})
 }
 
-// List get a list of userExample by custom conditions
-// @Summary get a list of userExample by custom conditions
+// List get a paginated list of userExamples by custom conditions
+// @Summary Get a paginated list of userExamples by custom conditions
 // @Description Returns a paginated list of userExample based on query filters, including page number and size.
 // @Tags userExample
 // @Accept json

@@ -23,7 +23,7 @@
   "paths": {
     "/api/v1/userExample": {
       "post": {
-        "summary": "create a new userExample",
+        "summary": "Create a new userExample",
         "description": "Creates a new userExample entity using the provided data in the request body.",
         "operationId": "userExample_Create",
         "responses": {
@@ -91,7 +91,7 @@
     },
     "/api/v1/userExample/{id}": {
       "get": {
-        "summary": "get userExample details by id",
+        "summary": "Get a userExample by id",
         "description": "Gets detailed information of a userExample specified by the given id in the path.",
         "operationId": "userExample_GetByID",
         "responses": {
@@ -122,7 +122,7 @@
         ]
       },
       "delete": {
-        "summary": "delete a userExample by id",
+        "summary": "Delete a userExample by id",
         "description": "Deletes a existing userExample identified by the given id in the path.",
         "operationId": "userExample_DeleteByID",
         "responses": {
@@ -153,7 +153,7 @@
         ]
       },
       "put": {
-        "summary": "update a userExample by id",
+        "summary": "Update a userExample by id",
         "description": "Updates the specified userExample with new data provided in the request body. The target is identified by id in the path.",
         "operationId": "userExample_UpdateByID",
         "responses": {
