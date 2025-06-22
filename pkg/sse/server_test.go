@@ -1,9 +1,7 @@
 package sse
 
 import (
-	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"strconv"
 	"testing"
@@ -27,33 +25,6 @@ func runSSEServer(port int, hub *Hub) {
 	})
 
 	r.Run(":" + strconv.Itoa(port))
-}
-
-func runSSEServer2(ctx context.Context, port int, hub *Hub) {
-	gin.SetMode(gin.ReleaseMode)
-	r := gin.New()
-	count := 10000
-	r.GET("/events", func(c *gin.Context) {
-		count++
-		uid := strconv.Itoa(count) // mock user id
-		hub.Serve(c, uid)
-	})
-
-	listener, err := net.Listen("tcp", ":"+strconv.Itoa(port))
-	if err != nil {
-		panic(err)
-	}
-	srv := &http.Server{Handler: r}
-
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			panic(err)
-		}
-	}()
-
-	<-ctx.Done()
-	_ = listener.Close()
-	_ = srv.Shutdown(ctx)
 }
 
 func TestServe(t *testing.T) {

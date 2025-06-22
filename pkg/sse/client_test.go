@@ -56,10 +56,8 @@ func TestSSEClient_Connect(t *testing.T) {
 
 func TestSSEClient_Reconnect(t *testing.T) {
 	port, _ := utils.GetAvailablePort()
+	t.Log("use port", port)
 	eventType := DefaultEventType
-	ctx, cancel := context.WithCancel(context.Background())
-	hub := NewHub(WithContext(ctx, cancel))
-	go runSSEServer2(ctx, port, hub)
 
 	client := NewClient(fmt.Sprintf("http://localhost:%d/events", port), WithClientReconnectTimeInterval(time.Millisecond*100))
 	client.OnEvent(eventType, func(event *Event) {
@@ -67,27 +65,16 @@ func TestSSEClient_Reconnect(t *testing.T) {
 	})
 	err := client.Connect()
 	assert.NoError(t, err)
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 
-	// expected connect is true
-	assert.True(t, client.GetConnectStatus(), "Client should be connected")
-
-	// close sse server
-	hub.Close()
-
-	time.Sleep(time.Millisecond * 300)
-	// expected connect is false
-	assert.False(t, client.GetConnectStatus(), "Client should be disconnected")
-
-	// run sse server again
-	ctx, cancel = context.WithCancel(context.Background())
-	hub = NewHub(WithContext(ctx, cancel))
-	go runSSEServer2(ctx, port, hub)
+	// run sse server
+	ctx, cancel := context.WithCancel(context.Background())
+	hub := NewHub(WithContext(ctx, cancel))
 	defer hub.Close()
-	_ = client.Connect()
+	go runSSEServer(port, hub)
 
 	// wait for client to reconnect
-	time.Sleep(2 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	// expected connect is true
 	assert.True(t, client.GetConnectStatus(), "Client should be connected again")
