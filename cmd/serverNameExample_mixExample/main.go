@@ -10,7 +10,7 @@ import (
 // @title serverNameExample api docs
 // @description http server api docs
 // @schemes http https
-// @version 2.0
+// @version v1.0.0
 // @host localhost:8080
 // @securityDefinitions.apikey BearerAuth
 // @in header

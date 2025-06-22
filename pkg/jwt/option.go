@@ -9,6 +9,8 @@ import (
 	"github.com/go-dev-frame/sponge/pkg/krand"
 )
 
+type SigningMethodHMAC = jwt.SigningMethodHMAC
+
 var (
 	HS256 = jwt.SigningMethodHS256
 	HS384 = jwt.SigningMethodHS384
@@ -24,8 +26,8 @@ var (
 var (
 	ErrTokenExpired = jwt.ErrTokenExpired
 	//errInvalid      = errors.New("token is invalid")
-	errClaims       = errors.New("claims is not match")
-	errNotMatch     = errors.New(" access token and refresh token is not match")
+	errClaims   = errors.New("claims is not match")
+	errNotMatch = errors.New(" access token and refresh token is not match")
 )
 
 // ------------------------------------------------------------------------------------------

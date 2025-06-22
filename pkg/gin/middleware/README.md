@@ -1,7 +1,17 @@
 ## middleware
 
-Common gin middleware libraries.
+Common gin middleware libraries, including:
 
+- [Logging](README.md#logging-middleware)
+- [Cors](README.md#allow-cross-domain-requests-middleware)
+- [Rate limiter](README.md#rate-limiter-middleware)
+- [Circuit breaker](README.md#circuit-breaker-middleware)
+- [JWT authorization](README.md#jwt-authorization-middleware)
+- [Tracing](README.md#tracing-middleware)
+- [Metrics](README.md#metrics-middleware)
+- [Request id](README.md#request-id-middleware)
+- [Timeout](README.md#timeout-middleware)
+ 
 <br>
 
 ## Example of use
@@ -127,113 +137,123 @@ func NewRouter() *gin.Engine {
 
 ### JWT authorization middleware
 
-```go
-package main
+There are two usage examples available:
 
-import (
-    "time"
-    "github.com/gin-gonic/gin"
-    "github.com/go-dev-frame/sponge/pkg/gin/middleware"
-    "github.com/go-dev-frame/sponge/pkg/gin/response"
-    "github.com/go-dev-frame/sponge/pkg/jwt"
-)
+1. **Example One**: This example adopts a highly abstracted design, making it simpler and more convenient to use. Click to view the example at [pkg/gin/middleware/auth](https://github.com/go-dev-frame/sponge/tree/main/pkg/gin/middleware/auth#example-of-use). Requires sponge version `v1.13.2+`.
+2. **Example Two**: This example offers greater flexibility and is suitable for scenarios requiring custom implementations. The example code is as follows:
 
-func main() {
-    r := gin.Default()
-
-    // Case 1: default jwt options, signKey, signMethod(HS256), expiry time(24 hour)
-    {
-        r.POST("/auth/login", LoginDefault)
-        r.GET("/demo1/user/:id", middleware.Auth(), GetByID)
-        r.GET("/demo2/user/:id", middleware.Auth(middleware.WithReturnErrReason()), GetByID)
-        r.GET("/demo3/user/:id", middleware.Auth(middleware.WithExtraVerify(extraVerifyFn)), GetByID)
-    }
-
-    // Case 2: custom jwt options, signKey, signMethod(HS512), expiry time(12 hour), fields, claims
-    {
-        signKey := []byte("custom-sign-key")
-        jwtAuth1 := middleware.Auth(middleware.WithSignKey(signKey))
-        jwtAuth2 := middleware.Auth(middleware.WithSignKey(signKey), middleware.WithReturnErrReason())
-        jwtAuth3 := middleware.Auth(middleware.WithSignKey(signKey), middleware.WithExtraVerify(extraVerifyFn))
-
-        r.POST("/auth/login", LoginCustom)
-        r.GET("/demo4/user/:id", jwtAuth1, GetByID)
-        r.GET("/demo5/user/:id", jwtAuth2, GetByID)
-        r.GET("/demo6/user/:id", jwtAuth3, GetByID)
-    }
-
-    r.Run(":8080")
-}
-
-func LoginDefault(c *gin.Context) {
-    // ......
-
-    _, token, err := jwt.GenerateToken("100")
-
-    response.Success(c, token)
-}
-
-func LoginCustom(c *gin.Context) {
-    // ......
- 
-    uid := "100"
-    fields := map[string]interface{}{
-        "name":   "bob",
-        "age":    10,
-        "is_vip": true,
-    }
-
-    _, token, err := jwt.GenerateToken(
-        uid,
-        jwt.WithGenerateTokenSignKey([]byte("custom-sign-key")),
-        jwt.WithGenerateTokenSignMethod(jwt.HS512),
-        jwt.WithGenerateTokenFields(fields),
-        jwt.WithGenerateTokenClaims([]jwt.RegisteredClaimsOption{
-            jwt.WithExpires(time.Hour * 12),
-            //jwt.WithIssuedAt(now),
-            // jwt.WithSubject("123"),
-            // jwt.WithIssuer("https://auth.example.com"),
-            // jwt.WithAudience("https://api.example.com"),
-            // jwt.WithNotBefore(now),
-            // jwt.WithJwtID("abc1234xxx"),
-        }...),
+    ```go
+    package main
+    
+    import (
+        "time"
+        "github.com/gin-gonic/gin"
+        "github.com/go-dev-frame/sponge/pkg/gin/middleware"
+        "github.com/go-dev-frame/sponge/pkg/gin/response"
+        "github.com/go-dev-frame/sponge/pkg/jwt"
     )
-
-    response.Success(c, token)
-}
-
-func GetByID(c *gin.Context) {
-    uid := c.MustGet("id").(string)
-
-    claims,ok := middleware.GetClaims(c) // if necessary, claims can be got from gin context.
-
-    response.Success(c, gin.H{"id": uid})
-}
-
-func extraVerifyFn(claims *jwt.Claims, c *gin.Context) error {
-    // check if token is about to expire (less than 10 minutes remaining)
-    if time.Now().Unix()-claims.ExpiresAt.Unix() < int64(time.Minute*10) {
-        token, err := claims.NewToken(time.Hour*24, jwt.HS256, jwtSignKey) // same signature as jwt.GenerateToken
-        if err != nil {
-            return err
+    
+    func main() {
+        r := gin.Default()
+    
+        g := r.Group("/api/v1")
+    
+        // Case 1: default jwt options, signKey, signMethod(HS256), expiry time(24 hour)
+        {
+            r.POST("/auth/login", LoginDefault)
+            g.Use(middleware.Auth())
+            //g.Use(middleware.Auth(middleware.WithExtraVerify(extraVerifyFn))) // add extra verify function
         }
-        c.Header("X-Renewed-Token", token)
+    
+        // Case 2: custom jwt options, signKey, signMethod(HS512), expiry time(48 hour), fields, claims
+        {
+            r.POST("/auth/login", LoginCustom)
+            signKey := []byte("your-sign-key")
+            g.Use(middleware.Auth(middleware.WithSignKey(signKey)))
+            //g.Use(middleware.Auth(middleware.WithSignKey(signKey), middleware.WithExtraVerify(extraVerifyFn))) // add extra verify function
+        }
+    
+        g.GET("/user/:id", GetByID)
+        //g.PUT("/user/:id", Create)
+        //g.DELETE("/user/:id", DeleteByID)
+    
+        r.Run(":8080")
     }
-
-    // judge whether the user is disabled, query whether jwt id exists from the blacklist
-    //if CheckBlackList(uid, claims.ID) {
-    //    return errors.New("user is disabled")
-    //}
-
-    // get fields from claims
-    //uid := claims.UID
-    //name, _ := claims.GetString("name")
-    //age, _ := claims.GetInt("age")
-    //isVip, _ := claims.GetBool("is_vip")
-
-    return nil
-}
-```
+    
+    func customGenerateToken(uid string, fields map[string]interface{}) (string, error) {
+        _, token, err := jwt.GenerateToken(
+            uid,
+            jwt.WithGenerateTokenSignKey([]byte("custom-sign-key")),
+            jwt.WithGenerateTokenSignMethod(jwt.HS512),
+            jwt.WithGenerateTokenFields(fields),
+            jwt.WithGenerateTokenClaims([]jwt.RegisteredClaimsOption{
+                jwt.WithExpires(time.Hour * 48),
+                //jwt.WithIssuedAt(now),
+                // jwt.WithSubject("123"),
+                // jwt.WithIssuer("https://middleware.example.com"),
+                // jwt.WithAudience("https://api.example.com"),
+                // jwt.WithNotBefore(now),
+                // jwt.WithJwtID("abc1234xxx"),
+            }...),
+        )
+    
+        return token, err
+    }
+    
+    func LoginDefault(c *gin.Context) {
+        // ......
+    
+        _, token, err := jwt.GenerateToken("100")
+    
+        response.Success(c, token)
+    }
+    
+    func LoginCustom(c *gin.Context) {
+        // ......
+    
+        uid := "100"
+        fields := map[string]interface{}{
+            "name":   "bob",
+            "age":    10,
+            "is_vip": true,
+        }
+    
+        token, err := customGenerateToken(uid, fields)
+    
+        response.Success(c, token)
+    }
+    
+    func GetByID(c *gin.Context) {
+        uid := c.Param("id")
+    
+        // if necessary, claims can be got from gin context.
+        claims, ok := middleware.GetClaims(c)
+        //uid := claims.UID
+        //name, _ := claims.GetString("name")
+        //age, _ := claims.GetInt("age")
+        //isVip, _ := claims.GetBool("is_vip")
+    
+        response.Success(c, gin.H{"id": uid})
+    }
+    
+    func extraVerifyFn(claims *jwt.Claims, c *gin.Context) error {
+        // check if token is about to expire (less than 10 minutes remaining)
+        if time.Now().Unix()-claims.ExpiresAt.Unix() < int64(time.Minute*10) {
+            token, err := claims.NewToken(time.Hour*24, jwt.HS512, []byte("your-sign-key")) // same signature as jwt.GenerateToken
+            if err != nil {
+                return err
+            }
+            c.Header("X-Renewed-Token", token)
+        }
+    
+        // judge whether the user is disabled, query whether jwt id exists from the blacklist
+        //if CheckBlackList(uid, claims.ID) {
+        //    return errors.New("user is disabled")
+        //}
+    
+        return nil
+    }
+    ```
 
 <br>
 
@@ -311,7 +331,7 @@ func NewRouter() *gin.Engine {
 
 <br>
 
-### Request id
+### Request id middleware
 
 ```go
 import (
@@ -345,7 +365,7 @@ func NewRouter() *gin.Engine {
 
 <br>
 
-### Timeout
+### Timeout middleware
 
 ```go
 import (

@@ -26,7 +26,6 @@ func GenMicroCommand() *cobra.Command {
 		generate.RPCGwPbCommand(),
 		generate.RPCPbCommand(),
 		generate.GRPCConnectionCommand(),
-		generate.ConvertSwagJSONCommand("micro"),
 		generate.GRPCAndHTTPCommand(),
 		generate.GRPCAndHTTPPbCommand(),
 		generate.ServiceAndHandlerCRUDCommand(),

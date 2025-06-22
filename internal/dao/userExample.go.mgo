@@ -56,7 +56,7 @@ func (d *userExampleDao) deleteCache(ctx context.Context, id string) error {
 	return nil
 }
 
-// Create a record, insert the record and the id value is written back to the table
+// Create a new userExample, insert the record and the id value is written back to the table
 func (d *userExampleDao) Create(ctx context.Context, record *model.UserExample) error {
 	if record.ID.IsZero() {
 		record.ID = primitive.NewObjectID()
@@ -71,7 +71,7 @@ func (d *userExampleDao) Create(ctx context.Context, record *model.UserExample) 
 	return err
 }
 
-// DeleteByID soft delete a record by id
+// DeleteByID delete a userExample by id
 func (d *userExampleDao) DeleteByID(ctx context.Context, id string) error {
 	filter := bson.M{"_id": database.ToObjectID(id)}
 	_, err := d.collection.UpdateOne(ctx, mgo.ExcludeDeleted(filter), mgo.EmbedDeletedAt(bson.M{}))
@@ -85,7 +85,7 @@ func (d *userExampleDao) DeleteByID(ctx context.Context, id string) error {
 	return nil
 }
 
-// UpdateByID update a record by id
+// UpdateByID update a userExample by id
 func (d *userExampleDao) UpdateByID(ctx context.Context, record *model.UserExample) error {
 	err := d.updateDataByID(ctx, d.collection, record)
 
@@ -134,7 +134,7 @@ func (d *userExampleDao) updateDataByID(ctx context.Context, collection *mongo.C
 	return err
 }
 
-// GetByID get a record by id
+// GetByID get a userExample by id
 func (d *userExampleDao) GetByID(ctx context.Context, id string) (*model.UserExample, error) {
 	oid := database.ToObjectID(id)
 	if oid.IsZero() {
@@ -193,46 +193,17 @@ func (d *userExampleDao) GetByID(ctx context.Context, id string) (*model.UserExa
 	return nil, err
 }
 
-// GetByColumns get paging records by column information,
-// Note: query performance degrades when table rows are very large because of the use of offset.
-//
-// params includes paging parameters and query parameters
-// paging parameters (required):
-//
-//	page: page number, starting from 0
-//	limit: lines per page
-//	sort: sort fields, default is id backwards, you can add - sign before the field to indicate reverse order, no - sign to indicate ascending order, multiple fields separated by comma
-//
-// query parameters (not required):
-//
-//	name: column name, if value is of type objectId, the suffix :oid must be added, e.g. order_id:oid
-//	exp: expressions, which default is "=",  support =, !=, >, >=, <, <=, like, in, notin
-//	value: column value, if exp=in, multiple values are separated by commas
-//	logic: logical type, default value is "and", support &, and, ||, or
-//
-// example: search for a male over 20 years of age
-//
-//	params = &query.Params{
-//	    Page: 0,
-//	    Limit: 20,
-//	    Columns: []query.Column{
-//		{
-//			Name:    "age",
-//			Exp: ">",
-//			Value:   20,
-//		},
-//		{
-//			Name:  "gender",
-//			Value: "male",
-//		},
-//	}
+// GetByColumns get a paginated list of userExamples by custom conditions.
+// For more details, please refer to https://go-sponge.com/component/custom-page-query.html
 func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params) ([]*model.UserExample, int64, error) {
-	filter, err := params.ConvertToMongoFilter()
+	filter, err := params.ConvertToMongoFilter(query.WithWhitelistNames(model.UserExampleColumnNames))
 	if err != nil {
 		return nil, 0, errors.New("query params error: " + err.Error())
 	}
+	filter = mgo.ExcludeDeleted(filter)
+	logger.Info("query filter", logger.Any("filter", filter))
 
-	total, err := d.collection.CountDocuments(ctx, mgo.ExcludeDeleted(filter))
+	total, err := d.collection.CountDocuments(ctx, filter)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -246,7 +217,7 @@ func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params)
 	findOpts.SetLimit(int64(limit)).SetSkip(int64(skip))
 	findOpts.Sort = sort
 
-	cursor, err := d.collection.Find(ctx, mgo.ExcludeDeleted(filter), findOpts)
+	cursor, err := d.collection.Find(ctx, filter, findOpts)
 	if err != nil {
 		return nil, 0, err
 	}

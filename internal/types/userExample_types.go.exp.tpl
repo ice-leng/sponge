@@ -64,7 +64,9 @@ type Create{{.TableNameCamel}}Reply struct {
 
 // Update{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply only for api docs
 type Update{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply struct {
-	Result
+	Code int      `json:"code"` // return code
+	Msg  string   `json:"msg"`  // return information description
+	Data struct{} `json:"data"` // return data
 }
 
 // Get{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply only for api docs
@@ -78,12 +80,16 @@ type Get{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply struct {
 
 // Delete{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply only for api docs
 type Delete{{.TableNameCamel}}By{{.ColumnNameCamel}}Reply struct {
-	Result
+	Code int      `json:"code"` // return code
+	Msg  string   `json:"msg"`  // return information description
+	Data struct{} `json:"data"` // return data
 }
 
 // Delete{{.TableNamePluralCamel}}By{{.ColumnNamePluralCamel}}Reply only for api docs
 type Delete{{.TableNamePluralCamel}}By{{.ColumnNamePluralCamel}}Reply struct {
-	Result
+	Code int      `json:"code"` // return code
+	Msg  string   `json:"msg"`  // return information description
+	Data struct{} `json:"data"` // return data
 }
 
 // List{{.TableNamePluralCamel}}Request request params

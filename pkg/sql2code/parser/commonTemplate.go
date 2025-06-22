@@ -49,31 +49,31 @@ import "validate/validate.proto";
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
 service {{.TName}} {
-  // create {{.TName}}
+  // create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {}
 
-  // delete {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // delete a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc DeleteBy{{.CrudInfo.ColumnNameCamel}}(Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {}
 
-  // update {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // update a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc UpdateBy{{.CrudInfo.ColumnNameCamel}}(Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {}
 
-  // get {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // get {{.TName}} details by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc GetBy{{.CrudInfo.ColumnNameCamel}}(Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {}
 
-  // list of {{.TName}} by query parameters
+  // get a list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {}
 
   // delete {{.TName}} by batch {{.CrudInfo.ColumnNameCamelFCL}}
   rpc DeleteBy{{.CrudInfo.ColumnNamePluralCamel}}(Delete{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Request) returns (Delete{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Reply) {}
 
-  // get {{.TName}} by condition
+  // get {{.TName}} details by custom condition
   rpc GetByCondition(Get{{.TableName}}ByConditionRequest) returns (Get{{.TableName}}ByConditionReply) {}
 
-  // list of {{.TName}} by batch {{.CrudInfo.ColumnNameCamelFCL}}
+  // get a list of {{.TName}} by batch {{.CrudInfo.ColumnNameCamelFCL}}
   rpc ListBy{{.CrudInfo.ColumnNamePluralCamel}}(List{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Request) returns (List{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Reply) {}
 
-  // list {{.TName}} by last {{.CrudInfo.ColumnNameCamelFCL}}
+  // get a list of {{.TName}} by last {{.CrudInfo.ColumnNameCamelFCL}}
   rpc ListByLast{{.CrudInfo.ColumnNameCamel}}(List{{.TableName}}ByLast{{.CrudInfo.ColumnNameCamel}}Request) returns (List{{.TableName}}ByLast{{.CrudInfo.ColumnNameCamel}}Reply) {}
 }
 
@@ -172,19 +172,19 @@ import "validate/validate.proto";
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
 service {{.TName}} {
-  // create {{.TName}}
+  // create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {}
 
-  // delete {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // delete a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc DeleteBy{{.CrudInfo.ColumnNameCamel}}(Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {}
 
-  // update {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // update a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc UpdateBy{{.CrudInfo.ColumnNameCamel}}(Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {}
 
-  // get {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // get {{.TName}} details by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc GetBy{{.CrudInfo.ColumnNameCamel}}(Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {}
 
-  // list of {{.TName}} by query parameters
+  // get a list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {}
 }
 
@@ -252,13 +252,11 @@ import "validate/validate.proto";
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
 /*
-Reference https://github.com/grpc-ecosystem/grpc-gateway/blob/db7fbefff7c04877cdb32e16d4a248a024428207/examples/internal/proto/examplepb/a_bit_of_everything.proto
-Default settings for generating swagger documents
-NOTE: because json does not support 64 bits, the int64 and uint64 types under *.swagger.json are automatically converted to string types
-Tips: add swagger option to rpc method, example:
+Default settings for generating *.swagger.json documents. For reference, see: https://bit.ly/4dE5jj7
+Tip: To enhance the generated Swagger documentation, you can add the openapiv2_operation option to your RPC method. For example:
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      summary: "get user by id",
-      description: "get user by id",
+      summary: "get user details by id",
+      description: "Gets detailed information of a userExample specified by the given id in the path.",
       security: {
         security_requirement: {
           key: "BearerAuth";
@@ -272,7 +270,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   base_path: ""
   info: {
     title: "serverNameExample api docs";
-    version: "2.0";
+    version: "v1.0.0";
   }
   schemes: HTTP;
   schemes: HTTPS;
@@ -292,7 +290,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 service {{.TName}} {
-  // create {{.TName}}
+  // create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}"
@@ -300,14 +298,14 @@ service {{.TName}} {
     };
   }
 
-  // delete {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // delete a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc DeleteBy{{.CrudInfo.ColumnNameCamel}}(Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       delete: "/api/v1/{{.TName}}/left_curly_bracket{{.CrudInfo.ColumnNameCamelFCL}}right_curly_bracket"
     };
   }
 
-  // update {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // update a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc UpdateBy{{.CrudInfo.ColumnNameCamel}}(Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       put: "/api/v1/{{.TName}}/left_curly_bracket{{.CrudInfo.ColumnNameCamelFCL}}right_curly_bracket"
@@ -315,14 +313,14 @@ service {{.TName}} {
     };
   }
 
-  // get {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // get {{.TName}} details by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc GetBy{{.CrudInfo.ColumnNameCamel}}(Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/left_curly_bracket{{.CrudInfo.ColumnNameCamelFCL}}right_curly_bracket"
     };
   }
 
-  // list of {{.TName}} by query parameters
+  // get a list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/list"
@@ -338,7 +336,7 @@ service {{.TName}} {
     };
   }
 
-  // get {{.TName}} by condition
+  // get a {{.TName}} by custom conditions
   rpc GetByCondition(Get{{.TableName}}ByConditionRequest) returns (Get{{.TableName}}ByConditionReply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/condition"
@@ -346,7 +344,7 @@ service {{.TName}} {
     };
   }
 
-  // list of {{.TName}} by batch {{.CrudInfo.ColumnNameCamelFCL}}
+  // get a list of {{.TName}} by batch {{.CrudInfo.ColumnNameCamelFCL}}
   rpc ListBy{{.CrudInfo.ColumnNamePluralCamel}}(List{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Request) returns (List{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/list/ids"
@@ -354,7 +352,7 @@ service {{.TName}} {
     };
   }
 
-  // list {{.TName}} by last {{.CrudInfo.ColumnNameCamelFCL}}
+  // get a list of {{.TName}} by last {{.CrudInfo.ColumnNameCamelFCL}}
   rpc ListByLast{{.CrudInfo.ColumnNameCamel}}(List{{.TableName}}ByLast{{.CrudInfo.ColumnNameCamel}}Request) returns (List{{.TableName}}ByLast{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/list"
@@ -377,11 +375,14 @@ If used to generate code that supports the HTTP protocol, notes for defining mes
     2. If the request url is followed by a query parameter, such as /api/v1/getUserExample?name=Tom,
         a form tag must be added when defining the query parameter in the message, such as:
         string name = 1 [(tagger.tags) = "form:\"name\""].
-    3. If the message field name contain underscores(such as 'field_name'), it will cause a problem
-        where the JSON field names of the Swagger request parameters are different from those of the
-        GRPC JSON tag names. There are two solutions: Solution 1, remove the underline from the
-         message field name. Option 2, use the tool 'protoc-go-inject-tag' to modify the JSON tag name,
-         such as: string first_name = 1 ; // @gotags: json:"firstName"
+    3. When the message fields use snake_case naming (e.g., order_id), the generated swagger.json file
+        will use camelCase (e.g., orderId) instead of the expected snake_case. This behavior aligns with
+        the JSON tag names used by gRPC, but it can cause the Gin framework to fail to correctly bind and
+        retrieve parameter values. There are two ways to resolve this issue:
+            (1) Explicitly specify the JSON tag name using the json_name option, such as:
+                 string order_id = 1 [json_name = "order_id"];
+            (2) If you want to switch to camelCase naming and update the JSON tag name accordingly, such as:
+                 string order_id = 1 [json_name = "orderID", (tagger.tags) = "json:\"orderID\""];
 */
 
 
@@ -473,10 +474,8 @@ import "validate/validate.proto";
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
 /*
-Reference https://github.com/grpc-ecosystem/grpc-gateway/blob/db7fbefff7c04877cdb32e16d4a248a024428207/examples/internal/proto/examplepb/a_bit_of_everything.proto
-Default settings for generating swagger documents
-NOTE: because json does not support 64 bits, the int64 and uint64 types under *.swagger.json are automatically converted to string types
-Tips: add swagger option to rpc method, example:
+Default settings for generating *.swagger.json documents. For reference, see: https://bit.ly/4dE5jj7
+Tip: To enhance the generated Swagger documentation, you can add the openapiv2_operation option to your RPC method. For example:
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "get user by id",
       description: "get user by id",
@@ -493,7 +492,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   base_path: ""
   info: {
     title: "serverNameExample api docs";
-    version: "2.0";
+    version: "v1.0.0";
   }
   schemes: HTTP;
   schemes: HTTPS;
@@ -513,7 +512,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 service {{.TName}} {
-  // create {{.TName}}
+  // create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}"
@@ -521,14 +520,14 @@ service {{.TName}} {
     };
   }
 
-  // delete {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // delete a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc DeleteBy{{.CrudInfo.ColumnNameCamel}}(Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       delete: "/api/v1/{{.TName}}/left_curly_bracket{{.CrudInfo.ColumnNameCamelFCL}}right_curly_bracket"
     };
   }
 
-  // update {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // update a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc UpdateBy{{.CrudInfo.ColumnNameCamel}}(Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       put: "/api/v1/{{.TName}}/left_curly_bracket{{.CrudInfo.ColumnNameCamelFCL}}right_curly_bracket"
@@ -536,14 +535,14 @@ service {{.TName}} {
     };
   }
 
-  // get {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // get {{.TName}} details by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc GetBy{{.CrudInfo.ColumnNameCamel}}(Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/left_curly_bracket{{.CrudInfo.ColumnNameCamelFCL}}right_curly_bracket"
     };
   }
 
-  // list of {{.TName}} by query parameters
+  // get a list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/list"
@@ -567,11 +566,14 @@ If used to generate code that supports the HTTP protocol, notes for defining mes
     2. If the request url is followed by a query parameter, such as /api/v1/getUserExample?name=Tom,
         a form tag must be added when defining the query parameter in the message, such as:
         string name = 1 [(tagger.tags) = "form:\"name\""].
-    3. If the message field name contain underscores(such as 'field_name'), it will cause a problem
-        where the JSON field names of the Swagger request parameters are different from those of the
-        GRPC JSON tag names. There are two solutions: Solution 1, remove the underline from the
-         message field name. Option 2, use the tool 'protoc-go-inject-tag' to modify the JSON tag name,
-         such as: string first_name = 1 ; // @gotags: json:"firstName"
+    3. When the message fields use snake_case naming (e.g., order_id), the generated swagger.json file
+        will use camelCase (e.g., orderId) instead of the expected snake_case. This behavior aligns with
+        the JSON tag names used by gRPC, but it can cause the Gin framework to fail to correctly bind and
+        retrieve parameter values. There are two ways to resolve this issue:
+            (1) Explicitly specify the JSON tag name using the json_name option, such as:
+                 string order_id = 1 [json_name = "order_id"];
+            (2) If you want to switch to camelCase naming and update the JSON tag name accordingly, such as:
+                 string order_id = 1 [json_name = "orderID", (tagger.tags) = "json:\"orderID\""];
 */
 
 

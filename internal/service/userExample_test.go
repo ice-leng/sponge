@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/jinzhu/copier"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/go-dev-frame/sponge/pkg/copier"
 	"github.com/go-dev-frame/sponge/pkg/gotest"
 	"github.com/go-dev-frame/sponge/pkg/utils"
 

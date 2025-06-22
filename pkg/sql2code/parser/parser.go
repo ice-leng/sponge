@@ -12,7 +12,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/huandu/xstrings"
 	"github.com/jinzhu/inflection"
 	"github.com/zhufuyi/sqlparser/ast"
 	"github.com/zhufuyi/sqlparser/dependency/mysql"
@@ -786,7 +785,58 @@ func getModelStructCode(data tmplData, importPaths []string, isEmbed bool, jsonN
 		structCode = strings.ReplaceAll(structCode, `bson:"id" json:"id"`, `bson:"_id" json:"id"`)
 	}
 
+	tableColumnsCode, err := getTableColumnsCode(data, isEmbed)
+	if err != nil {
+		return "", nil, err
+	}
+	structCode += string(tableColumnsCode)
+
 	return structCode, newImportPaths, nil
+}
+
+func getTableColumnsCode(data tmplData, isEmbed bool) ([]byte, error) {
+	if data.DBDriver == DBDriverMongodb {
+		for _, field := range data.Fields {
+			if field.Name == "ID" {
+				field.ColName = "_id"
+				data.Fields = append(data.Fields, field)
+				break
+			}
+		}
+	}
+	if isEmbed {
+		var fields = []tmplField{
+			{
+				ColName: "id",
+			},
+			{
+				ColName: "created_at",
+			},
+			{
+				ColName: "updated_at",
+			},
+			{
+				ColName: "deleted_at",
+			},
+		}
+		for _, field := range data.Fields {
+			if field.Name == __mysqlModel__ {
+				continue
+			}
+			fields = append(fields, field)
+		}
+		data.Fields = fields
+	}
+	builder := strings.Builder{}
+	err := tableColumnsTmpl.Execute(&builder, data)
+	if err != nil {
+		return nil, fmt.Errorf("tableColumnsTmpl.Execute error: %v", err)
+	}
+	code, err := format.Source([]byte(builder.String()))
+	if err != nil {
+		return nil, fmt.Errorf("tableColumnsTmpl format.Source error: %v", err)
+	}
+	return code, err
 }
 
 func getModelCode(data modelCodes) (string, error) {
@@ -1291,115 +1341,4 @@ func getDefaultValue(expr ast.ExprNode) (value string) {
 		}
 	}
 	return value
-}
-
-var acronym = map[string]struct{}{
-	"ID": {},
-	"IP": {},
-}
-
-// nolint
-func toCamel(s string) string {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return s
-	}
-	s += "."
-
-	n := strings.Builder{}
-	n.Grow(len(s))
-	temp := strings.Builder{}
-	temp.Grow(len(s))
-	wordFirst := true
-	for _, v := range []byte(s) {
-		vIsCap := v >= 'A' && v <= 'Z'
-		vIsLow := v >= 'a' && v <= 'z'
-		if wordFirst && vIsLow {
-			v -= 'a' - 'A'
-		}
-
-		if vIsCap || vIsLow {
-			temp.WriteByte(v)
-			wordFirst = false
-		} else {
-			isNum := v >= '0' && v <= '9'
-			wordFirst = isNum || v == '_' || v == ' ' || v == '-' || v == '.'
-			if temp.Len() > 0 && wordFirst {
-				word := temp.String()
-				upper := strings.ToUpper(word)
-				if _, ok := acronym[upper]; ok {
-					n.WriteString(upper)
-				} else {
-					n.WriteString(word)
-				}
-				temp.Reset()
-			}
-			if isNum {
-				n.WriteByte(v)
-			}
-		}
-	}
-	str := n.String()
-
-	if len(str) > 2 {
-		if str[len(str)-2:] == "Id" {
-			str = str[:len(str)-2] + "ID"
-		} else if str[len(str)-2:] == "Ip" {
-			str = str[:len(str)-2] + "IP"
-		}
-	}
-	return str
-}
-
-func firstLetterToLower(str string) string {
-	if len(str) == 0 {
-		return str
-	}
-
-	if (str[0] >= 'A' && str[0] <= 'Z') || (str[0] >= 'a' && str[0] <= 'z') {
-		return strings.ToLower(str[:1]) + str[1:]
-	}
-
-	return str
-}
-
-func customToCamel(str string) string {
-	str = firstLetterToLower(toCamel(str))
-
-	if len(str) == 2 {
-		if str == "iD" {
-			str = "id"
-		} else if str == "iP" {
-			str = "ip"
-		}
-	}
-
-	return str
-}
-
-func customToSnake(str string) string {
-	if len(str) == 0 {
-		return str
-	}
-
-	index := 0
-	for _, c := range str {
-		if c != '_' {
-			break
-		}
-		index++
-	}
-	if index != 0 {
-		str = str[index:]
-	}
-
-	if len(str) == 2 {
-		if str == "iD" {
-			str = "id"
-		} else if str == "iP" {
-			str = "ip"
-		}
-	}
-
-	return xstrings.ToSnakeCase(str)
 }

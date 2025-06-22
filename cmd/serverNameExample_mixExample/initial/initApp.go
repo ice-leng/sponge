@@ -8,9 +8,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/jinzhu/copier"
-
 	"github.com/go-dev-frame/sponge/pkg/conf"
+	"github.com/go-dev-frame/sponge/pkg/copier"
 	"github.com/go-dev-frame/sponge/pkg/logger"
 	"github.com/go-dev-frame/sponge/pkg/nacoscli"
 	"github.com/go-dev-frame/sponge/pkg/stat"
