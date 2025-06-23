@@ -192,6 +192,7 @@ func (c *Column) convert() error {
 	return c.convertLogic()
 }
 
+// nolint
 func (c *Column) convertValue() error {
 	if err := c.checkValid(); err != nil {
 		return err
@@ -212,7 +213,7 @@ func (c *Column) convertValue() error {
 	if c.Exp == "" {
 		c.Exp = Eq
 	}
-	if v, ok := expMap[strings.ToLower(c.Exp)]; ok { //nolint
+	if v, ok := expMap[strings.ToLower(c.Exp)]; ok {
 		c.Exp = v
 		switch c.Exp {
 		// case eqSymbol:
