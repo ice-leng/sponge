@@ -6,8 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jinzhu/copier"
-
+	"github.com/go-dev-frame/sponge/pkg/copier"
 	"github.com/go-dev-frame/sponge/pkg/gin/middleware"
 	"github.com/go-dev-frame/sponge/pkg/logger"
 	"github.com/go-dev-frame/sponge/pkg/sgorm/query"
@@ -37,7 +36,7 @@ func NewUserExamplePbHandler() serverNameExampleV1.UserExampleLogicer {
 	}
 }
 
-// Create a record
+// Create a new userExample
 func (h *userExamplePbHandler) Create(ctx context.Context, req *serverNameExampleV1.CreateUserExampleRequest) (*serverNameExampleV1.CreateUserExampleReply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -61,7 +60,7 @@ func (h *userExamplePbHandler) Create(ctx context.Context, req *serverNameExampl
 	return &serverNameExampleV1.CreateUserExampleReply{Id: userExample.ID}, nil
 }
 
-// DeleteByID delete a record by id
+// DeleteByID delete a userExample by id
 func (h *userExamplePbHandler) DeleteByID(ctx context.Context, req *serverNameExampleV1.DeleteUserExampleByIDRequest) (*serverNameExampleV1.DeleteUserExampleByIDReply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -78,7 +77,7 @@ func (h *userExamplePbHandler) DeleteByID(ctx context.Context, req *serverNameEx
 	return &serverNameExampleV1.DeleteUserExampleByIDReply{}, nil
 }
 
-// UpdateByID update a record by id
+// UpdateByID update a userExample by id
 func (h *userExamplePbHandler) UpdateByID(ctx context.Context, req *serverNameExampleV1.UpdateUserExampleByIDRequest) (*serverNameExampleV1.UpdateUserExampleByIDReply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -103,7 +102,7 @@ func (h *userExamplePbHandler) UpdateByID(ctx context.Context, req *serverNameEx
 	return &serverNameExampleV1.UpdateUserExampleByIDReply{}, nil
 }
 
-// GetByID get a record by id
+// GetByID get a userExample by id
 func (h *userExamplePbHandler) GetByID(ctx context.Context, req *serverNameExampleV1.GetUserExampleByIDRequest) (*serverNameExampleV1.GetUserExampleByIDReply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -132,7 +131,7 @@ func (h *userExamplePbHandler) GetByID(ctx context.Context, req *serverNameExamp
 	}, nil
 }
 
-// List of records by query parameters
+// List get a paginated list of userExamples by custom conditions
 func (h *userExamplePbHandler) List(ctx context.Context, req *serverNameExampleV1.ListUserExampleRequest) (*serverNameExampleV1.ListUserExampleReply, error) {
 	err := req.Validate()
 	if err != nil {
@@ -179,12 +178,7 @@ func convertUserExamplePb(record *model.UserExample) (*serverNameExampleV1.UserE
 	if err != nil {
 		return nil, err
 	}
-	// Note: if copier.Copy cannot assign a value to a field, add it here, e.g. CreatedAt, UpdatedAt
-	value.Id = record.ID
-	// todo generate the conversion createdAt and updatedAt code here
-	// delete the templates code start
-	value.CreatedAt = record.CreatedAt.Format(time.RFC3339)
-	value.UpdatedAt = record.UpdatedAt.Format(time.RFC3339)
-	// delete the templates code end
+	// Note: if copier.Copy cannot assign a value to a field, add it here
+
 	return value, nil
 }

@@ -27,4 +27,21 @@ func (table *UserExample) TableName() string {
 	return "user_example"
 }
 
+// UserExampleColumnNames Whitelist for custom query fields to prevent sql injection attacks
+var UserExampleColumnNames = map[string]bool{
+	"id":         true,
+	"created_at": true,
+	"updated_at": true,
+	"deleted_at": true,
+	"name":       true,
+	"password":   true,
+	"email":      true,
+	"phone":      true,
+	"avatar":     true,
+	"age":        true,
+	"gender":     true,
+	"status":     true,
+	"login_at":   true,
+}
+
 // delete the templates code end

@@ -20,34 +20,38 @@ type CheckHealthReply struct {
 }
 
 // CheckHealth check healthy.
-// @Summary check health
-// @Description check health
+// @Summary check system health status
+// @Description Returns system health information including status and hostname
 // @Tags system
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} CheckHealthReply{}
+// @Success 200 {object} CheckHealthReply "Returns health status information"
 // @Router /health [get]
 func CheckHealth(c *gin.Context) {
 	c.JSON(http.StatusOK, CheckHealthReply{Status: "UP", Hostname: utils.GetHostname()})
 }
 
-// Ping ping
-// @Summary ping
-// @Description ping
+type PingReply struct{}
+
+// Ping the server
+// @Summary ping the server
+// @Description Simple ping endpoint to check if server is responsive
 // @Tags system
 // @Accept  json
 // @Produce  json
+// @Success 200 {object} PingReply "Returns empty JSON object"
 // @Router /ping [get]
 func Ping(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
 // ListCodes list error codes info
-// @Summary list error codes info
-// @Description list error codes info
+// @Summary list all error codes
+// @Description Returns a list of all defined HTTP error codes and their descriptions
 // @Tags system
 // @Accept  json
 // @Produce  json
+// @Success 200 {array} errcode.ErrInfo "List of error codes"
 // @Router /codes [get]
 func ListCodes(c *gin.Context) {
 	c.JSON(http.StatusOK, errcode.ListHTTPErrCodes())

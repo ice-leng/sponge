@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/copier"
 
+	"github.com/go-dev-frame/sponge/pkg/copier"
 	"github.com/go-dev-frame/sponge/pkg/gin/middleware"
 	"github.com/go-dev-frame/sponge/pkg/gin/response"
 	"github.com/go-dev-frame/sponge/pkg/logger"
@@ -45,11 +45,11 @@ func NewUserExampleHandler() UserExampleHandler {
 	}
 }
 
-// Create a record
-// @Summary create userExample
-// @Description submit information to create userExample
+// Create a new userExample
+// @Summary Create a new userExample
+// @Description Creates a new userExample entity using the provided data in the request body.
 // @Tags userExample
-// @accept json
+// @Accept json
 // @Produce json
 // @Param data body types.CreateUserExampleRequest true "userExample information"
 // @Success 200 {object} types.CreateUserExampleReply{}
@@ -83,11 +83,11 @@ func (h *userExampleHandler) Create(c *gin.Context) {
 	response.Success(c, gin.H{"id": userExample.ID})
 }
 
-// DeleteByID delete a record by id
-// @Summary delete userExample
-// @Description delete userExample by id
+// DeleteByID delete a userExample by id
+// @Summary Delete a userExample by id
+// @Description Deletes a existing userExample identified by the given id in the path.
 // @Tags userExample
-// @accept json
+// @Accept json
 // @Produce json
 // @Param id path string true "id"
 // @Success 200 {object} types.DeleteUserExampleByIDReply{}
@@ -116,11 +116,11 @@ func (h *userExampleHandler) DeleteByID(c *gin.Context) {
 	response.Success(c)
 }
 
-// UpdateByID update information by id
-// @Summary update userExample
-// @Description update userExample information by id
+// UpdateByID update a userExample by id
+// @Summary Update a userExample by id
+// @Description Updates the specified userExample by given id in the path, support partial update.
 // @Tags userExample
-// @accept json
+// @Accept json
 // @Produce json
 // @Param id path string true "id"
 // @Param data body types.UpdateUserExampleByIDRequest true "userExample information"
@@ -162,9 +162,9 @@ func (h *userExampleHandler) UpdateByID(c *gin.Context) {
 	response.Success(c)
 }
 
-// GetByID get a record by id
-// @Summary get userExample detail
-// @Description get userExample detail by id
+// GetByID get a userExample by id
+// @Summary Get a userExample by id
+// @Description Gets detailed information of a userExample specified by the given id in the path.
 // @Tags userExample
 // @Param id path string true "id"
 // @Accept json
@@ -203,11 +203,11 @@ func (h *userExampleHandler) GetByID(c *gin.Context) {
 	response.Success(c, gin.H{"userExample": data})
 }
 
-// List of records by query parameters
-// @Summary list of userExamples by query parameters
-// @Description list of userExamples by paging and conditions
+// List get a paginated list of userExamples by custom conditions
+// @Summary Get a paginated list of userExamples by custom conditions
+// @Description Returns a paginated list of userExample based on query filters, including page number and size.
 // @Tags userExample
-// @accept json
+// @Accept json
 // @Produce json
 // @Param request query types.ListUserExamplesRequest true "query parameters"
 // @Success 200 {object} types.ListUserExamplesReply{}

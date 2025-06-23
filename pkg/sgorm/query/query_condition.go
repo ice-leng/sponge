@@ -3,7 +3,9 @@ package query
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -77,6 +79,38 @@ var logicMap = map[string]string{
 	"or:)":  " OR ",
 }
 
+// ---------------------------------------------------------------------------
+
+type rulerOptions struct {
+	whitelistNames map[string]bool
+	validateFn     func(columns []Column) error
+}
+
+// RulerOption set the parameters of ruler options
+type RulerOption func(*rulerOptions)
+
+func (o *rulerOptions) apply(opts ...RulerOption) {
+	for _, opt := range opts {
+		opt(o)
+	}
+}
+
+// WithWhitelistNames set white list names of columns
+func WithWhitelistNames(whitelistNames map[string]bool) RulerOption {
+	return func(o *rulerOptions) {
+		o.whitelistNames = whitelistNames
+	}
+}
+
+// WithValidateFn set validate function of columns
+func WithValidateFn(fn func(columns []Column) error) RulerOption {
+	return func(o *rulerOptions) {
+		o.validateFn = fn
+	}
+}
+
+// -----------------------------------------------------------------------------
+
 // Params query parameters
 type Params struct {
 	Page  int    `json:"page" form:"page" binding:"gte=0"`
@@ -97,22 +131,8 @@ type Column struct {
 	Logic string      `json:"logic" form:"logic"` // logical type, defaults to and when the value is null, with &(and), ||(or)
 }
 
-func (c *Column) checkValid() error {
-	if c.Name == "" {
-		return fmt.Errorf("field 'name' cannot be empty")
-	}
-	if c.Value == nil {
-		v := expMap[strings.ToLower(c.Exp)]
-		if v == " IS NULL " || v == " IS NOT NULL " {
-			return nil
-		}
-		return fmt.Errorf("field 'value' cannot be nil")
-	}
-	return nil
-}
-
 // converting ExpType to sql expressions and LogicType to sql using characters
-func (c *Column) convert() (string, error) {
+func (c *Column) checkExp() (string, error) {
 	symbol := "?"
 	if c.Exp == "" {
 		c.Exp = Eq
@@ -142,15 +162,27 @@ func (c *Column) convert() (string, error) {
 			}
 		case " IN ", " NOT IN ":
 			val, ok1 := c.Value.(string)
-			if !ok1 {
-				return symbol, fmt.Errorf("invalid value type '%s'", c.Value)
+			if ok1 {
+				values := []interface{}{}
+				ss := strings.Split(val, ",")
+				for _, s := range ss {
+					s = strings.TrimSpace(s)
+					if strings.HasPrefix(s, "\"") {
+						values = append(values, strings.Trim(s, "\""))
+						continue
+					} else if strings.HasPrefix(s, "'") {
+						values = append(values, strings.Trim(s, "'"))
+						continue
+					}
+					value, err := strconv.Atoi(s)
+					if err == nil {
+						values = append(values, value)
+					} else {
+						values = append(values, s)
+					}
+				}
+				c.Value = values
 			}
-			iVal := []interface{}{}
-			ss := strings.Split(val, ",")
-			for _, s := range ss {
-				iVal = append(iVal, s)
-			}
-			c.Value = iVal
 			symbol = "(?)"
 		case " IS NULL ", " IS NOT NULL ":
 			c.Value = nil
@@ -185,7 +217,7 @@ func (p *Params) ConvertToPage() (order string, limit int, offset int) { //nolin
 
 // ConvertToGormConditions conversion to gorm-compliant parameters based on the Columns parameter
 // ignore the logical type of the last column, whether it is a one-column or multi-column query
-func (p *Params) ConvertToGormConditions() (string, []interface{}, error) {
+func (p *Params) ConvertToGormConditions(opts ...RulerOption) (string, []interface{}, error) { //nolint
 	str := ""
 	args := []interface{}{}
 	l := len(p.Columns)
@@ -199,12 +231,33 @@ func (p *Params) ConvertToGormConditions() (string, []interface{}, error) {
 	}
 	field := p.Columns[0].Name
 
-	for i, column := range p.Columns {
-		if err := column.checkValid(); err != nil {
+	o := rulerOptions{}
+	o.apply(opts...)
+	if o.validateFn != nil {
+		err := o.validateFn(p.Columns)
+		if err != nil {
 			return "", nil, err
 		}
+	}
 
-		symbol, err := column.convert()
+	for i, column := range p.Columns {
+		// check name
+		if column.Name == "" || (o.whitelistNames != nil && !o.whitelistNames[column.Name]) {
+			return "", nil, fmt.Errorf("field name '%s' is not allowed", column.Name)
+		}
+
+		// check value
+		if column.Value == nil {
+			v := expMap[strings.ToLower(column.Exp)]
+			if v != " IS NULL " && v != " IS NOT NULL " {
+				return "", nil, fmt.Errorf("field 'value' cannot be nil")
+			}
+		} else {
+			column.Value = convertValue(column.Value)
+		}
+
+		// check exp
+		symbol, err := column.checkExp()
 		if err != nil {
 			return "", nil, err
 		}
@@ -249,6 +302,61 @@ func (p *Params) ConvertToGormConditions() (string, []interface{}, error) {
 	return str, args, nil
 }
 
+// if the value is a string or an integer, if true means it is a string, otherwise it is an integer
+func convertValue(v interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return v
+	}
+
+	s = strings.TrimSpace(s)
+	if strings.HasPrefix(s, "\"") {
+		s2 := strings.Trim(s, "\"")
+		if _, err := strconv.Atoi(s2); err == nil {
+			return s2
+		}
+		return s
+	}
+	intVal, err := strconv.Atoi(s)
+	if err == nil {
+		return intVal
+	}
+	boolVal, err := strconv.ParseBool(s)
+	if err == nil {
+		return boolVal
+	}
+	floatVal, err := strconv.ParseFloat(s, 64)
+	if err == nil {
+		return floatVal
+	}
+
+	// try to parse as RFC3339
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return t
+	}
+	// support other formats
+	layouts := []string{
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02T15:04:05Z0700",
+		"2006-01-02T15:04:05.999999999Z0700",
+		"2006-01-02T15:04:05.999999999Z07:00",
+		"2006-01-02",
+		"2006-01-02 15:04:05",
+		"2006-01-02 15:04:05.999999999",
+		"2006-01-02 15:04:05 -07:00",
+		"2006-01-02 15:04:05.999999999 -07:00",
+	}
+	for _, layout := range layouts {
+		t, err := time.Parse(layout, s)
+		if err == nil {
+			return t
+		}
+	}
+	return v
+}
+
+// -------------------------------------------------------------------------------------------
+
 // Conditions query conditions
 type Conditions struct {
 	Columns []Column `json:"columns" form:"columns" binding:"min=1"` // columns info
@@ -256,9 +364,9 @@ type Conditions struct {
 
 // ConvertToGorm conversion to gorm-compliant parameters based on the Columns parameter
 // ignore the logical type of the last column, whether it is a one-column or multi-column query
-func (c *Conditions) ConvertToGorm() (string, []interface{}, error) {
+func (c *Conditions) ConvertToGorm(opts ...RulerOption) (string, []interface{}, error) {
 	p := &Params{Columns: c.Columns}
-	return p.ConvertToGormConditions()
+	return p.ConvertToGormConditions(opts...)
 }
 
 // CheckValid check valid

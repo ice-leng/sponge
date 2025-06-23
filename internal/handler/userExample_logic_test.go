@@ -8,9 +8,9 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gin-gonic/gin"
 	"github.com/go-dev-frame/sponge/api/types"
-	"github.com/jinzhu/copier"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/go-dev-frame/sponge/pkg/copier"
 	"github.com/go-dev-frame/sponge/pkg/gin/response"
 	"github.com/go-dev-frame/sponge/pkg/gotest"
 	"github.com/go-dev-frame/sponge/pkg/httpcli"

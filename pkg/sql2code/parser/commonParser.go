@@ -47,7 +47,7 @@ func setCrudInfo(field tmplField) *CrudInfo {
 	}
 	pluralName := inflection.Plural(field.Name)
 
-	return &CrudInfo{
+	info := &CrudInfo{
 		ColumnName:               field.ColName,
 		ColumnNameCamel:          field.Name,
 		ColumnNameCamelFCL:       customFirstLetterToLower(field.Name),
@@ -60,6 +60,15 @@ func setCrudInfo(field tmplField) *CrudInfo {
 		PrimaryKeyColumnName:     primaryKeyName,
 		IsStandardPrimaryKey:     field.ColName == "id",
 	}
+
+	if info.ColumnNameCamel == info.ColumnNamePluralCamel {
+		info.ColumnNamePluralCamel += "s" // if singular and plural are the same, force the suffix 's' to distinguish them
+	}
+	if info.ColumnNameCamelFCL == info.ColumnNamePluralCamelFCL {
+		info.ColumnNamePluralCamelFCL += "s" // if singular and plural are the same, force the suffix 's' to distinguish them
+	}
+
+	return info
 }
 
 func newCrudInfo(data tmplData) *CrudInfo {

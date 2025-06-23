@@ -80,7 +80,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_zhufuyi_sponge_internal_types.Params"
+                            "$ref": "#/definitions/github_com_go-dev-frame_sponge_internal_types.Params"
                         }
                     }
                 ],
@@ -212,7 +212,7 @@ const docTemplate = `{
         },
         "/codes": {
             "get": {
-                "description": "list error codes info",
+                "description": "Returns a list of all defined HTTP error codes and their descriptions",
                 "consumes": [
                     "application/json"
                 ],
@@ -222,13 +222,23 @@ const docTemplate = `{
                 "tags": [
                     "system"
                 ],
-                "summary": "list error codes info",
-                "responses": {}
+                "summary": "list all error codes",
+                "responses": {
+                    "200": {
+                        "description": "List of error codes",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/errcode.ErrInfo"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/config": {
             "get": {
-                "description": "show config info",
+                "description": "Returns the current system configuration in JSON format. This includes all runtime configuration parameters.",
                 "consumes": [
                     "application/json"
                 ],
@@ -238,13 +248,21 @@ const docTemplate = `{
                 "tags": [
                     "system"
                 ],
-                "summary": "show config info",
-                "responses": {}
+                "summary": "get system configuration",
+                "responses": {
+                    "200": {
+                        "description": "Returns the complete system configuration",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
             }
         },
         "/health": {
             "get": {
-                "description": "check health",
+                "description": "Returns system health information including status and hostname",
                 "consumes": [
                     "application/json"
                 ],
@@ -254,10 +272,10 @@ const docTemplate = `{
                 "tags": [
                     "system"
                 ],
-                "summary": "check health",
+                "summary": "check system health status",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns health status information",
                         "schema": {
                             "$ref": "#/definitions/handlerfunc.CheckHealthReply"
                         }
@@ -267,7 +285,7 @@ const docTemplate = `{
         },
         "/ping": {
             "get": {
-                "description": "ping",
+                "description": "Simple ping endpoint to check if server is responsive",
                 "consumes": [
                     "application/json"
                 ],
@@ -277,13 +295,31 @@ const docTemplate = `{
                 "tags": [
                     "system"
                 ],
-                "summary": "ping",
-                "responses": {}
+                "summary": "ping the server",
+                "responses": {
+                    "200": {
+                        "description": "Returns empty JSON object",
+                        "schema": {
+                            "$ref": "#/definitions/handlerfunc.PingReply"
+                        }
+                    }
+                }
             }
         }
     },
     "definitions": {
-        "github_com_zhufuyi_sponge_internal_types.Column": {
+        "errcode.ErrInfo": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "msg": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_go-dev-frame_sponge_internal_types.Column": {
             "type": "object",
             "properties": {
                 "exp": {
@@ -291,7 +327,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "logic": {
-                    "description": "logical type, defaults to and when value is null, only \u0026(and), ||(or)",
+                    "description": "logical type, default value is \"and\", support \u0026, and, ||, or",
                     "type": "string"
                 },
                 "name": {
@@ -303,14 +339,14 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_zhufuyi_sponge_internal_types.Params": {
+        "github_com_go-dev-frame_sponge_internal_types.Params": {
             "type": "object",
             "properties": {
                 "columns": {
                     "description": "query conditions",
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_zhufuyi_sponge_internal_types.Column"
+                        "$ref": "#/definitions/github_com_go-dev-frame_sponge_internal_types.Column"
                     }
                 },
                 "limit": {
@@ -337,6 +373,9 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "handlerfunc.PingReply": {
+            "type": "object"
         },
         "types.CreateUserExampleReply": {
             "type": "object",
@@ -576,7 +615,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "2.0",
+	Version:          "v1.0.0",
 	Host:             "localhost:8080",
 	BasePath:         "",
 	Schemes:          []string{"http", "https"},

@@ -1,54 +1,9 @@
+要求 [Go 1.23+](https://studygolang.com/dl) 版本。
 
-要求使用go 1.23以上版本： [https://studygolang.com/dl](https://studygolang.com/dl)
-
-> 注：如果不能科学上网，获取github的库可能会遇到超时失败问题，建议设置为国内代理，执行命令 **go env -w GOPROXY=https://goproxy.cn,direct**
-
-<br>
-
----
-
-<br>
-
-### Windows环境
-
-安装sponge之前确保已安装go语言环境，并把`GOBIN`添加到系统环境变量**path**，如果已经设置过可以跳过此步骤：
-
-```bash
-    # 检查GOBIN目录是否存在
-    go env GOBIN
-    
-    # 如果为空，设置GOBIN(例如：D:\go\bin)，可能需要管理员权限
-    go env -w GOBIN=D:\go\bin
-    # 然后并把GOBIN目录添加到系统path环境变量
-```
-
-<br>
-
-> 因为sponge依赖一些linux命令，因此在windows环境中需要安装git bash、make来支持linux命令环境。
-
-为了安装方便，已经把sponge及其依赖的程序打包在一起，下载地址(选择一个下载即可)：
-
-- 百度云：[**sponge-install.zip**](https://pan.baidu.com/s/1adMIlUyQlH6vRK2UIN7MRg?pwd=3fja)。
-- 蓝奏云：[**sponge安装文件**](https://wwm.lanzoue.com/b049fldpi) 密码:5rq9，共下载4个文件，安装前先看`安装说明.txt`文件。
-
-下载文件后：
-
-(1) 解压文件，双击 **install.bat** 进行安装，安装git过程一直默认即可(如果已经安装过git，可以跳过安装git这个步骤)。
-
-(2) 在任意文件夹下右键(显示更多选项)，选择【Open Git Bash here】打开git bash终端：
-
-```bash
-# 初始化sponge
-sponge init
-```
-
-注意：
-
-- 使用sponge开发项目时，请使用git bash终端，不要使用系统默认的cmd，否则会出现找不到命令的错误。
-- 不要在`GOBIN`目录(sponge可执行文件所在的目录)下打开终端来执行命令`sponge run`。
-- 如果当前使用sponge的版本低于`v1.11.1`，并且需要升级，请执行命令更新到最新版本的sponge： `go install github.com/go-dev-frame/sponge/cmd/sponge@latest && sponge init`。
-
-在windows除了上面安装sponge方式，还提供了原生安装，点击查看【安装 sponge】 --> 【windows环境】[安装文档](https://go-sponge.com/zh-cn/quick-start?id=%e5%ae%89%e8%a3%85-sponge)。
+> **提示**：Go下载第三方包时可能会遇到依赖下载超时问题，建议设置国内代理：
+> ```bash
+> go env -w GOPROXY=https://goproxy.cn,direct
+> ```
 
 <br>
 
@@ -56,52 +11,48 @@ sponge init
 
 <br>
 
-### Linux或MacOS环境
+### Windows 环境
 
-(1) 把`GOBIN`添加到系统环境变量**path**，如果已经设置过可以跳过此步骤。
+#### 前置准备
+
+确保已安装 Go 并配置 `GOBIN` 环境变量：
 
 ```bash
-# 打开 .bashrc 文件
-vim ~/.bashrc
-
-# 复制下面命令到.bashrc
-export GOROOT="/opt/go"     # 你的go安装目录
-export GOPATH=$HOME/go      # 设置 go get 命令下载第三方包的目录
-export GOBIN=$GOPATH/bin    # 设置 go install 命令编译后生成可执行文件的存放目录
-export PATH=$PATH:$GOBIN:$GOROOT/bin   # 把GOBIN目录添加到系统环境变量path
-
-# 保存 .bashrc 文件后，使设置生效
-source ~/.bashrc
-
-# 查看GOBIN目录，如果输出不为空，说明设置成功
+# 检查 GOBIN 是否已设置（输出为空表示未设置）
 go env GOBIN
+
+# 若未设置，请配置（根据实际修改示例路径）
+go env -w GOBIN=D:\go\bin
+# 然后将 GOBIN 路径添加到系统 PATH 环境变量
 ```
 
 <br>
 
-(2) 把sponge及其依赖的插件安装到 `GOBIN` 目录。
+#### 快速安装 sponge
 
-**✅ 安装 protoc**
+我们提供了包含所有依赖的集成安装包：
+- 百度云盘：[sponge-install.zip](https://pan.baidu.com/s/1adMIlUyQlH6vRK2UIN7MRg?pwd=3fja)
+- 蓝奏云：[sponge 安装文件](https://wwm.lanzoue.com/b049fldpi) 密码:5rq9，*需下载全部4个文件，安装前请阅读`安装说明.txt`*
 
-下载protoc地址： [https://github.com/protocolbuffers/protobuf/releases/tag/v25.2](https://github.com/protocolbuffers/protobuf/releases/tag/v25.2)
+<br>
 
-根据系统类型下载对应的 **protoc** 可执行文件，把 **protoc** 可执行文件移动到`GOBIN`目录下。
+**安装步骤**：
 
-```bash
-# 安装sponge
-go install github.com/go-dev-frame/sponge/cmd/sponge@latest
+1. 解压后运行 `install.bat`
+    - 安装 Git 时保持默认选项即可（已安装可跳过）
+2. 打开 Git Bash 终端，鼠标右键 → 【Open Git Bash here】
+   ```bash
+   sponge init          # 初始化并安装依赖
+   sponge plugins       # 查看已安装的插件
+   sponge -v            # 查看版本
+   ```
 
-# 初始化sponge，自动安装sponge依赖插件
-sponge init
+   **注意**：请始终使用 Git Bash，不要使用 Windows 默认的 cmd 终端，否则可能出现找不到命令的错误。
 
-# 查看插件是否都安装成功，如果发现有插件没有安装成功，执行命令重试 sponge plugins --install
-sponge plugins
+<br>
 
-# 查看sponge版本
-sponge -v
-```
-
-> 注：不要在`GOBIN`目录下打开终端来执行命令`sponge run`。
+> 上面是集成安装包的安装方式，另支持原生安装 sponge 方式，详见：  
+> 👉 [【安装 Sponge】→【Windows 环境】](https://go-sponge.com/zh/getting-started/install.html#安装-sponge)
 
 <br>
 
@@ -109,39 +60,80 @@ sponge -v
 
 <br>
 
-### Docker环境
+### Linux/MacOS 环境
 
-> ⚠ 使用docker启动的sponge UI服务，只支持在界面操作来生成代码功能，如果需要在生成的服务代码基础上进行开发，还是需要根据上面的安装说明，在本地安装sponge和依赖插件。
+#### 环境配置
 
-**方式一：Docker启动**
+配置环境变量（已配置可跳过）：
 
 ```bash
-docker run -d --name sponge -p 24631:24631 zhufuyi/sponge:latest -a http://你的宿主机ip:24631
+vim ~/.bashrc
+```
+
+添加以下内容（根据实际情况修改路径）：
+```bash
+export GOROOT="/opt/go"       # Go 安装目录
+export GOPATH=$HOME/go        # Go 模块下载目录
+export GOBIN=$GOPATH/bin      # 可执行文件存放目录
+export PATH=$PATH:$GOBIN:$GOROOT/bin
+```
+
+生效配置：
+```bash
+source ~/.bashrc
+go env GOBIN  # 验证是否配置成功，如果输出不为空，说明设置成功
 ```
 
 <br>
 
-**方式二：docker-compose启动**
+#### 安装步骤
 
-docker-compose.yaml 文件内容如下：
+1. 安装 protoc：
+    - 下载地址：[protoc v25.2](https://github.com/protocolbuffers/protobuf/releases/tag/v25.2)
+    - 将 `protoc` 可执行文件放入 `GOBIN` 目录
 
+2. 安装 sponge：
+   ```bash
+   go install github.com/go-dev-frame/sponge/cmd/sponge@latest
+   sponge init          # 初始化并安装依赖
+   sponge plugins       # 查看已安装的插件
+   sponge -v            # 查看版本
+   ```
+
+<br>
+
+---
+
+<br>
+
+### Docker 环境
+
+> ⚠ 注意：Docker 版仅支持 UI 代码生成功能，如需在生成的服务代码基础上进行开发，仍需在本地安装 sponge 完整环境。
+
+#### 快速启动
+
+**方案一：Docker 命令**
+```bash
+docker run -d --name sponge -p 24631:24631 zhufuyi/sponge:latest -a http://<宿主机IP>:24631
+```
+
+<br>
+
+**方案二：docker-compose**
 ```yaml
 version: "3.7"
-
 services:
   sponge:
     image: zhufuyi/sponge:latest
     container_name: sponge
     restart: always
-    command: ["-a","http://你的宿主机ip:24631"]
+    command: ["-a","http://<宿主机IP>:24631"]
     ports:
       - "24631:24631"
 ```
-
-启动服务：
-
+启动命令：
 ```bash
 docker-compose up -d
 ```
 
-在docker部署成功后，在浏览器访问 `http://你的宿主机ip:24631`。
+访问地址：`http://<宿主机IP>:24631`
