@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "title": "serverNameExample api docs",
-    "version": "2.0"
+    "version": "v1.0.0"
   },
   "tags": [
     {
@@ -23,8 +23,8 @@
   "paths": {
     "/api/v1/userExample": {
       "post": {
-        "summary": "create userExample",
-        "description": "submit information to create userExample",
+        "summary": "Create a new userExample",
+        "description": "Creates a new userExample entity using the provided data in the request body.",
         "operationId": "userExample_Create",
         "responses": {
           "200": {
@@ -57,8 +57,8 @@
     },
     "/api/v1/userExample/list": {
       "post": {
-        "summary": "list of userExamples by query parameters",
-        "description": "list of userExamples by paging and conditions",
+        "summary": "get a list of userExamples by custom conditions",
+        "description": "Returns a paginated list of userExamples filtered by specified query parameters. The request supports pagination (page number, page size) and filtering conditions.",
         "operationId": "userExample_List",
         "responses": {
           "200": {
@@ -91,8 +91,8 @@
     },
     "/api/v1/userExample/{id}": {
       "get": {
-        "summary": "get userExample detail",
-        "description": "get userExample detail by id",
+        "summary": "Get a userExample by id",
+        "description": "Gets detailed information of a userExample specified by the given id in the path.",
         "operationId": "userExample_GetByID",
         "responses": {
           "200": {
@@ -122,8 +122,8 @@
         ]
       },
       "delete": {
-        "summary": "delete userExample",
-        "description": "delete userExample by id",
+        "summary": "Delete a userExample by id",
+        "description": "Deletes a existing userExample identified by the given id in the path.",
         "operationId": "userExample_DeleteByID",
         "responses": {
           "200": {
@@ -153,8 +153,8 @@
         ]
       },
       "put": {
-        "summary": "update userExample",
-        "description": "update userExample by id",
+        "summary": "Update a userExample by id",
+        "description": "Updates the specified userExample with new data provided in the request body. The target is identified by id in the path.",
         "operationId": "userExample_UpdateByID",
         "responses": {
           "200": {
@@ -183,39 +183,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string"
-                },
-                "email": {
-                  "type": "string"
-                },
-                "password": {
-                  "type": "string"
-                },
-                "phone": {
-                  "type": "string"
-                },
-                "avatar": {
-                  "type": "string"
-                },
-                "age": {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                "gender": {
-                  "$ref": "#/definitions/v1GenderType"
-                },
-                "status": {
-                  "type": "integer",
-                  "format": "int32"
-                },
-                "loginAt": {
-                  "type": "integer",
-                  "format": "int64"
-                }
-              }
+              "$ref": "#/definitions/userExampleUpdateByIDBody"
             }
           }
         ],
@@ -248,6 +216,7 @@
         "details": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/protobufAny"
           }
         }
@@ -257,16 +226,20 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "column name"
         },
         "exp": {
-          "type": "string"
+          "type": "string",
+          "title": "expressions, default value is \"=\", support =, !=, \u003e, \u003e=, \u003c, \u003c=, like, in, notin"
         },
         "value": {
-          "type": "string"
+          "type": "string",
+          "title": "column value"
         },
         "logic": {
-          "type": "string"
+          "type": "string",
+          "title": "logical type, default value is \"and\", support \u0026, and, ||, or"
         }
       }
     },
@@ -275,20 +248,69 @@
       "properties": {
         "page": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "page number, starting from 0"
         },
         "limit": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "number per page"
         },
         "sort": {
-          "type": "string"
+          "type": "string",
+          "title": "sorted fields, multi-column sorting separated by commas"
         },
         "columns": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/typesColumn"
-          }
+          },
+          "title": "query conditions"
+        }
+      }
+    },
+    "userExampleUpdateByIDBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "name"
+        },
+        "email": {
+          "type": "string",
+          "title": "email"
+        },
+        "password": {
+          "type": "string",
+          "title": "password"
+        },
+        "phone": {
+          "type": "string",
+          "title": "phone number"
+        },
+        "avatar": {
+          "type": "string",
+          "title": "avatar"
+        },
+        "age": {
+          "type": "integer",
+          "format": "int32",
+          "title": "age"
+        },
+        "gender": {
+          "$ref": "#/definitions/v1GenderType",
+          "title": "gender, 1:Male, 2:Female, other values:unknown"
+        },
+        "status": {
+          "type": "integer",
+          "format": "int32",
+          "title": "account status"
+        },
+        "loginAt": {
+          "type": "integer",
+          "format": "int64",
+          "title": "login timestamp"
         }
       }
     },
@@ -305,26 +327,33 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "name"
         },
         "email": {
-          "type": "string"
+          "type": "string",
+          "title": "email"
         },
         "password": {
-          "type": "string"
+          "type": "string",
+          "title": "password"
         },
         "phone": {
-          "type": "string"
+          "type": "string",
+          "title": "phone number"
         },
         "avatar": {
-          "type": "string"
+          "type": "string",
+          "title": "avatar"
         },
         "age": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "age"
         },
         "gender": {
-          "$ref": "#/definitions/v1GenderType"
+          "$ref": "#/definitions/v1GenderType",
+          "title": "gender, 1:Male, 2:Female, other values:unknown"
         }
       }
     },
@@ -358,6 +387,7 @@
         "userExamples": {
           "type": "array",
           "items": {
+            "type": "object",
             "$ref": "#/definitions/v1UserExample"
           }
         }
@@ -382,37 +412,47 @@
           "format": "uint64"
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "name"
         },
         "email": {
-          "type": "string"
+          "type": "string",
+          "title": "email"
         },
         "phone": {
-          "type": "string"
+          "type": "string",
+          "title": "phone number"
         },
         "avatar": {
-          "type": "string"
+          "type": "string",
+          "title": "avatar"
         },
         "age": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "age"
         },
         "gender": {
-          "$ref": "#/definitions/v1GenderType"
+          "$ref": "#/definitions/v1GenderType",
+          "title": "gender, 1:Male, 2:Female, other values:unknown"
         },
         "status": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "account status"
         },
         "loginAt": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "title": "login timestamp"
         },
         "createdAt": {
-          "type": "string"
+          "type": "string",
+          "title": "creation time"
         },
         "updatedAt": {
-          "type": "string"
+          "type": "string",
+          "title": "update time"
         }
       }
     }

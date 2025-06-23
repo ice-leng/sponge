@@ -4,7 +4,9 @@ package query
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -44,9 +46,6 @@ const (
 	OR        string = "or" //nolint
 	orSymbol1        = "|"
 	orSymbol2        = "||"
-
-	allLogicAnd = 1
-	allLogicOr  = 2
 )
 
 var expMap = map[string]string{
@@ -70,13 +69,53 @@ var expMap = map[string]string{
 }
 
 var logicMap = map[string]string{
-	AND:        andSymbol1,
-	andSymbol1: andSymbol1,
-	andSymbol2: andSymbol1,
-	OR:         orSymbol1,
-	orSymbol1:  orSymbol1,
-	orSymbol2:  orSymbol1,
+	AND:        AND,
+	"AND":      AND,
+	andSymbol1: AND,
+	andSymbol2: AND,
+
+	OR:        OR,
+	"OR":      OR,
+	orSymbol1: OR,
+	orSymbol2: OR,
+
+	"and:(": AND,
+	"and:)": AND,
+	"or:(":  OR,
+	"or:)":  OR,
 }
+
+// ---------------------------------------------------------------------------
+
+type rulerOptions struct {
+	whitelistNames map[string]bool
+	validateFn     func(columns []Column) error
+}
+
+// RulerOption set the parameters of ruler options
+type RulerOption func(*rulerOptions)
+
+func (o *rulerOptions) apply(opts ...RulerOption) {
+	for _, opt := range opts {
+		opt(o)
+	}
+}
+
+// WithWhitelistNames set white list names of columns
+func WithWhitelistNames(whitelistNames map[string]bool) RulerOption {
+	return func(o *rulerOptions) {
+		o.whitelistNames = whitelistNames
+	}
+}
+
+// WithValidateFn set validate function of columns
+func WithValidateFn(fn func(columns []Column) error) RulerOption {
+	return func(o *rulerOptions) {
+		o.validateFn = fn
+	}
+}
+
+// -----------------------------------------------------------------------------
 
 // Params query parameters
 type Params struct {
@@ -98,6 +137,13 @@ type Column struct {
 	Logic string      `json:"logic" form:"logic"` // logical type, defaults to and when the value is null, with &(and), ||(or)
 }
 
+func (c *Column) checkName(whitelists map[string]bool) error {
+	if c.Name == "" || (whitelists != nil && !whitelists[c.Name]) {
+		return fmt.Errorf("field name '%s' is not allowed", c.Name)
+	}
+	return nil
+}
+
 func (c *Column) checkValid() error {
 	if c.Name == "" {
 		return fmt.Errorf("field 'name' cannot be empty")
@@ -116,25 +162,43 @@ func (c *Column) convertLogic() error {
 		c.Logic = v
 		return nil
 	}
-	return fmt.Errorf("unknown logic type '%s'", c.Logic)
+	return fmt.Errorf("convertLogic error: unknown logic type '%s'", c.Logic)
+}
+
+func (c *Column) checkLogic() error {
+	if c.Logic == "" {
+		c.Logic = AND
+	}
+	if _, ok := logicMap[strings.ToLower(c.Logic)]; ok { //nolint
+		return nil
+	}
+	return fmt.Errorf("checkLogic error: unknown logic type '%s'", c.Logic)
 }
 
 // converting ExpType to sql expressions and LogicType to sql using characters
 func (c *Column) convert() error {
+	err := c.convertValue()
+	if err != nil {
+		return err
+	}
+	return c.convertLogic()
+}
+
+func (c *Column) convertValue() error {
 	if err := c.checkValid(); err != nil {
 		return err
 	}
 
-	if c.Name == "id" || c.Name == "_id" {
-		if str, ok := c.Value.(string); ok {
-			c.Name = "_id"
-			c.Value, _ = primitive.ObjectIDFromHex(str)
+	if oid, ok := isObjectID(c.Value); ok {
+		c.Value = oid
+
+		if c.Name == "id" {
+			c.Name = "_id" // force to "_id"
+		} else if strings.HasSuffix(c.Name, ":oid") {
+			c.Name = strings.TrimSuffix(c.Name, ":oid")
 		}
-	} else if strings.Contains(c.Name, ":oid") {
-		if str, ok := c.Value.(string); ok {
-			c.Name = strings.Replace(c.Name, ":oid", "", 1)
-			c.Value, _ = primitive.ObjectIDFromHex(str)
-		}
+	} else {
+		c.Value = convertValue(c.Value)
 	}
 
 	if c.Exp == "" {
@@ -145,7 +209,7 @@ func (c *Column) convert() error {
 		switch c.Exp {
 		//case eqSymbol:
 		case neqSymbol:
-			c.Value = bson.M{"$neq": c.Value}
+			c.Value = bson.M{"$ne": c.Value}
 		case gtSymbol:
 			c.Value = bson.M{"$gt": c.Value}
 		case gteSymbol:
@@ -159,21 +223,34 @@ func (c *Column) convert() error {
 			c.Value = bson.M{"$regex": escapedValue, "$options": "i"}
 		case In, NotIn:
 			val, ok2 := c.Value.(string)
-			if !ok2 {
-				return fmt.Errorf("invalid value type '%s'", c.Value)
+			if ok2 {
+				values := []interface{}{}
+				ss := strings.Split(val, ",")
+				for _, s := range ss {
+					s = strings.TrimSpace(s)
+					if strings.HasPrefix(s, "\"") {
+						values = append(values, strings.Trim(s, "\""))
+						continue
+					} else if strings.HasPrefix(s, "'") {
+						values = append(values, strings.Trim(s, "'"))
+						continue
+					}
+					value, err := strconv.Atoi(s)
+					if err == nil {
+						values = append(values, value)
+					} else {
+						values = append(values, s)
+					}
+				}
+				c.Value = bson.M{"$" + c.Exp: values}
+			} else {
+				c.Value = bson.M{"$" + c.Exp: c.Value}
 			}
-			values := []interface{}{}
-			ss := strings.Split(val, ",")
-			for _, s := range ss {
-				values = append(values, s)
-			}
-			c.Value = bson.M{"$" + c.Exp: values}
 		}
 	} else {
 		return fmt.Errorf("unsported exp type '%s'", c.Exp)
 	}
-
-	return c.convertLogic()
+	return nil
 }
 
 // ConvertToPage converted to page
@@ -187,7 +264,16 @@ func (p *Params) ConvertToPage() (sort bson.D, limit int, skip int) { //nolint
 
 // ConvertToMongoFilter conversion to mongo-compliant parameters based on the Columns parameter
 // ignore the logical type of the last column, whether it is a one-column or multi-column query
-func (p *Params) ConvertToMongoFilter() (bson.M, error) {
+func (p *Params) ConvertToMongoFilter(opts ...RulerOption) (bson.M, error) {
+	o := rulerOptions{}
+	o.apply(opts...)
+	if o.validateFn != nil {
+		err := o.validateFn(p.Columns)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	filter := bson.M{}
 	l := len(p.Columns)
 	switch l {
@@ -195,7 +281,11 @@ func (p *Params) ConvertToMongoFilter() (bson.M, error) {
 		return bson.M{}, nil
 
 	case 1: // l == 1
-		err := p.Columns[0].convert()
+		err := p.Columns[0].checkName(o.whitelistNames)
+		if err != nil {
+			return nil, err
+		}
+		err = p.Columns[0].convert()
 		if err != nil {
 			return nil, err
 		}
@@ -203,7 +293,15 @@ func (p *Params) ConvertToMongoFilter() (bson.M, error) {
 		return filter, nil
 
 	case 2: // l == 2
-		err := p.Columns[0].convert()
+		err := p.Columns[0].checkName(o.whitelistNames)
+		if err != nil {
+			return nil, err
+		}
+		err = p.Columns[1].checkName(o.whitelistNames)
+		if err != nil {
+			return nil, err
+		}
+		err = p.Columns[0].convert()
 		if err != nil {
 			return nil, err
 		}
@@ -211,7 +309,7 @@ func (p *Params) ConvertToMongoFilter() (bson.M, error) {
 		if err != nil {
 			return nil, err
 		}
-		if p.Columns[0].Logic == andSymbol1 {
+		if p.Columns[0].Logic == AND {
 			filter = bson.M{"$and": []bson.M{
 				{p.Columns[0].Name: p.Columns[0].Value},
 				{p.Columns[1].Name: p.Columns[1].Value}}}
@@ -223,125 +321,257 @@ func (p *Params) ConvertToMongoFilter() (bson.M, error) {
 		return filter, nil
 
 	default: // l >=3
-		return p.convertMultiColumns()
+		return p.convertMultiColumns(o.whitelistNames)
 	}
 }
 
-func (p *Params) convertMultiColumns() (bson.M, error) {
-	filter := bson.M{}
-	logicType, groupIndexes, err := checkSameLogic(p.Columns)
-	if err != nil {
-		return nil, err
+func (p *Params) convertMultiColumns(whitelistNames map[string]bool) (bson.M, error) {
+	if len(p.Columns) == 0 {
+		return bson.M{"filter": bson.M{}}, nil
 	}
-	if logicType == allLogicAnd {
-		for _, column := range p.Columns {
-			err := column.convert()
-			if err != nil {
-				return nil, err
-			}
-			if v, ok := filter["$and"]; !ok {
-				filter["$and"] = []bson.M{{column.Name: column.Value}}
-			} else {
-				if cols, ok1 := v.([]bson.M); ok1 {
-					cols = append(cols, bson.M{column.Name: column.Value})
-					filter["$and"] = cols
-				}
-			}
-		}
-		return filter, nil
-	} else if logicType == allLogicOr {
-		for _, column := range p.Columns {
-			err := column.convert()
-			if err != nil {
-				return nil, err
-			}
-			if v, ok := filter["$or"]; !ok {
-				filter["$or"] = []bson.M{{column.Name: column.Value}}
-			} else {
-				if cols, ok1 := v.([]bson.M); ok1 {
-					cols = append(cols, bson.M{column.Name: column.Value})
-					filter["$or"] = cols
-				}
-			}
-		}
-		return filter, nil
-	}
-	orConditions := []bson.M{}
-	for _, indexes := range groupIndexes {
-		if len(indexes) == 1 {
-			column := p.Columns[indexes[0]]
-			err := column.convert()
-			if err != nil {
-				return nil, err
-			}
-			orConditions = append(orConditions, bson.M{column.Name: column.Value})
-		} else {
-			andConditions := []bson.M{}
-			for _, index := range indexes {
-				column := p.Columns[index]
-				err := column.convert()
-				if err != nil {
-					return nil, err
-				}
-				andConditions = append(andConditions, bson.M{column.Name: column.Value})
-			}
-			orConditions = append(orConditions, bson.M{"$and": andConditions})
-		}
-	}
-	filter["$or"] = orConditions
 
-	return filter, nil
-}
-
-func checkSameLogic(columns []Column) (int, [][]int, error) {
-	orIndexes := []int{}
-	l := len(columns)
-	for i, column := range columns {
-		if i == l-1 { // ignore the logical type of the last column
-			break
-		}
-		err := column.convertLogic()
+	hasParentheses := false
+	countLeftParentheses := 0
+	countRightParentheses := 0
+	for _, col := range p.Columns {
+		err := col.checkName(whitelistNames)
 		if err != nil {
-			return 0, nil, err
+			return nil, err
 		}
-		if column.Logic == orSymbol1 {
-			orIndexes = append(orIndexes, i)
+		if strings.Contains(col.Logic, "(") {
+			hasParentheses = true
+			countLeftParentheses++
+		}
+		if strings.Contains(col.Logic, ")") {
+			countRightParentheses++
+			hasParentheses = true
 		}
 	}
-
-	if len(orIndexes) == 0 {
-		return allLogicAnd, nil, nil
-	} else if len(orIndexes) == l-1 {
-		return allLogicOr, nil, nil
+	if countLeftParentheses != countRightParentheses {
+		return nil, fmt.Errorf("mismatched parentheses in logic")
 	}
-	// mix and or
-	groupIndexes := groupingIndex(l, orIndexes)
 
-	return 0, groupIndexes, nil
+	var finalFilter bson.M
+	var err error
+
+	if hasParentheses {
+		finalFilter, err = buildFilterWithStack(p.Columns)
+	} else {
+		finalFilter, err = buildFilterWithPrecedence(p.Columns)
+	}
+
+	return finalFilter, err
 }
 
-func groupingIndex(l int, orIndexes []int) [][]int {
-	groupIndexes := [][]int{}
-	lastIndex := 0
-	for _, index := range orIndexes {
-		group := []int{}
-		for i := lastIndex; i <= index; i++ {
-			group = append(group, i)
+func isObjectID(v interface{}) (primitive.ObjectID, bool) {
+	if str, ok := v.(string); ok && len(str) == 24 {
+		value, err := primitive.ObjectIDFromHex(str)
+		if err == nil {
+			return value, true
 		}
-		groupIndexes = append(groupIndexes, group)
-		if lastIndex == index {
-			lastIndex++
+	}
+	return [12]byte{}, false
+}
+
+type filterGroup struct {
+	operator string   // "$and", "$or"
+	filters  []bson.M // list of filters within this group
+}
+
+// use stack to handle explicit grouping
+func buildFilterWithStack(columns []Column) (bson.M, error) {
+	stack := []*filterGroup{
+		{operator: "$and", filters: []bson.M{}},
+	}
+
+	for _, col := range columns {
+		if err := col.checkLogic(); err != nil {
+			return nil, err
+		}
+		singleFilter, err := col.createSingleCondition()
+		if err != nil {
+			return nil, fmt.Errorf("failed to create condition for column '%s': %w", col.Name, err)
+		}
+
+		logic := strings.ToLower(col.Logic)
+		if logic == "" {
+			logic = "and"
+		}
+		op := "$and"
+		if strings.HasPrefix(logic, "or") {
+			op = "$or"
+		}
+
+		if strings.HasSuffix(logic, ":(") {
+			newGroup := &filterGroup{
+				operator: op,
+				filters:  []bson.M{singleFilter},
+			}
+			stack = append(stack, newGroup)
+		} else if strings.HasSuffix(logic, ":)") {
+			if len(stack) < 2 {
+				return nil, fmt.Errorf("mismatched parentheses in logic: '%s'", logic)
+			}
+			currentGroup := stack[len(stack)-1]
+			currentGroup.filters = append(currentGroup.filters, singleFilter)
+			stack = stack[:len(stack)-1]
+
+			var combined bson.M
+			if currentGroup.operator == "$and" {
+				merged := bson.M{}
+				for _, f := range currentGroup.filters {
+					for k, v := range f {
+						merged[k] = v
+					}
+				}
+				combined = merged
+			} else {
+				combined = bson.M{currentGroup.operator: currentGroup.filters}
+			}
+
+			parentGroup := stack[len(stack)-1]
+			parentGroup.filters = append(parentGroup.filters, combined)
+			if op == "$or" {
+				parentGroup.operator = "$or"
+			}
 		} else {
-			lastIndex = index
+			topGroup := stack[len(stack)-1]
+			topGroup.filters = append(topGroup.filters, singleFilter)
+			if op == "$or" {
+				topGroup.operator = "$or"
+			}
 		}
 	}
-	group := []int{}
-	for i := lastIndex + 1; i < l; i++ {
-		group = append(group, i)
+
+	if len(stack) != 1 {
+		return nil, fmt.Errorf("unclosed parentheses at the end of query")
 	}
-	groupIndexes = append(groupIndexes, group)
-	return groupIndexes
+
+	rootGroup := stack[0]
+	var finalFilter bson.M
+	if len(rootGroup.filters) == 1 && rootGroup.operator == "$and" {
+		finalFilter = rootGroup.filters[0]
+	} else {
+		finalFilter = bson.M{rootGroup.operator: rootGroup.filters}
+	}
+
+	return finalFilter, nil
 }
+
+// use precedence rules to handle flat lists (AND has higher precedence than OR)
+func buildFilterWithPrecedence(columns []Column) (bson.M, error) {
+	orGroups := [][]*Column{}
+	currentAndGroup := []*Column{}
+
+	for i := range columns {
+		col := &columns[i]
+		if err := col.convertLogic(); err != nil {
+			return nil, err
+		}
+		currentAndGroup = append(currentAndGroup, col)
+		if strings.ToLower(col.Logic) == "or" {
+			orGroups = append(orGroups, currentAndGroup)
+			currentAndGroup = []*Column{}
+		}
+	}
+
+	if len(currentAndGroup) > 0 {
+		orGroups = append(orGroups, currentAndGroup)
+	}
+
+	orParts := []bson.M{}
+	for _, group := range orGroups {
+		andParts := []bson.M{}
+		for _, col := range group {
+			condition, err := col.createSingleCondition()
+			if err != nil {
+				return nil, err
+			}
+			andParts = append(andParts, condition)
+		}
+
+		if len(andParts) == 0 {
+			continue
+		} else if len(andParts) == 1 {
+			orParts = append(orParts, andParts[0])
+		} else {
+			orParts = append(orParts, bson.M{"$and": andParts})
+		}
+	}
+
+	if len(orParts) == 0 {
+		return bson.M{}, nil
+	}
+	if len(orParts) == 1 {
+		return orParts[0], nil
+	}
+
+	return bson.M{"$or": orParts}, nil
+}
+
+// convert a single Column to a BSON condition (no change)
+func (c *Column) createSingleCondition() (bson.M, error) {
+	err := c.convertValue()
+	if err != nil {
+		return nil, fmt.Errorf("convertValue error: %v", err)
+	}
+	return bson.M{c.Name: c.Value}, nil
+}
+
+// if the value is a string or an integer, if true means it is a string, otherwise it is an integer
+func convertValue(v interface{}) interface{} {
+	s, ok := v.(string)
+	if !ok {
+		return v
+	}
+
+	s = strings.TrimSpace(s)
+	if strings.HasPrefix(s, "\"") {
+		s2 := strings.Trim(s, "\"")
+		if _, err := strconv.Atoi(s2); err == nil {
+			return s2
+		}
+		return s
+	}
+	intVal, err := strconv.Atoi(s)
+	if err == nil {
+		return intVal
+	}
+	boolVal, err := strconv.ParseBool(s)
+	if err == nil {
+		return boolVal
+	}
+	floatVal, err := strconv.ParseFloat(s, 64)
+	if err == nil {
+		return floatVal
+	}
+
+	// try to parse as RFC3339
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return t
+	}
+	// support other formats
+	layouts := []string{
+		"2006-01-02T15:04:05Z07:00",
+		"2006-01-02T15:04:05Z0700",
+		"2006-01-02T15:04:05.999999999Z0700",
+		"2006-01-02T15:04:05.999999999Z07:00",
+		"2006-01-02",
+		"2006-01-02 15:04:05",
+		"2006-01-02 15:04:05.999999999",
+		"2006-01-02 15:04:05 -07:00",
+		"2006-01-02 15:04:05.999999999 -07:00",
+	}
+	for _, layout := range layouts {
+		t, err := time.Parse(layout, s)
+		if err == nil {
+			return t
+		}
+	}
+	return v
+}
+
+// -------------------------------------------------------------------------------------------
 
 // Conditions query conditions
 type Conditions struct {
@@ -376,7 +606,7 @@ func (c *Conditions) CheckValid() error {
 
 // ConvertToMongo conversion to mongo-compliant parameters based on the Columns parameter
 // ignore the logical type of the last column, whether it is a one-column or multi-column query
-func (c *Conditions) ConvertToMongo() (bson.M, error) {
+func (c *Conditions) ConvertToMongo(opts ...RulerOption) (bson.M, error) {
 	p := &Params{Columns: c.Columns}
-	return p.ConvertToMongoFilter()
+	return p.ConvertToMongoFilter(opts...)
 }

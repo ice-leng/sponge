@@ -62,12 +62,16 @@ type CreateUserExampleReply struct {
 
 // DeleteUserExampleByIDReply only for api docs
 type DeleteUserExampleByIDReply struct {
-	Result
+	Code int      `json:"code"` // return code
+	Msg  string   `json:"msg"`  // return information description
+	Data struct{} `json:"data"` // return data
 }
 
 // UpdateUserExampleByIDReply only for api docs
 type UpdateUserExampleByIDReply struct {
-	Result
+	Code int      `json:"code"` // return code
+	Msg  string   `json:"msg"`  // return information description
+	Data struct{} `json:"data"` // return data
 }
 
 // GetUserExampleByIDReply only for api docs

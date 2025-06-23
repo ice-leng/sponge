@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -420,39 +419,122 @@ func do(method string, url string, body interface{}) ([]byte, error) {
 
 // ------------------------------------------------------------------------------------------
 
-type st struct {
-	Name string
-}
+func Test_CustomValidator_ValidateStruct(t *testing.T) {
+	type User struct {
+		Name string `binding:"required"`
+		Age  int    `binding:"gte=18"`
+	}
 
-func TestCustomValidator_Engine(t *testing.T) {
-	validator := NewCustomValidator()
-	v := validator.Engine()
-	assert.NotNil(t, v)
-}
+	type UserList1 struct {
+		Users []User `binding:"required,dive"`
+	}
 
-func TestCustomValidator_ValidateStruct(t *testing.T) {
-	validator := NewCustomValidator()
-	err := validator.ValidateStruct(new(st))
-	assert.NoError(t, err)
-}
+	type UserList2 struct {
+		Users []*User `binding:"required,dive"`
+	}
 
-func TestCustomValidator_lazyinit(t *testing.T) {
-	validator := NewCustomValidator()
-	validator.lazyinit()
-}
-
-func TestInit(t *testing.T) {
 	validator := Init()
-	assert.NotNil(t, validator)
+
+	user := &User{Name: "John", Age: 10}
+	if err := validator.ValidateStruct(user); err != nil {
+		assert.NotNil(t, err)
+		t.Log(err)
+	}
+
+	var u = &User{Name: "John", Age: 11}
+	if err := validator.ValidateStruct(&u); err != nil {
+		assert.NotNil(t, err)
+		t.Log(err)
+	}
+
+	users := []User{{Name: "Alice", Age: 25}, {Name: "Bob", Age: 17}}
+	if err := validator.ValidateStruct(users); err != nil {
+		assert.NotNil(t, err)
+		t.Log(err)
+	}
+
+	userList := UserList1{}
+	if err := validator.ValidateStruct(&userList); err != nil {
+		assert.NotNil(t, err)
+		t.Log(err)
+	}
+
+	userList1 := UserList1{
+		Users: []User{{Name: "Charlie", Age: 10}, {Name: "", Age: 30}},
+	}
+	if err := validator.ValidateStruct(&userList1); err != nil {
+		assert.NotNil(t, err)
+		t.Log(err)
+	}
+
+	userList2 := UserList2{
+		Users: []*User{{Name: "Charlie", Age: 30}, {Name: "", Age: 40}},
+	}
+	if err := validator.ValidateStruct(&userList2); err != nil {
+		assert.NotNil(t, err)
+		t.Log(err)
+	}
 }
 
-func TestNewCustomValidator(t *testing.T) {
-	validator := NewCustomValidator()
-	assert.NotNil(t, validator)
-}
+func Benchmark_CustomValidator_ValidateStruct(b *testing.B) {
+	type User struct {
+		Name string `binding:"required"`
+		Age  int    `binding:"gte=18"`
+	}
 
-func Test_kindOfData(t *testing.T) {
+	type UserList1 struct {
+		Users []User `binding:"required,dive"` // 验证指针切片
+	}
 
-	kind := kindOfData(new(st))
-	assert.Equal(t, reflect.Struct, kind)
+	type UserList2 struct {
+		Users []*User `binding:"required,dive"` // 验证指针切片
+	}
+
+	validator := Init()
+
+	b.Run("User struct", func(b *testing.B) {
+		user := User{Name: "John", Age: 10}
+		for i := 0; i < b.N; i++ {
+			_ = validator.ValidateStruct(user)
+		}
+	})
+
+	b.Run("User struct pointer", func(b *testing.B) {
+		user := &User{Name: "John", Age: 10}
+		for i := 0; i < b.N; i++ {
+			_ = validator.ValidateStruct(user)
+		}
+	})
+
+	b.Run("User struct pointer pointer", func(b *testing.B) {
+		var u = &User{Name: "John", Age: 11}
+		for i := 0; i < b.N; i++ {
+			_ = validator.ValidateStruct(&u)
+		}
+	})
+
+	b.Run("User slice", func(b *testing.B) {
+		users := []User{{Name: "Alice", Age: 25}, {Name: "Bob", Age: 17}}
+		for i := 0; i < b.N; i++ {
+			_ = validator.ValidateStruct(users)
+		}
+	})
+
+	b.Run("UserList slice struct", func(b *testing.B) {
+		userList1 := UserList1{
+			Users: []User{{Name: "Charlie", Age: 10}, {Name: "", Age: 30}},
+		}
+		for i := 0; i < b.N; i++ {
+			_ = validator.ValidateStruct(&userList1)
+		}
+	})
+
+	b.Run("UserList slice struct pointer", func(b *testing.B) {
+		userList2 := UserList2{
+			Users: []*User{{Name: "Charlie", Age: 30}, {Name: "", Age: 40}},
+		}
+		for i := 0; i < b.N; i++ {
+			_ = validator.ValidateStruct(&userList2)
+		}
+	})
 }

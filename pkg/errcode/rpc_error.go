@@ -286,11 +286,12 @@ func ListGRPCErrCodes(w http.ResponseWriter, _ *http.Request) {
 }
 
 // ShowConfig show config info
-// @Summary show config info
-// @Description show config info
+// @Summary get system configuration
+// @Description Returns the current system configuration in JSON format. This includes all runtime configuration parameters.
 // @Tags system
 // @Accept  json
 // @Produce  json
+// @Success 200 {object} map[string]interface{} "Returns the complete system configuration"
 // @Router /config [get]
 func ShowConfig(jsonData []byte) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {

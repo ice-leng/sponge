@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
 
 	"github.com/go-dev-frame/sponge/pkg/errcode"
 	"github.com/go-dev-frame/sponge/pkg/gin/handlerfunc"
@@ -14,7 +13,6 @@ import (
 	"github.com/go-dev-frame/sponge/pkg/gin/middleware/metrics"
 	"github.com/go-dev-frame/sponge/pkg/gin/prof"
 	"github.com/go-dev-frame/sponge/pkg/gin/swagger"
-	"github.com/go-dev-frame/sponge/pkg/gin/validator"
 	"github.com/go-dev-frame/sponge/pkg/logger"
 
 	"github.com/go-dev-frame/sponge/docs"
@@ -83,9 +81,6 @@ func NewRouter_pbExample() *gin.Engine { //nolint
 	if config.Get().App.EnableHTTPProfile {
 		prof.Register(r, prof.WithIOWaitTime())
 	}
-
-	// validator
-	binding.Validator = validator.Init()
 
 	r.GET("/health", handlerfunc.CheckHealth)
 	r.GET("/ping", handlerfunc.Ping)
