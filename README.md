@@ -15,9 +15,9 @@
 
 </div>
 
-**Sponge** is a powerful and easy-to-use `Go` development framework. Its core concept is to reverse-generate modular code by parsing `SQL`, `Protobuf`, and `JSON` files. These modular components can be flexibly combined into various types of complete backend services.
+**Sponge** is a powerful and easy-to-use Go development framework. Its core philosophy is **"Definition is Code"**, means generating modular Go code by parsing `SQL`, `Protobuf`, and `JSON` files. These code modules can be flexibly combined to build various types of complete backend services.
 
-Sponge provides a one-stop project development solution. It covers code generation, development, testing, API documentation, and deployment, enabling developers to effortlessly build stable, reliable, and high-performance backend service systems (including RESTful API, gRPC, HTTP+gRPC, and gRPC Gateway, etc.) with a low-code approach.
+Sponge provides a one-stop project development solution that covers code generation, development, testing, API documentation, and deployment. It helps developers easily build stable, reliable, and high-performance backend services (including RESTful APIs, gRPC, HTTP+gRPC, gRPC Gateway, etc.) in a "low-code" approach, greatly improve the efficiency and quality of project development.
 
 <br>
 

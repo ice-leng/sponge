@@ -2,9 +2,9 @@
 
 <br>
 
-**sponge** 是一个强大且易用的 `Go` 开发框架，其核心理念是通过解析 `SQL`、`Protobuf`、`JSON` 文件逆向生成模块化的代码，这些模块代码可灵活组合成多种类型的完整后端服务。
+**sponge** 是一个强大且易用的 Go 开发框架，其核心理念是**定义即代码**(Definition is Code)，通过解析 `SQL`、`Protobuf`、`JSON` 文件逆向生成模块化的 Go 代码，这些模块代码可灵活组合成多种类型的完整后端服务。
 
-sponge 提供一站式项目开发解决方案，涵盖代码生成、开发、测试、API 文档和部署等，帮助开发者以"低代码"方式轻松构建稳定可靠的高性能后端服务体系(包括 RESTful API、gRPC、HTTP+gRPC、gRPC Gateway 等)。
+sponge 提供一站式项目开发解决方案，涵盖代码生成、开发、测试、API 文档和部署等，帮助开发者以"低代码"方式轻松构建稳定可靠的高性能后端服务(包括 RESTful API、gRPC、HTTP+gRPC、gRPC Gateway 等)，大幅提升项目开发的效率与质量。
 
 <br>
 
