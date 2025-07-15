@@ -37,6 +37,10 @@ const (
 	In = "in"
 	// NotIn exclude
 	NotIn = "nin"
+	// IsNull is null
+	IsNull = "isnull"
+	// IsNotNull is not null
+	IsNotNull = "isnotnull"
 
 	// AND logic and
 	AND        string = "and" //nolint
@@ -49,23 +53,27 @@ const (
 )
 
 var expMap = map[string]string{
-	Eq:        eqSymbol,
-	eqSymbol:  eqSymbol,
-	Neq:       neqSymbol,
-	neqSymbol: neqSymbol,
-	Gt:        gtSymbol,
-	gtSymbol:  gtSymbol,
-	Gte:       gteSymbol,
-	gteSymbol: gteSymbol,
-	Lt:        ltSymbol,
-	ltSymbol:  ltSymbol,
-	Lte:       lteSymbol,
-	lteSymbol: lteSymbol,
-	Like:      Like,
-	In:        In,
-	NotIn:     NotIn,
-	"notin":   NotIn,
-	"not in":  NotIn,
+	Eq:            eqSymbol,
+	eqSymbol:      eqSymbol,
+	Neq:           neqSymbol,
+	neqSymbol:     neqSymbol,
+	Gt:            gtSymbol,
+	gtSymbol:      gtSymbol,
+	Gte:           gteSymbol,
+	gteSymbol:     gteSymbol,
+	Lt:            ltSymbol,
+	ltSymbol:      ltSymbol,
+	Lte:           lteSymbol,
+	lteSymbol:     lteSymbol,
+	Like:          Like,
+	In:            In,
+	NotIn:         NotIn,
+	"notin":       NotIn,
+	"not in":      NotIn,
+	IsNull:        IsNull,
+	IsNotNull:     IsNotNull,
+	"is null":     IsNull,
+	"is not null": IsNotNull,
 }
 
 var logicMap = map[string]string{
@@ -184,6 +192,7 @@ func (c *Column) convert() error {
 	return c.convertLogic()
 }
 
+// nolint
 func (c *Column) convertValue() error {
 	if err := c.checkValid(); err != nil {
 		return err
@@ -204,10 +213,10 @@ func (c *Column) convertValue() error {
 	if c.Exp == "" {
 		c.Exp = Eq
 	}
-	if v, ok := expMap[strings.ToLower(c.Exp)]; ok { //nolint
+	if v, ok := expMap[strings.ToLower(c.Exp)]; ok {
 		c.Exp = v
 		switch c.Exp {
-		//case eqSymbol:
+		// case eqSymbol:
 		case neqSymbol:
 			c.Value = bson.M{"$ne": c.Value}
 		case gtSymbol:
@@ -218,6 +227,10 @@ func (c *Column) convertValue() error {
 			c.Value = bson.M{"$lt": c.Value}
 		case lteSymbol:
 			c.Value = bson.M{"$lte": c.Value}
+		case IsNull:
+			c.Value = bson.M{"$exist": false}
+		case IsNotNull:
+			c.Value = bson.M{"$exist": true}
 		case Like:
 			escapedValue := regexp.QuoteMeta(fmt.Sprintf("%v", c.Value))
 			c.Value = bson.M{"$regex": escapedValue, "$options": "i"}
@@ -312,11 +325,13 @@ func (p *Params) ConvertToMongoFilter(opts ...RulerOption) (bson.M, error) {
 		if p.Columns[0].Logic == AND {
 			filter = bson.M{"$and": []bson.M{
 				{p.Columns[0].Name: p.Columns[0].Value},
-				{p.Columns[1].Name: p.Columns[1].Value}}}
+				{p.Columns[1].Name: p.Columns[1].Value},
+			}}
 		} else {
 			filter = bson.M{"$or": []bson.M{
 				{p.Columns[0].Name: p.Columns[0].Value},
-				{p.Columns[1].Name: p.Columns[1].Value}}}
+				{p.Columns[1].Name: p.Columns[1].Value},
+			}}
 		}
 		return filter, nil
 
