@@ -128,6 +128,7 @@ func HTTPCommand() *cobra.Command {
 					serverName:    serverName,
 
 					suitedMonoRepo: suitedMonoRepo,
+					isGenerateWeb:  true,
 				}
 				outPath, err = hg.generateCode()
 				if err != nil {

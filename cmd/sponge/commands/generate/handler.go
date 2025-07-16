@@ -3,6 +3,7 @@ package generate
 import (
 	"errors"
 	"fmt"
+	"github.com/huandu/xstrings"
 	"math/rand"
 	"strings"
 
@@ -142,6 +143,7 @@ type handlerGenerator struct {
 
 	fields        []replacer.Field
 	isCommonStyle bool
+	isGenerateWeb bool
 }
 
 func (g *handlerGenerator) generateCode() (string, error) {
@@ -264,7 +266,13 @@ func (g *handlerGenerator) generateCode() (string, error) {
 	}
 
 	subFiles = append(subFiles, getSubFiles(selectFiles, replaceFiles)...)
-
+	if g.isGenerateWeb {
+		webFiles := []string{
+			webApiFile, webViewFile,
+		}
+		r.SetWebFiles(webFiles...)
+		subFiles = append(subFiles, webFiles...)
+	}
 	r.SetSubDirsAndFiles(subDirs, subFiles...)
 	_ = r.SetOutputDir(g.outPath, subTplName)
 	fields := g.addFields(r)
@@ -337,6 +345,45 @@ func (g *handlerGenerator) addFields(r replacer.Replacer) []replacer.Field {
 	if g.suitedMonoRepo {
 		fs := SubServerCodeFields(g.moduleName, g.serverName)
 		fields = append(fields, fs...)
+	}
+
+	if g.isGenerateWeb {
+		fields = append(fields, deleteAllFieldsMark(r, webApiFile, startMark, endMark)...)
+		fields = append(fields, deleteAllFieldsMark(r, webViewFile, startMark, endMark)...)
+		fields = append(fields, []replacer.Field{
+			{
+				Old: webApiFormFileMark,
+				New: g.codes[parser.CodeWebApiForm],
+			},
+			{
+				Old: webViewColumnMark,
+				New: g.codes[parser.CodeWebViewColumn],
+			},
+			{
+				Old: webViewFormMark,
+				New: g.codes[parser.CodeWebViewForm],
+			},
+			{
+				Old: webViewRuleMark,
+				New: g.codes[parser.CodeWebViewRule],
+			},
+			{
+				Old: "userExample",
+				New: xstrings.FirstRuneToLower(g.codes[parser.TableName]),
+			},
+			{
+				Old: "USEREXAMPLE",
+				New: strings.ToUpper(g.codes[parser.TableName]),
+			},
+			{
+				Old: "api.sub",
+				New: "src/api/" + xstrings.FirstRuneToLower(g.codes[parser.TableName]) + ".api.ts",
+			},
+			{
+				Old: "view.sub",
+				New: "src/views/" + xstrings.FirstRuneToLower(g.codes[parser.TableName]) + "/index.vue",
+			},
+		}...)
 	}
 
 	return fields
