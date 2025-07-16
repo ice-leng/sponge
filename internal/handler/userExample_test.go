@@ -200,7 +200,7 @@ func Test_userExampleHandler_GetByID(t *testing.T) {
 		AddRow(testData.ID)
 
 	h.MockDao.SQLMock.ExpectQuery("SELECT .*").
-		WithArgs(testData.ID).
+		WithArgs(testData.ID, 1).
 		WillReturnRows(rows)
 
 	result := &httpcli.StdResult{}

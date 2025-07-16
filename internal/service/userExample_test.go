@@ -162,7 +162,7 @@ func Test_userExampleService_GetByID(t *testing.T) {
 		AddRow(data.ID)
 
 	s.MockDao.SQLMock.ExpectQuery("SELECT .*").
-		WithArgs(testData.Id).
+		WithArgs(testData.Id, 1).
 		WillReturnRows(rows)
 
 	reply, err := s.IServiceClient.(serverNameExampleV1.UserExampleClient).GetByID(s.Ctx, testData)
