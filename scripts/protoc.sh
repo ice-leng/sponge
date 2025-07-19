@@ -132,7 +132,7 @@ function generateByAllProto(){
     echo "Error: not found proto file in path $protoBasePath"
     exit 1
   fi
-  echo -e "generate *pb.go by proto files: ${colorGray}$allProtoFiles${markEnd}"
+  echo -e "generate *.pb.go from .proto files: ${colorGray}$allProtoFiles${markEnd}"
   echo ""
 
   # generate files *_pb.go
@@ -188,7 +188,7 @@ function generateBySpecifiedProto(){
   if [ "$specifiedProtoFiles"x = x ];then
     return
   fi
-  echo -e "generate template code by proto files: ${colorMagenta}$specifiedProtoFiles${markEnd}"
+  echo -e "generate glue code from .proto files: ${colorMagenta}$specifiedProtoFiles${markEnd}"
   echo ""
   # todo generate api template code command here
   # delete the templates code start

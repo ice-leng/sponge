@@ -2,7 +2,7 @@
 
 <br>
 
-**sponge** 是一个强大且易用的 Go 开发框架，其核心理念是**定义即代码**(Definition is Code)，通过解析 `SQL`、`Protobuf`、`JSON` 文件逆向生成模块化的 Go 代码，这些模块代码可灵活组合成多种类型的完整后端服务。
+**sponge** 是一个强大且易用的 Go 开发框架，其核心理念是**定义即代码**(Definition is Code)，通过解析 `SQL`、`Protobuf`、`JSON` 文件生成模块化的 Go 代码，这些模块代码可灵活组合成多种类型的完整后端服务。
 
 sponge 提供一站式项目开发解决方案，涵盖代码生成、开发、测试、API 文档和部署等，帮助开发者以"低代码"方式轻松构建稳定可靠的高性能后端服务(包括 RESTful API、gRPC、HTTP+gRPC、gRPC Gateway 等)，大幅提升项目开发的效率与质量。
 
@@ -88,9 +88,9 @@ sponge 内置了丰富的组件(按需使用)：
 | 鉴权 [jwt](https://github.com/golang-jwt/jwt) | [jwt 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/jwt/README.md#example-of-use)<br>[gin 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/gin/middleware/README.md#jwt-authorization-middleware)<br>[gRPC 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/grpc/interceptor/README.md#jwt-authentication-interceptor) |
 | 校验 [validator](https://github.com/go-playground/validator), [protoc-gen-validate](https://github.com/bufbuild/protoc-gen-validate) | [validator 示例](https://github.com/go-dev-frame/sponge/blob/main/internal/types/userExample_types.go#L17)<br>[protoc-gen-validate 示例](https://github.com/go-dev-frame/sponge/blob/main/api/serverNameExample/v1/userExample.proto#L156) |
 | Websocket [gorilla/websocket](https://github.com/gorilla/websocket) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/ws/README.md#example-of-use) |
-| [SSE](https://html.spec.whatwg.org/multipage/server-sent-events.html) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/sse/README.md#example-of-use) |
+| HTTP [SSE](https://html.spec.whatwg.org/multipage/server-sent-events.html) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/sse/README.md#example-of-use) |
 | 定时任务 [cron](https://github.com/robfig/cron) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/gocron/README.md#example-of-use) |
-| 消息队列 [rabbitmq](https://github.com/rabbitmq/amqp091-go), [kafka](https://github.com/IBM/sarama) | [rabbitmq 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/rabbitmq/README.md#example-of-use)<br>[kafka 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/kafka/README.md#example-of-use) |
+| 消息队列 [rabbitmq](https://github.com/rabbitmq/amqp091-go), [kafka](https://github.com/IBM/sarama), [asynq](github.com/hibiken/asynq) | [rabbitmq 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/rabbitmq/README.md#example-of-use)<br>[kafka 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/kafka/README.md#example-of-use)<br>[asynq 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/sasynq/README.md#example-of-use) |
 | 分布式事务管理器 [dtm](https://github.com/dtm-labs/dtm) | [dtm 服务发现示例](https://github.com/go-dev-frame/sponge_examples/blob/main/_11_sponge-dtm-service-registration-discovery/internal/rpcclient/dtmservice.go#L31)<br>[使用 dtm 秒杀抢购示例](https://github.com/go-dev-frame/sponge_examples/blob/main/_12_sponge-dtm-flashSale/grpc%2Bhttp/internal/service/flashSale.go#L67) |
 | 分布式锁 [dlock](https://github.com/go-dev-frame/sponge/tree/main/pkg/dlock) | [示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/dlock/README.md#example-of-use) |
 | 自适应限流 [ratelimit](https://github.com/go-dev-frame/sponge/tree/main/pkg/shield/ratelimit) | [gin 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/gin/middleware/README.md#rate-limiter-middleware)<br>[gRPC 示例](https://github.com/go-dev-frame/sponge/blob/main/pkg/gin/middleware/README.md#rate-limiter-interceptor) | |
