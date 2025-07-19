@@ -1,19 +1,19 @@
 
-## Change Log
+## Changelog
 
 ### New Features
 
-1. Added a custom Copier utility library that supports automatic bidirectional conversion between time types and strings.
-2. Implemented automatic conversion from Swagger 2.0 to OpenAPI 3.0 specification.
-3. Added implementation of SSE (Server-Sent Events) for both server and client sides.
-4. MongoDB ORM supports complex conditional group queries, with automatic type recognition and conversion for values (integer/date-time).
-5. SGORM ORM supports automatic type recognition and conversion for values (integer/date-time).
+1. Added `pkg/sasynq` - a distributed task queue library for asynchronous background task processing.
 
 ### Bug Fixes
 
-1. Fixed an issue where the Swagger API documentation generated from Protobuf was inconsistent with the actual API response format.
+1. Fixed DBResolver compatibility issues with the latest GORM version [#111](https://github.com/go-dev-frame/sponge/issues/111)
+2. Resolved postgresql table parsing errors when table comments contain single quotes [#112](https://github.com/go-dev-frame/sponge/issues/112)
 
-### Dependency Upgrades
+### Dependency Updates
 
-1. Upgraded Gin framework from v1.9.1 to v1.10.1.
-2. Upgraded Copier library from v0.3.5 to v0.4.0.
+1. Upgraded GORM from v1.25.1 to v1.30.0
+
+### Other Changes
+
+1. Removed deprecated `pkg/ggorm` library (replaced by `pkg/sgorm`)
