@@ -34,15 +34,15 @@ func HandleSwaggerJSONCommand() *cobra.Command {
 		Use:   "swagger",
 		Short: "Handle swagger json file",
 		Long: "Handles Swagger JSON files by standardizing response format data, " +
-			"converting specifications to OpenAPI 3, and transforming 64-bit integer fields into strings.",
+			"converting specifications to OpenAPI 3, and transforming 64-bit fields string into integer (default is true).",
 		Example: color.HiBlackString(`  # Standardize response format data in swagger.json
   sponge web swagger --enable-standardize-response --file=docs/swagger.json
 
   # Convert swagger2.0 to openapi3.0
   sponge web swagger --enable-to-openapi3 --file=docs/swagger.json
 
-  # Transform 64-bit integer into string in swagger.json fields
-  sponge web swagger --enable-integer-to-string --file=docs/swagger.json`),
+  # Cancel the default conversion of 64 bit integer type fields from strings to integers
+  sponge web swagger --enable-string-to-integer=false --file=docs/swagger.json`),
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -52,7 +52,7 @@ func HandleSwaggerJSONCommand() *cobra.Command {
 				if err = handleSwaggerFieldStringToInteger(jsonFile); err != nil {
 					return err
 				}
-				fmt.Printf("Successfully transform 64-bit string to integer in %s fields\n", jsonFile)
+				fmt.Printf("Successfully transform 64-bit fields string to integer in %s fields\n", jsonFile)
 			}
 
 			if enableUniformResponse {
@@ -78,7 +78,7 @@ func HandleSwaggerJSONCommand() *cobra.Command {
 	cmd.Flags().BoolVarP(&enableUniformResponse, "enable-standardize-response", "u", false, "standardize response format data in swagger json")
 	cmd.Flags().BoolVarP(&enableConvertToOpenAPI3, "enable-to-openapi3", "o", false, "convert swagger2.0 to openapi3")
 	cmd.Flags().BoolVarP(&enableStringToInteger, "enable-string-to-integer", "t", true, "transform string into 64-bit integer in swagger.json fields")
-	cmd.Flags().BoolVarP(&enableTransformIntegerToString, "enable-integer-to-string", "s", false, "Deprecated, instead use --enable-string-to-integer")
+	cmd.Flags().BoolVarP(&enableTransformIntegerToString, "enable-integer-to-string", "s", false, "deprecated, instead use --enable-string-to-integer")
 
 	return cmd
 }
