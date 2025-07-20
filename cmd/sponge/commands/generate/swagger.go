@@ -25,6 +25,7 @@ func HandleSwaggerJSONCommand() *cobra.Command {
 		enableUniformResponse          bool
 		enableConvertToOpenAPI3        bool
 		enableTransformIntegerToString bool
+		enableStringToInteger          bool
 
 		jsonFile string
 	)
@@ -47,6 +48,13 @@ func HandleSwaggerJSONCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 
+			if enableStringToInteger {
+				if err = handleSwaggerFieldStringToInteger(jsonFile); err != nil {
+					return err
+				}
+				fmt.Printf("Successfully transform 64-bit string to integer in %s fields\n", jsonFile)
+			}
+
 			if enableUniformResponse {
 				if err = handleStandardizeResponseAction(jsonFile); err != nil {
 					return err
@@ -62,17 +70,6 @@ func HandleSwaggerJSONCommand() *cobra.Command {
 				fmt.Printf("Successfully convert swagger2.0 to openapi3.0, output: %s, %s\n", outputJSONFile, outputYamlFile)
 			}
 
-			if enableTransformIntegerToString {
-				if err = handleSwaggerIntegerToStringAction(jsonFile); err != nil {
-					return err
-				}
-				fmt.Printf("Successfully transform 64-bit integer to string in %s fields\n", jsonFile)
-			}
-
-			if enableUniformResponse == false && enableConvertToOpenAPI3 == false && enableTransformIntegerToString == false { //nolint
-				fmt.Println("No action specified, please use 'sponge web swagger -h' to see available options.")
-			}
-
 			return nil
 		},
 	}
@@ -80,7 +77,8 @@ func HandleSwaggerJSONCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&jsonFile, "file", "f", "docs/apis.swagger.json", "input swagger json file")
 	cmd.Flags().BoolVarP(&enableUniformResponse, "enable-standardize-response", "u", false, "standardize response format data in swagger json")
 	cmd.Flags().BoolVarP(&enableConvertToOpenAPI3, "enable-to-openapi3", "o", false, "convert swagger2.0 to openapi3")
-	cmd.Flags().BoolVarP(&enableTransformIntegerToString, "enable-integer-to-string", "s", true, "transform 64-bit integer into string in swagger.json fields")
+	cmd.Flags().BoolVarP(&enableStringToInteger, "enable-string-to-integer", "t", true, "transform string into 64-bit integer in swagger.json fields")
+	cmd.Flags().BoolVarP(&enableTransformIntegerToString, "enable-integer-to-string", "s", false, "Deprecated, instead use --enable-string-to-integer")
 
 	return cmd
 }
@@ -470,7 +468,7 @@ func getOutputFile(filePath string) (yamlFile string, jsonFile string) {
 
 // -------------------------------------------------------------------------------------------
 
-func handleSwaggerIntegerToStringAction(jsonFilePath string) error {
+func handleSwaggerFieldStringToInteger(jsonFilePath string) error {
 	newData, err := convertStringToInteger(jsonFilePath)
 	if err != nil {
 		return err
