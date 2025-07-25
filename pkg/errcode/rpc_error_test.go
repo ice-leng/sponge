@@ -112,6 +112,9 @@ func TestGetStatusCode(t *testing.T) {
 			GetStatusCode(s.ErrToHTTP("reason for error")),
 		)
 	}
+
+	ok := IsStatus(StatusInvalidParams.Err(), StatusInvalidParams)
+	t.Log(ok)
 }
 
 func TestRCode(t *testing.T) {

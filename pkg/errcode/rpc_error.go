@@ -239,7 +239,15 @@ func convertToHTTPCode(code codes.Code) int {
 // GetStatusCode get status code from error returned by RPC invoke
 func GetStatusCode(err error) codes.Code {
 	st, _ := status.FromError(err)
+	if st == nil {
+		return codes.OK
+	}
 	return st.Code()
+}
+
+// IsStatus check if error is a specific status
+func IsStatus(err error, e *RPCStatus) bool {
+	return GetStatusCode(err) == e.status.Code()
 }
 
 // ErrInfo error info
