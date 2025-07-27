@@ -181,7 +181,7 @@ func (g *serviceAndHandlerGenerator) generateCode() (string, error) {
 			"userExample.go",
 		},
 		"internal/service": {
-			"userExample.go", "userExample_client_test.go",
+			"userExample.go", /*"userExample_client_test.go",*/
 		},
 	}
 
@@ -252,7 +252,7 @@ func (g *serviceAndHandlerGenerator) generateCode() (string, error) {
 					"userExample.go.mgo",
 				},
 				"internal/service": {
-					"userExample.go.mgo", "userExample_client_test.go.mgo",
+					"userExample.go.mgo", /*"userExample_client_test.go.mgo",*/
 				},
 			}
 			g.fields = append(g.fields, deleteFieldsMark(r, serviceLogicFile+mgoSuffix, startMark, endMark)...)
@@ -408,7 +408,7 @@ func serviceHandlerExtendedAPI(r replacer.Replacer) (map[string][]string, []repl
 			"userExample.go.service.exp",
 		},
 		"internal/service": {
-			"userExample.go.exp", "userExample_client_test.go.exp",
+			"userExample.go.exp", /*"userExample_client_test.go.exp",*/
 		},
 	}
 
@@ -463,7 +463,7 @@ func serviceHandlerMongoDBExtendedAPI(r replacer.Replacer) (map[string][]string,
 			"userExample.go",
 		},
 		"internal/service": {
-			"userExample.go.mgo.exp", "userExample_client_test.go.mgo.exp",
+			"userExample.go.mgo.exp", /*"userExample_client_test.go.mgo.exp",*/
 		},
 	}
 
