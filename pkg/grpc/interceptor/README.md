@@ -211,6 +211,12 @@ func setDialOptions() []grpc.DialOption {
         interceptor.UnaryServerCircuitBreaker(
             //interceptor.WithValidCode(codes.DeadlineExceeded), // add error code for circuit breaker
             //interceptor.WithUnaryServerDegradeHandler(handler), // add custom degrade handler
+            //interceptor.WithBreakerOption(
+                //circuitbreaker.WithSuccess(75),           // default 60
+                //circuitbreaker.WithRequest(200),          // default 100
+                //circuitbreaker.WithBucket(20),            // default 10
+                //circuitbreaker.WithWindow(time.Second*5), // default 3s
+            //),
         ),
     )
     options = append(options, option)

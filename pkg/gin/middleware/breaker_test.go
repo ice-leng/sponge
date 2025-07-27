@@ -26,9 +26,16 @@ func runCircuitBreakerHTTPServer() string {
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
-	r.Use(CircuitBreaker(WithGroup(group.NewGroup(func() interface{} {
-		return circuitbreaker.NewBreaker()
-	})),
+	r.Use(CircuitBreaker(
+		WithGroup(group.NewGroup(func() interface{} {
+			return circuitbreaker.NewBreaker()
+		})),
+		WithBreakerOption(
+			circuitbreaker.WithSuccess(75),           // default 60
+			circuitbreaker.WithRequest(200),          // default 100
+			circuitbreaker.WithBucket(20),            // default 10
+			circuitbreaker.WithWindow(time.Second*5), // default 3s
+		),
 		WithValidCode(http.StatusForbidden),
 		WithDegradeHandler(degradeHandler),
 	))

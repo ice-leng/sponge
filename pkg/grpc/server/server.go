@@ -14,8 +14,8 @@ import (
 // RegisterFn register object
 type RegisterFn func(srv *grpc.Server)
 
-// ServiceRegisterFn service register
-type ServiceRegisterFn func()
+// ServiceRegisterFn used to register service address to Consul/ETCD/Nacos/Zookeeper...
+type ServiceRegisterFn func() error
 
 // Option set server option
 type Option func(*options)
@@ -95,15 +95,15 @@ func customInterceptorOptions(o *options) []grpc.ServerOption {
 	return opts
 }
 
-// Run grpc server
-func Run(port int, registerFn RegisterFn, options ...Option) {
+// Run grpc server with options, registerFn is the function to register object to the server
+func Run(port int, registerFn RegisterFn, options ...Option) (*grpc.Server, error) {
 	o := defaultServerOptions()
 	o.apply(options...)
 
 	// listening on TCP port
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	if o.isShowConnections {
@@ -116,9 +116,11 @@ func Run(port int, registerFn RegisterFn, options ...Option) {
 	// register object to the server
 	registerFn(srv)
 
-	// register service to target
+	// register service address to Consul/ETCD/Nacos/Zookeeper...
 	if o.serviceRegisterFn != nil {
-		o.serviceRegisterFn()
+		if err = o.serviceRegisterFn(); err != nil {
+			return nil, err
+		}
 	}
 
 	go func() {
@@ -128,4 +130,6 @@ func Run(port int, registerFn RegisterFn, options ...Option) {
 			panic(err)
 		}
 	}()
+
+	return srv, nil
 }

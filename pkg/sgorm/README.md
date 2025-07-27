@@ -8,9 +8,7 @@ Support `mysql`, `postgresql`, `sqlite`.
 
 ## Examples of use
 
-### mysql
-
-#### Initializing the connection
+### Mysql
 
 ```go
     import "github.com/go-dev-frame/sponge/pkg/sgorm/mysql"
@@ -18,7 +16,7 @@ Support `mysql`, `postgresql`, `sqlite`.
     var dsn = "root:123456@(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
 
     // case 1: connect to the database using the default settings
-    gdb, err := mysql.Init(dsn)
+    db, err := mysql.Init(dsn)
 
     // case 2: customised settings to connect to the database
     db, err := mysql.Init(
@@ -81,18 +79,18 @@ Tidb is mysql compatible, just use **mysql.Init**.
     import "github.com/go-dev-frame/sponge/pkg/sgorm/sqlite"
 
     func InitSqlite() {
-        opts := []sgorm.Option{
-            sgorm.WithMaxIdleConns(10),
-            sgorm.WithMaxOpenConns(100),
-            sgorm.WithConnMaxLifetime(time.Duration(10) * time.Minute),
-            sgorm.WithLogging(logger.Get()),
-            sgorm.WithLogRequestIDKey("request_id"),
+        opts := []sqlite.Option{
+            sqlite.WithMaxIdleConns(10),
+            sqlite.WithMaxOpenConns(100),
+            sqlite.WithConnMaxLifetime(time.Duration(10) * time.Minute),
+            sqlite.WithLogging(logger.Get()),
+            sqlite.WithLogRequestIDKey("request_id"),
         }
 
         dbFile: = "test.db"
-        db, err := sgorm.Init(dbFile, opts...)
+        db, err := sqlite.Init(dbFile, opts...)
         if err != nil {
-            panic("sgorm.Init error: " + err.Error())
+            panic("sqlite.Init error: " + err.Error())
         }
     }
 ```
@@ -159,6 +157,6 @@ func (table *User) TableName() string {
 
 <br>
 
-### gorm User Guide
+### Gorm Guide
 
 - https://gorm.io/zh_CN/docs/index.html
