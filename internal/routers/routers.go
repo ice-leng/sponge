@@ -60,12 +60,28 @@ func NewRouter() *gin.Engine {
 
 	// limit middleware
 	if config.Get().App.EnableLimit {
-		r.Use(middleware.RateLimit())
+		r.Use(middleware.RateLimit(
+		//middleware.WithWindow(time.Second*5), // default 10s
+		//middleware.WithBucket(200), // default 100
+		//middleware.WithCPUThreshold(900), // default 800
+		))
 	}
 
 	// circuit breaker middleware
 	if config.Get().App.EnableCircuitBreaker {
-		r.Use(middleware.CircuitBreaker())
+		r.Use(middleware.CircuitBreaker(
+			//middleware.WithBreakerOption(
+			//circuitbreaker.WithSuccess(75),           // default 60
+			//circuitbreaker.WithRequest(100),          // default 100
+			//circuitbreaker.WithBucket(20),            // default 10
+			//circuitbreaker.WithWindow(time.Second*3), // default 3s
+			//),
+			//middleware.WithDegradeHandler(handler),              // Add degradation processing
+			middleware.WithValidCode( // Add error codes to trigger circuit breaking
+				errcode.InternalServerError.Code(),
+				errcode.ServiceUnavailable.Code(),
+			),
+		))
 	}
 
 	// trace middleware
