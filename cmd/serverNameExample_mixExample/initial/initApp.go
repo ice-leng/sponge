@@ -104,7 +104,7 @@ func initConfig() {
 // then read the service configuration according to the nacos configuration center)
 func getConfigFromNacos() {
 	if configFile == "" {
-		configFile = configs.Path("serverNameExample_cc.yml")
+		configFile = configs.Location("serverNameExample_cc.yml")
 	}
 	nacosConfig, err := config.NewCenter(configFile)
 	if err != nil {
@@ -130,7 +130,7 @@ func getConfigFromNacos() {
 // get configuration from local configuration file
 func getConfigFromLocal() {
 	if configFile == "" {
-		configFile = configs.Path("serverNameExample.yml")
+		configFile = configs.Location("serverNameExample.yml")
 	}
 	err := config.Init(configFile)
 	if err != nil {
