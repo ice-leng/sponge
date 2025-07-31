@@ -7,7 +7,7 @@ services:
         #user: root
         restart: always
         volumes:
-            - $PWD/prometheus.yaml:/etc/prometheus/prometheus.yml
+            - $PWD/prometheus.yml:/etc/prometheus/prometheus.yml
             - $PWD/prometheus_data:/prometheus
             - $PWD/conf.d:/etc/prometheus/conf.d
             - $PWD/rules.d:/etc/prometheus/rules.d
