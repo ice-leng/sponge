@@ -13,11 +13,15 @@ func init() {
 	basePath = filepath.Dir(currentFile)
 }
 
-// return absolute path of sponge configs yml file
+// Location return absolute path of the configs yml file
 func Location(rel string) string {
 	if filepath.IsAbs(rel) {
 		return rel
 	}
 
 	return filepath.Join(basePath, rel)
+}
+
+func Path(rel string) string {
+	return Location(rel)
 }
