@@ -1,8 +1,9 @@
 package sasynq
 
 import (
+	"crypto/tls"
+
 	"github.com/hibiken/asynq"
-	"go.uber.org/zap"
 )
 
 // RedisMode defines the Redis connection mode.
@@ -35,11 +36,13 @@ type RedisConfig struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	DB       int    `yaml:"db"`
+
+	TLSConfig *tls.Config `yaml:"tlsConfig"`
 }
 
 // GetAsynqRedisConnOpt converts RedisConfig to asynq's RedisConnOpt interface.
 // This is the core of the high-availability switching logic.
-func (c *RedisConfig) GetAsynqRedisConnOpt() asynq.RedisConnOpt {
+func (c RedisConfig) GetAsynqRedisConnOpt() asynq.RedisConnOpt {
 	switch c.Mode {
 	case RedisModeSentinel:
 		return asynq.RedisFailoverClientOpt{
@@ -48,21 +51,24 @@ func (c *RedisConfig) GetAsynqRedisConnOpt() asynq.RedisConnOpt {
 			Username:      c.Username,
 			Password:      c.Password,
 			DB:            c.DB,
+			TLSConfig:     c.TLSConfig,
 		}
 	case RedisModeCluster:
 		return asynq.RedisClusterClientOpt{
-			Addrs:    c.ClusterAddrs,
-			Username: c.Username,
-			Password: c.Password,
+			Addrs:     c.ClusterAddrs,
+			Username:  c.Username,
+			Password:  c.Password,
+			TLSConfig: c.TLSConfig,
 		}
 	case RedisModeSingle:
 		fallthrough
 	default:
 		return asynq.RedisClientOpt{
-			Addr:     c.Addr,
-			Username: c.Username,
-			Password: c.Password,
-			DB:       c.DB,
+			Addr:      c.Addr,
+			Username:  c.Username,
+			Password:  c.Password,
+			DB:        c.DB,
+			TLSConfig: c.TLSConfig,
 		}
 	}
 }
@@ -73,13 +79,9 @@ type ServerConfig struct {
 }
 
 // DefaultServerConfig returns a default server configuration.
-func DefaultServerConfig(l ...*zap.Logger) ServerConfig {
-	var zapLogger *zap.Logger
-	if len(l) == 0 {
-		zapLogger = defaultLogger
-	} else {
-		zapLogger = l[0]
-	}
+func DefaultServerConfig(opts ...LoggerOption) ServerConfig {
+	o := defaultLoggerOptions()
+	o.apply(opts...)
 
 	cfg := &asynq.Config{
 		Concurrency: 10,
@@ -88,7 +90,7 @@ func DefaultServerConfig(l ...*zap.Logger) ServerConfig {
 			"default":  3,
 			"low":      1,
 		},
-		Logger: NewZapLogger(zapLogger),
+		Logger: NewZapLogger(o.logger, o.zapSkip),
 	}
 
 	return ServerConfig{cfg}

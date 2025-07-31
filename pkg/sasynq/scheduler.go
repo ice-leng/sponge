@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/hibiken/asynq"
-	"go.uber.org/zap"
 )
 
 // SchedulerOption set options.
@@ -43,12 +42,11 @@ func WithSchedulerLogLevel(level asynq.LogLevel) SchedulerOption {
 }
 
 // WithSchedulerLogger sets the logger for the scheduler.
-func WithSchedulerLogger(l *zap.Logger) SchedulerOption {
+func WithSchedulerLogger(opts ...LoggerOption) SchedulerOption {
+	opt := defaultLoggerOptions()
+	opt.apply(opts...)
 	return func(o *schedulerOptions) {
-		if l == nil {
-			return
-		}
-		o.logger = NewZapLogger(l)
+		o.logger = NewZapLogger(opt.logger, opt.zapSkip)
 	}
 }
 
@@ -94,7 +92,7 @@ func (s *Scheduler) RegisterTask(cronSpec string, typeName string, payload any, 
 	return s.Scheduler.Register(cronSpec, task, opts...)
 }
 
-// Unregister removes a periodic task.
+// Unregister removes a periodic task, cancel task execution.
 func (s *Scheduler) Unregister(entryID string) error {
 	return s.Scheduler.Unregister(entryID)
 }

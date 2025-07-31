@@ -51,8 +51,8 @@ func RegisterTaskHandler[T any](mux *asynq.ServeMux, typeName string, handler Ta
 
 // --- Task Option Helpers ---
 
-// WithRetry specifies the max number of times the task will be retried.
-func WithRetry(maxRetry int) asynq.Option {
+// WithMaxRetry specifies the max number of times the task will be retried.
+func WithMaxRetry(maxRetry int) asynq.Option {
 	return asynq.MaxRetry(maxRetry)
 }
 
@@ -66,9 +66,8 @@ func WithDeadline(t time.Time) asynq.Option {
 	return asynq.Deadline(t)
 }
 
-// WithUniqueID specifies that the task should be unique for a given period.
-// If another task with the same unique ID is enqueued within the retention period, it will be rejected.
-func WithUniqueID(id string) asynq.Option {
+// WithTaskID specifies the ID for the task, if another task with the same ID already exists, it will be rejeceted.
+func WithTaskID(id string) asynq.Option {
 	return asynq.TaskID(id)
 }
 

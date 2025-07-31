@@ -21,7 +21,8 @@ type LoggerOption func(*loggerOptions)
 
 type loggerOptions struct {
 	logger    *zap.Logger
-	maxLength int
+	zapSkip   int // default is 2
+	maxLength int // default is 300
 }
 
 func (o *loggerOptions) apply(opts ...LoggerOption) {
@@ -34,6 +35,7 @@ func defaultLoggerOptions() *loggerOptions {
 	return &loggerOptions{
 		logger:    defaultLogger,
 		maxLength: defaultMaxLength,
+		zapSkip:   2,
 	}
 }
 
@@ -51,6 +53,15 @@ func WithMaxLength(l int) LoggerOption {
 	return func(o *loggerOptions) {
 		if l > 0 {
 			o.maxLength = l
+		}
+	}
+}
+
+// WithZapSkip sets the number of callers to skip when logging.
+func WithZapSkip(s int) LoggerOption {
+	return func(o *loggerOptions) {
+		if s >= 0 {
+			o.zapSkip = s
 		}
 	}
 }
@@ -116,9 +127,8 @@ type ZapLogger struct {
 	zLog *zap.Logger
 }
 
-func NewZapLogger(l *zap.Logger) asynq.Logger {
-	//zLog := l.WithOptions(zap.AddCallerSkip(5)).With(zap.String("component", "asynq"))
-	zLog := l.WithOptions(zap.AddCallerSkip(2)).With(zap.String("component", "asynq"))
+func NewZapLogger(l *zap.Logger, skip int) asynq.Logger {
+	zLog := l.WithOptions(zap.AddCallerSkip(skip)).With(zap.String("asynq", "true"))
 	return &ZapLogger{
 		zLog: zLog,
 	}

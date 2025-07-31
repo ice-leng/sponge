@@ -18,6 +18,13 @@ func NewClient(cfg RedisConfig) *Client {
 	}
 }
 
+// NewFromClient creates a new producer client from an existing asynq.Client.
+func NewFromClient(c *asynq.Client) *Client {
+	return &Client{
+		Client: c,
+	}
+}
+
 // Enqueue enqueues the given task to a queue.
 func (c *Client) Enqueue(task *asynq.Task, opts ...asynq.Option) (*asynq.TaskInfo, error) {
 	return c.Client.Enqueue(task, opts...)
@@ -54,6 +61,17 @@ func (c *Client) EnqueueAt(t time.Time, typeName string, payload any, opts ...as
 	}
 
 	opts = append(opts, asynq.ProcessAt(t))
+	info, err := c.Client.Enqueue(task, opts...)
+	return task, info, err
+}
+
+// EnqueueUnique enqueues a task with unique in the queue for a specified duration.
+func (c *Client) EnqueueUnique(keepTime time.Duration, typeName string, payload any, opts ...asynq.Option) (*asynq.Task, *asynq.TaskInfo, error) {
+	task, err := NewTask(typeName, payload)
+	if err != nil {
+		return nil, nil, err
+	}
+	opts = append(opts, asynq.Unique(keepTime))
 	info, err := c.Client.Enqueue(task, opts...)
 	return task, info, err
 }
