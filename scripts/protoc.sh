@@ -105,7 +105,6 @@ function autoDetectTypesProto() {
     if grep -q "$target" "$file"; then
       allProtoFiles=$allProtoFiles" $target"
       sponge patch gen-types-pb --out=. > /dev/null 2>&1
-      # Note: If the project uses mono-repo type, please manually move "api/types" directory to "../api/types"
       return 0
     fi
   done

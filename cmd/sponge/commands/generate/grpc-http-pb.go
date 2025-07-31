@@ -369,7 +369,11 @@ func (g *httpAndGRPCPbGenerator) addFields(r replacer.Replacer) []replacer.Field
 	fields = append(fields, getGRPCServiceFields()...)
 
 	if g.suitedMonoRepo {
-		fs := serverCodeFields(codeNameGRPCHTTPPb, g.moduleName, g.serverName)
+		serverType := codeNameGRPCHTTPPb
+		if g.isAddDBInitCode {
+			serverType = codeNameGRPC // force to use grpc type when using mono-repo
+		}
+		fs := serverCodeFields(serverType, g.moduleName, g.serverName)
 		fields = append(fields, fs...)
 	}
 
