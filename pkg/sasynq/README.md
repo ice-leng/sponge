@@ -3,7 +3,7 @@
 `sasynq` is a wrapper around the excellent [asynq](https://github.com/hibiken/asynq) library. It provides a simpler and more user-friendly SDK while remaining fully compatible with native asynq usage patterns. Its main features include:
 
 - Support for Redis Cluster and Sentinel for high availability and horizontal scalability.
-- Distributed task queues with support for priority queues, delayed queues, unique tasks (to prevent duplicate execution), and periodic task scheduling.
+- Distributed task queues with support for priority queues, delayed queues, unique tasks (to prevent duplicate execution), cancel task, and periodic task scheduling.
 - Built-in mechanisms for task retries (with customizable retry counts), timeouts, and deadlines.
 - Flexible scheduling for immediate, delayed, or specific-time execution.
 - Unified logging using zap.
