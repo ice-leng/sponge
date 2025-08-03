@@ -1,5 +1,7 @@
 
 ## Changelog
 
-1. Fixed inconsistency between xxxID format names under `.pb.go` and `_client_test.go` when generating gRPC CRUD. [#114](https://github.com/go-dev-frame/sponge/issues/114)
-2. Updated Comments README.md.
+1. Add the function of generating README.md
+2. Fixed [#119](https://github.com/go-dev-frame/sponge/issues/119)
+3. Fixed [#120](https://github.com/go-dev-frame/sponge/issues/120)
+4. Fixed [#123](https://github.com/go-dev-frame/sponge/issues/123)
