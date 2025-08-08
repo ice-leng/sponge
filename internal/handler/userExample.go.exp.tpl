@@ -204,6 +204,7 @@ func (h *{{.TableNameCamelFCL}}Handler) GetBy{{.ColumnNameCamel}}(c *gin.Context
 }
 
 // List get a paginated list of {{.TableNamePluralCamelFCL}} by custom conditions
+// For more details, please refer to https://go-sponge.com/component/data/custom-page-query.html
 // @Summary Get a paginated list of {{.TableNamePluralCamelFCL}} by custom conditions
 // @Description Returns a paginated list of {{.TableNamePluralCamelFCL}} based on query filters, including page number and size.
 // @Tags {{.TableNameCamelFCL}}
