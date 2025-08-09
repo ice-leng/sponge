@@ -211,7 +211,7 @@ func (t tmplField) ConditionZero() string {
 	case "string", "sql.NullString": //nolint
 		return ` != ""`
 	case "time.Time", "*time.Time", "sql.NullTime": //nolint
-		return `.IsZero() == false`
+		return ` != nil && table.` + t.Name + `.IsZero() == false`
 	case "[]byte", "[]string", "[]int", "interface{}": //nolint
 		return ` != nil` //nolint
 	case "bool": //nolint
@@ -681,6 +681,9 @@ func getModelStructCode(data tmplData, importPaths []string, isEmbed bool, jsonN
 			}
 			switch field.DBDriver {
 			case DBDriverMysql, DBDriverTidb, DBDriverPostgresql:
+				if strings.Contains(field.GoType, "time.Time") {
+					field.GoType = "*time.Time"
+				}
 				if field.rewriterField != nil {
 					switch field.rewriterField.goType {
 					//case jsonTypeName, decimalTypeName:
