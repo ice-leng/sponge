@@ -88,8 +88,8 @@ func DecodeSignedCookie(secretKeyBase string, decodedCookie string, cookieName s
 			Message string `json:"message"`
 		} `json:"_rails"`
 	}
-	if err := json.Unmarshal(plaintext, &envelope); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal envelope: %w", err)
+	if unmarshalEnvelopeErr := json.Unmarshal(plaintext, &envelope); unmarshalEnvelopeErr != nil {
+		return nil, fmt.Errorf("failed to unmarshal envelope: %w", unmarshalEnvelopeErr)
 	}
 	if envelope.Rails.Pur == "" || envelope.Rails.Message == "" {
 		return nil, errors.New("invalid envelope data")
@@ -104,8 +104,8 @@ func DecodeSignedCookie(secretKeyBase string, decodedCookie string, cookieName s
 		return nil, fmt.Errorf("failed to base64 decode message: %w", err)
 	}
 	var session map[string]any
-	if err := json.Unmarshal(msgBytes, &session); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal session: %w", err)
+	if unmarshalSessionErr := json.Unmarshal(msgBytes, &session); unmarshalSessionErr != nil {
+		return nil, fmt.Errorf("failed to unmarshal session: %w", unmarshalSessionErr)
 	}
 	return session, nil
 }
