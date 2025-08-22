@@ -62,8 +62,8 @@ func NewRouter() *gin.Engine {
 	if config.Get().App.EnableLimit {
 		r.Use(middleware.RateLimit(
 		//middleware.WithWindow(time.Second*5), // default 10s
-		//middleware.WithBucket(200), // default 100
-		//middleware.WithCPUThreshold(900), // default 800
+		//middleware.WithBucket(1000), // default 100
+		//middleware.WithCPUThreshold(750), // default 800
 		))
 	}
 
