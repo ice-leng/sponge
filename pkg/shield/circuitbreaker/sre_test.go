@@ -165,6 +165,74 @@ func TestTrueOnProba(t *testing.T) {
 	assert.InEpsilon(t, proba, ratio, epsilon)
 }
 
+func TestBreaker_AllowAndMark(t *testing.T) {
+	breaker := NewBreaker(
+		WithSuccess(0.6),
+		WithRequest(10),
+		WithWindow(2*time.Second),
+		WithBucket(5),
+	)
+
+	// the first 10 requests were all successful, so there shouldn't be a circuit breaker
+	for i := 0; i < 10; i++ {
+		if err := breaker.Allow(); err != nil {
+			t.Errorf("expected request allowed, got err: %v", err)
+		}
+		breaker.MarkSuccess()
+	}
+
+	// simulate failed request
+	for i := 0; i < 20; i++ {
+		if err := breaker.Allow(); err == nil {
+			breaker.MarkFailed()
+		}
+	}
+
+	// at this point, it may enter a circuit breaker state
+	err := breaker.Allow()
+	if err == nil {
+		t.Log("request allowed after many failures (maybe Half-Open probe)")
+	} else {
+		t.Logf("request blocked as expected: %v", err)
+	}
+}
+
+func TestBreaker_OpenToClosedRecovery(t *testing.T) {
+	breaker := NewBreaker(
+		WithSuccess(0.5),
+		WithRequest(5),
+		WithWindow(1*time.Second),
+		WithBucket(2),
+	)
+
+	// manufacturing a large number of failures, triggering circuit breakers
+	for i := 0; i < 10; i++ {
+		if err := breaker.Allow(); err == nil {
+			breaker.MarkFailed()
+		}
+	}
+
+	// immediate request, there is a high probability of rejection
+	if err := breaker.Allow(); err == nil {
+		t.Log("unexpected allow, breaker may still be closed")
+	}
+
+	// wait for a window period for the fuse to attempt restoration
+	time.Sleep(1200 * time.Millisecond)
+
+	// attempt to successfully detect requests
+	if err := breaker.Allow(); err != nil {
+		t.Errorf("expected probe request allowed, got err: %v", err)
+	} else {
+		breaker.MarkSuccess()
+	}
+
+	// requesting again, the Closed status should be restored
+	if err := breaker.Allow(); err != nil {
+		t.Errorf("expected request allowed after recovery, got err: %v", err)
+	}
+}
+
 func BenchmarkSreBreakerAllow(b *testing.B) {
 	breaker := getSREBreaker()
 	b.ResetTimer()
@@ -187,4 +255,24 @@ func TestNewBreaker(t *testing.T) {
 	)
 
 	assert.NotNil(t, breaker)
+}
+
+func BenchmarkBreaker_Allow(b *testing.B) {
+	breaker := NewBreaker(
+		WithSuccess(0.6),
+		WithRequest(50),
+		WithWindow(2*time.Second),
+		WithBucket(10),
+	)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := breaker.Allow(); err == nil {
+			if rand.Intn(100) < 80 { // simulate 80% success rate
+				breaker.MarkSuccess()
+			} else {
+				breaker.MarkFailed()
+			}
+		}
+	}
 }
