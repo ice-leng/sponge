@@ -212,7 +212,7 @@ func (t tmplField) ConditionZero() string {
 		return ` != ""`
 	case "time.Time", "*time.Time", "sql.NullTime": //nolint
 		return ` != nil && table.` + t.Name + `.IsZero() == false`
-	case "[]byte", "[]string", "[]int", "interface{}": //nolint
+	case "interface{}": //nolint
 		return ` != nil` //nolint
 	case "bool": //nolint
 		return ` != false`
@@ -222,12 +222,13 @@ func (t tmplField) ConditionZero() string {
 		if t.GoType == goTypeOID {
 			return ` != primitive.NilObjectID`
 		}
-		if t.GoType == "*"+t.Name {
-			return ` != nil` //nolint
-		}
-		if strings.Contains(t.GoType, "[]") {
-			return ` != nil` //nolint
-		}
+	}
+
+	if t.GoType == "*"+t.Name {
+		return ` != nil` //nolint
+	}
+	if strings.Contains(t.GoType, "[]") {
+		return ` != nil && len(table.` + t.Name + `) > 0` //nolint
 	}
 
 	if t.GoType == "" {
@@ -686,9 +687,6 @@ func getModelStructCode(data tmplData, importPaths []string, isEmbed bool, jsonN
 				}
 				if field.rewriterField != nil {
 					switch field.rewriterField.goType {
-					//case jsonTypeName, decimalTypeName:
-					//	field.GoType = field.rewriterField.goType
-					//	importPaths = append(importPaths, field.rewriterField.path)
 					case jsonTypeName, decimalTypeName, boolTypeName, boolTypeTinyName:
 						field.GoType = "*" + field.rewriterField.goType
 						importPaths = append(importPaths, field.rewriterField.path)
@@ -716,6 +714,9 @@ func getModelStructCode(data tmplData, importPaths []string, isEmbed bool, jsonN
 		newImportPaths = append(newImportPaths, "github.com/go-dev-frame/sponge/pkg/sgorm")
 	} else {
 		for _, field := range data.Fields {
+			if strings.Contains(field.GoType, "time.Time") {
+				field.GoType = "*time.Time"
+			}
 			switch field.DBDriver {
 			case DBDriverMongodb:
 				if field.Name == "ID" {
@@ -724,9 +725,6 @@ func getModelStructCode(data tmplData, importPaths []string, isEmbed bool, jsonN
 				}
 
 			default:
-				if strings.Contains(field.GoType, "time.Time") {
-					field.GoType = "*time.Time"
-				}
 				// force conversion of ID field to uint64 type
 				if field.Name == "ID" {
 					field.GoType = "uint64"
@@ -737,9 +735,6 @@ func getModelStructCode(data tmplData, importPaths []string, isEmbed bool, jsonN
 				if field.DBDriver == DBDriverMysql || field.DBDriver == DBDriverPostgresql || field.DBDriver == DBDriverTidb {
 					if field.rewriterField != nil {
 						switch field.rewriterField.goType {
-						//case jsonTypeName, decimalTypeName:
-						//	field.GoType = field.rewriterField.goType
-						//	importPaths = append(importPaths, field.rewriterField.path)
 						case jsonTypeName, decimalTypeName, boolTypeName, boolTypeTinyName:
 							field.GoType = "*" + field.rewriterField.goType
 							importPaths = append(importPaths, field.rewriterField.path)

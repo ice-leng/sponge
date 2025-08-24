@@ -66,10 +66,10 @@ func (d *userExampleDao) Create(ctx context.Context, record *model.UserExample) 
 	if record.ID.IsZero() {
 		record.ID = primitive.NewObjectID()
 	}
-	if record.CreatedAt.IsZero() {
-		record.CreatedAt = time.Now()
-		record.UpdatedAt = time.Now()
-	}
+	now := time.Now()
+	record.CreatedAt = &now
+	record.UpdatedAt = &now
+
 	_, err := d.collection.InsertOne(ctx, record)
 
 	_ = d.deleteCache(ctx, record.ID.Hex())
