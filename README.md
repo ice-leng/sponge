@@ -108,15 +108,16 @@ Sponge provides an online experience for code generation: [**Code Generation**](
     Access `http://localhost:24631` in your local browser to generate code.
 
 3.  **Example: One-Click Generation of Complete Web Service Backend Code**
-   -   Connect to the database, select table names.
-   -   Download Code: Get the complete code.
-   -   Generate Swagger Docs: `make docs`.
-   -   Run: `make run`.
-   -   Test: Access the Swagger documentation at `http://localhost:8080/swagger/index.html` in your browser to test the API.
 
-       <p align="center">
-       <img width="1500px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/en_sponge-ui.png">
-       </p>
+    <p align="center">
+    <img width="1500px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/en_sponge-ui.png">
+    </p>
+
+    - Connect to the database, select table names.
+    - Download Code: Get the complete code.
+    - Generate Swagger Docs: `make docs`.
+    - Run: `make run`.
+    - Test: Access the Swagger documentation at `http://localhost:8080/swagger/index.html` in your browser to test the API.
 
 <br>
 

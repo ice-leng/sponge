@@ -96,15 +96,16 @@ Sponge 提供在线体验生成代码：[**Code Generation**](https://go-sponge.
    在本地浏览器访问 `http://localhost:24631`生成代码。
 
 3. **示例：一键生成完整的 Web 服务后端代码**
+
+   <p align="center">
+   <img width="1500px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/sponge-ui.png">
+   </p>
+
     - 连接数据库，选择表名。
     - 下载代码：得到完整代码。
     - 生成 swagger 文档：`make docs`。
     - 运行：`make run`。
     - 测试：在浏览器访问 swagger 文档 `http://localhost:8080/swagger/index.html` 测试 API。
-
-   <p align="center">
-   <img width="1500px" src="https://raw.githubusercontent.com/go-dev-frame/sponge/main/assets/sponge-ui.png">
-   </p>
 
 <br>
 
