@@ -1,12 +1,10 @@
 package gemini
 
 const (
-	Model20Flash         = "gemini-2.0-flash"
-	Model20FlashThinking = "gemini-2.0-flash-thinking-exp"
-	Model20Pro           = "gemini-2.0-pro-exp"
-	Model25Pro           = "gemini-2.5-pro-exp-03-25"
+	Model25Flash = "gemini-2.5-flash"
+	Model25Pro   = "gemini-2.5-pro"
 
-	DefaultModel = Model25Pro
+	DefaultModel = Model25Flash
 
 	RoleUser  = "user"
 	RoleModel = "model"
