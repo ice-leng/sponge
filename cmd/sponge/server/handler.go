@@ -87,18 +87,20 @@ func ListLLM(c *gin.Context) {
 			{Label: "deepseek-reasoner", Value: "deepseek-reasoner"},
 		},
 		"chatgpt": {
+			{Label: "gpt-5", Value: "gpt-5"},
+			{Label: "gpt-5-thinking", Value: "gpt-5-thinking"},
+			{Label: "gpt-4.1", Value: "gpt-4.1"},
+			{Label: "gpt-4.1-mini", Value: "gpt-4.1-mini"},
 			{Label: "gpt-4o", Value: "gpt-4o"},
 			{Label: "gpt-4o-mini", Value: "gpt-4o-mini"},
-			{Label: "gpt-4-turbo", Value: "gpt-4-turbo"},
-			{Label: "gpt-4", Value: "gpt-4"},
-			{Label: "o1-mini", Value: "o1-mini"},
-			{Label: "o1-preview", Value: "o1-preview"},
+			{Label: "o4-mini-high", Value: "o4-mini-high"},
 		},
 		"gemini": {
-			{Label: "gemini-2.5-pro-exp-03-25", Value: "gemini-2.5-pro-exp-03-25"},
+			{Label: "gemini-2.5-flash", Value: "gemini-2.5-flash"},
+			{Label: "gemini-2.5-pro", Value: "gemini-2.5-pro"},
+			{Label: "gemini-2.5-flash-lite", Value: "gemini-2.5-flash-lite"},
 			{Label: "gemini-2.0-flash", Value: "gemini-2.0-flash"},
-			{Label: "gemini-2.0-flash-thinking-exp", Value: "gemini-2.0-flash-thinking-exp"},
-			{Label: "gemini-2.0-pro-exp", Value: "gemini-2.0-pro-exp"},
+			{Label: "gemini-2.0-pro", Value: "gemini-2.0-pro"},
 		},
 	}
 
