@@ -93,7 +93,6 @@ func ListLLM(c *gin.Context) {
 			{Label: "gpt-4.1-mini", Value: "gpt-4.1-mini"},
 			{Label: "gpt-4o", Value: "gpt-4o"},
 			{Label: "gpt-4o-mini", Value: "gpt-4o-mini"},
-			{Label: "o4-mini-high", Value: "o4-mini-high"},
 		},
 		"gemini": {
 			{Label: "gemini-2.5-flash", Value: "gemini-2.5-flash"},
@@ -330,6 +329,78 @@ func HandleAssistant(c *gin.Context) {
 	recordObj().set(c.ClientIP(), form.Path, params)
 
 	response.Success(c, resultInfo)
+}
+
+// HandlePerformanceTest handle performance test
+func HandlePerformanceTest(c *gin.Context) {
+	form := &GenerateCodeForm{}
+	err := c.ShouldBindJSON(form)
+	if err != nil {
+		responseErr(c, err, errcode.InvalidParams)
+		return
+	}
+
+	args := strings.Split(form.Arg, " ")
+	params := parseCommandArgs(args)
+	if len(args) > 2 {
+		params.Protocol = args[1]
+	}
+	if params.TotalRequests > 0 {
+		params.TestType = "requests"
+	} else if params.Duration != "" {
+		params.TestType = "duration"
+	}
+	if params.JobName != "" && params.PushURL != "" {
+		params.PushType = "prometheus"
+		params.PrometheusURL = params.PushURL
+		params.PushURL = ""
+	} else if params.PushURL != "" {
+		params.PushType = "custom"
+	}
+
+	ctx, _ := context.WithTimeout(context.Background(), time.Minute*30) // nolint
+	result := gobash.Run(ctx, "sponge", args...)
+	resultInfo := ""
+	count := 0
+	for v := range result.StdOut {
+		count++
+		if count == 1 { // first line is the command
+			continue
+		}
+		if strings.Contains(v, "Waiting for assistant responses") {
+			continue
+		}
+		resultInfo += v
+	}
+	if result.Err != nil {
+		responseErr(c, result.Err, errcode.InternalServerError)
+		return
+	}
+
+	recordObj().set(c.ClientIP(), form.Path, params)
+
+	resultInfo = splitString(resultInfo, "Performance Test Report ==========")
+
+	response.Success(c, resultInfo)
+}
+
+func splitString(str string, sep string) string {
+	lines := strings.Split(str, "\n")
+	startIndex := 0
+	isFound := false
+
+	for i, line := range lines {
+		if strings.Contains(line, sep) {
+			isFound = true
+			startIndex = i
+			break
+		}
+	}
+
+	if isFound {
+		return strings.Join(lines[startIndex:], "\n")
+	}
+	return str
 }
 
 // GetRecord generate run command record
