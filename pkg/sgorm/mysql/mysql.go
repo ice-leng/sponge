@@ -16,6 +16,7 @@ import (
 
 	"github.com/go-dev-frame/sponge/pkg/sgorm/dbclose"
 	"github.com/go-dev-frame/sponge/pkg/sgorm/glog"
+	"github.com/go-dev-frame/sponge/pkg/utils"
 )
 
 // Init mysql
@@ -35,7 +36,7 @@ func Init(dsn string, opts ...Option) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.Set("gorm:table_options", "CHARSET=utf8mb4") // automatic appending of table suffixes when creating tables
+	db.Set("gorm:table_options", "CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci") // automatic appending of table suffixes when creating tables
 
 	// register trace plugin
 	if o.enableTrace {
@@ -108,14 +109,14 @@ func rwSeparationPlugin(o *options) gorm.Plugin {
 	slaves := []gorm.Dialector{}
 	for _, dsn := range o.slavesDsn {
 		slaves = append(slaves, mysqlDriver.New(mysqlDriver.Config{
-			DSN: dsn,
+			DSN: utils.AdaptiveMysqlDsn(dsn),
 		}))
 	}
 
 	masters := []gorm.Dialector{}
 	for _, dsn := range o.mastersDsn {
 		masters = append(masters, mysqlDriver.New(mysqlDriver.Config{
-			DSN: dsn,
+			DSN: utils.AdaptiveMysqlDsn(dsn),
 		}))
 	}
 
