@@ -13,7 +13,7 @@ Support `mysql`, `postgresql`, `sqlite`.
 ```go
     import "github.com/go-dev-frame/sponge/pkg/sgorm/mysql"
 
-    var dsn = "root:123456@(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
+    var dsn = "root:123456@(127.0.0.1:3306)/test?charset=utf8mb4&collation=utf8mb4_general_ci&parseTime=True&loc=Local"
 
     // case 1: connect to the database using the default settings
     db, err := mysql.Init(dsn)
