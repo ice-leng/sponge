@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -28,6 +29,7 @@ func Exec(name string, args ...string) ([]byte, error) {
 type Result struct {
 	StdOut chan string
 	Err    error // If nil after the command is executed, the command is executed successfully
+	Pid    int   // Process ID of the command
 }
 
 // Run execute the command, no execution, command name must be in system path,
@@ -50,13 +52,14 @@ func Run(ctx context.Context, name string, args ...string) *Result {
 }
 
 func handleExec(ctx context.Context, cmd *exec.Cmd, result *Result) {
-	result.StdOut <- strings.Join(cmd.Args, " ") + "\n"
-
 	stdout, stderr, err := getCmdReader(cmd)
 	if err != nil {
 		result.Err = err
 		return
 	}
+
+	result.StdOut <- strings.Join(cmd.Args, " ") + fmt.Sprintf(" [pid]=%d", cmd.Process.Pid) + "\n" // command name and pid
+	result.Pid = cmd.Process.Pid
 
 	reader := bufio.NewReader(stdout)
 	// reads each line in real time
@@ -139,4 +142,22 @@ func getResult(cmd *exec.Cmd) ([]byte, error) {
 	}
 
 	return bytes, nil
+}
+
+// ParsePid extracts the process ID from the command output string.
+func ParsePid(s string) int {
+	const key = "[pid]="
+	idx := strings.Index(s, key)
+	if idx == -1 {
+		return 0
+	}
+
+	part := s[idx+len(key):]
+	part = strings.TrimSpace(part)
+
+	pid, err := strconv.Atoi(part)
+	if err != nil {
+		return 0
+	}
+	return pid
 }
