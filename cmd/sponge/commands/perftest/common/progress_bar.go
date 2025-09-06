@@ -59,7 +59,6 @@ func (b *Bar) shouldDraw() bool {
 	now := time.Now().UnixNano()
 	intervalNano := b.updateInterval.Nanoseconds()
 
-	//for {
 	lastNano := b.lastDrawNano.Load()
 	if now-lastNano < intervalNano {
 		// Too close to the last draw, skip
@@ -71,7 +70,6 @@ func (b *Bar) shouldDraw() bool {
 		return true
 	}
 	return false
-	//}
 }
 
 // draw renders the bar in the terminal.
