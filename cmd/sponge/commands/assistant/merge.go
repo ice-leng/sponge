@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -27,14 +28,15 @@ func MergeAssistantCode() *cobra.Command {
 		Use:   "merge",
 		Short: "Merge AI assistant generated code into source Go file",
 		Long:  "Merge AI assistant generated code into source Go file.",
-		Example: color.HiBlackString(`  # Merge deepseek generated code into source Go file in specified directory
+		Example: color.HiBlackString(`  # Merge DeepSeek-generated code into Go source files under the specified directory
   sponge assistant merge --type=deepseek --dir=/path/to/directory
 
-  # Merge chatgpt generated code into source Go file in specified directory
-  sponge assistant merge --type=chatgpt --dir=/path/to/directory
+  # Merge ChatGPT-generated code into the specified Go source file
+  sponge assistant merge --type=chatgpt --dir=/path/to/xxx.go
 
-  # Merge gemini generated code into source Go file in specified directory
-  sponge assistant merge --type=gemini --dir=/path/to/directory`),
+  # Merge Gemini-generated code into Go source files under the specified directory,
+  # and remove assistant-generated code after the merge
+  sponge assistant merge --type=gemini --dir=/path/to/directory --is-clean=true`),
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -72,7 +74,8 @@ func MergeAssistantCode() *cobra.Command {
 			var deleteFiles []string
 			backupDir := getBackupDir()
 			if len(mergeCodes) > 0 {
-				fmt.Printf("Merged to Go files:\n")
+				fmt.Printf("Merged Time: %s\n\n", time.Now().Format(time.DateTime))
+				fmt.Printf("Merged Files:\n")
 				for srcFile, code := range mergeCodes {
 					backupFile(srcFile, backupDir)
 					if err = os.WriteFile(srcFile, []byte(code), 0666); err != nil {
@@ -90,7 +93,7 @@ func MergeAssistantCode() *cobra.Command {
 			}
 
 			if len(mergeCodes) > 0 {
-				fmt.Printf("\n[Tip] You can view the pre-merge Go code files here:\n    %s\n\n", backupDir)
+				fmt.Printf("\n[Tip] Backed up Go files, you can restore the pre merge Go code from here:\n    %s\n\n", backupDir)
 			}
 
 			return nil
@@ -99,8 +102,8 @@ func MergeAssistantCode() *cobra.Command {
 
 	cmd.Flags().StringVarP(&assistantType, "type", "t", "", "assistant type, supported types: chatgpt, deepseek, gemini")
 	_ = cmd.MarkFlagRequired("type")
-	cmd.Flags().StringVarP(&dir, "dir", "d", ".", "input directory")
-	cmd.Flags().StringSliceVarP(&files, "file", "f", nil, "specified Go files")
+	cmd.Flags().StringVarP(&dir, "dir", "d", "", "go project directory")
+	cmd.Flags().StringSliceVarP(&files, "file", "f", nil, "specified Go files or generated assistant code files")
 	cmd.Flags().BoolVarP(&isClean, "is-clean", "c", false, "clean up assistant generated code after merge")
 
 	return cmd
@@ -116,8 +119,8 @@ type mergeParams struct {
 func (m *mergeParams) parseAssistantFiles() (map[string]string, error) {
 	fileMap := make(map[string]string) // srcFile -> genFile
 
-	for _, genFile := range m.specifiedFiles {
-		srcFile, ok := m.getSourceFile(genFile)
+	for _, file := range m.specifiedFiles {
+		srcFile, genFile, ok := m.getGoAndMDFile(file, m.assistantType)
 		if ok {
 			fileMap[srcFile] = genFile
 		}
@@ -150,6 +153,30 @@ func (m *mergeParams) getSourceFile(file string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func (m *mergeParams) getGoAndMDFile(file string, assistantType string) (goFile string, mdFile string, ok bool) {
+	if strings.HasSuffix(file, ".go") {
+		goFile = file
+		mdFile = file + "." + assistantType + ".md"
+		if gofile.IsExists(mdFile) {
+			ok = true
+		} else {
+			ok = false
+		}
+		return goFile, mdFile, ok
+	} else if strings.HasSuffix(file, getAssistantSuffixed(m.assistantType)) {
+		mdFile = file
+		goFile = strings.TrimSuffix(file, getAssistantSuffixed(m.assistantType)) + ".go"
+		if gofile.IsExists(goFile) {
+			ok = true
+		} else {
+			ok = false
+		}
+		return goFile, mdFile, ok
+	}
+
+	return "", "", false
 }
 
 func (m *mergeParams) mergeGoFile(srcFile string, genFile string) (string, error) {
