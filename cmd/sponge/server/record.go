@@ -38,12 +38,13 @@ type parameters struct {
 	DepProtoDir string `json:"depProtoDir"`
 	OnlyPrint   bool   `json:"onlyPrint"`
 
-	LLMType           string `json:"llmType"`
-	LLMModel          string `json:"llmModel"`
-	APIKey            string `json:"apiKey"`
-	GoDir             string `json:"goDir"`
-	GoFile            string `json:"goFile"`
-	IsSpecifiedGoFile bool   `json:"isSpecifiedGoFile"`
+	LLMType       string `json:"llmType"`
+	LLMModel      string `json:"llmModel"`
+	APIKey        string `json:"apiKey"`
+	GoDir         string `json:"goDir"`
+	GoFile        string `json:"goFile"`
+	TargetType    string `json:"targetType"`
+	IsCleanAICode bool   `json:"isCleanAICode"`
 
 	Protocol      string   `json:"protocol"`
 	URL           string   `json:"url"`
@@ -143,6 +144,9 @@ func parseCommandArgs(args []string) *parameters {
 			if ss[0] == "--only-print" {
 				params.OnlyPrint = true
 			}
+			if ss[0] == "--is-clean" {
+				params.IsCleanAICode = true
+			}
 		} else {
 			val := ss[1]
 			switch ss[0] {
@@ -197,10 +201,12 @@ func parseCommandArgs(args []string) *parameters {
 				params.APIKey = val
 			case "--dir":
 				params.GoDir = val
-				params.IsSpecifiedGoFile = false
+				params.TargetType = "goDir"
 			case "--file":
 				params.GoFile = val
-				params.IsSpecifiedGoFile = true
+				params.TargetType = "goFile"
+			case "--is-clean":
+				params.IsCleanAICode = val == "true"
 
 			case "--url":
 				params.URL = val

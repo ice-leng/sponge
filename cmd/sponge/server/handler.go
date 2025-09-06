@@ -10,7 +10,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -22,6 +24,7 @@ import (
 	"github.com/go-dev-frame/sponge/pkg/gofile"
 	"github.com/go-dev-frame/sponge/pkg/krand"
 	"github.com/go-dev-frame/sponge/pkg/mgo"
+	"github.com/go-dev-frame/sponge/pkg/process"
 	"github.com/go-dev-frame/sponge/pkg/sgorm"
 	"github.com/go-dev-frame/sponge/pkg/sgorm/mysql"
 	"github.com/go-dev-frame/sponge/pkg/sgorm/postgresql"
@@ -307,7 +310,7 @@ func HandleAssistant(c *gin.Context) {
 	args := strings.Split(form.Arg, " ")
 	params := parseCommandArgs(args)
 
-	ctx, _ := context.WithTimeout(context.Background(), time.Minute*30) // nolint
+	ctx, _ := context.WithTimeout(context.Background(), time.Minute*60) // nolint
 	result := gobash.Run(ctx, "sponge", args...)
 	resultInfo := ""
 	count := 0
@@ -329,6 +332,45 @@ func HandleAssistant(c *gin.Context) {
 	recordObj().set(c.ClientIP(), form.Path, params)
 
 	response.Success(c, resultInfo)
+}
+
+var processMap = sync.Map{}
+
+func getCommand(args []string) string {
+	if len(args) < 4 {
+		return ""
+	}
+	commandArgs := []string{"sponge", args[0], args[1]}
+	for _, arg := range args {
+		if strings.Contains(arg, "--url") {
+			commandArgs = append(commandArgs, arg)
+		}
+		if strings.Contains(arg, "--method") {
+			commandArgs = append(commandArgs, arg)
+		}
+	}
+	sort.Strings(commandArgs)
+	return strings.Join(commandArgs, "&")
+}
+
+func addProcess(key string, pid int) {
+	processMap.Store(key, pid)
+}
+
+func getPid(key string) (int, bool) {
+	value, ok := processMap.Load(key)
+	if !ok {
+		return -1, false
+	}
+	valueInt, ok := value.(int)
+	if !ok {
+		return -1, false
+	}
+	return valueInt, true
+}
+
+func removeProcess(key string) {
+	processMap.Delete(key)
 }
 
 // HandlePerformanceTest handle performance test
@@ -358,13 +400,22 @@ func HandlePerformanceTest(c *gin.Context) {
 		params.PushType = "custom"
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), time.Minute*30) // nolint
+	ctx, _ := context.WithTimeout(context.Background(), time.Hour*24) // nolint
 	result := gobash.Run(ctx, "sponge", args...)
+	key := ""
+	pid := 0
 	resultInfo := ""
 	count := 0
 	for v := range result.StdOut {
 		count++
-		if count == 1 { // first line is the command
+		if count == 1 { // first line is the command and pid value
+			pid = gobash.ParsePid(v)
+			if pid > 0 {
+				key = getCommand(args)
+				if result.Pid > 0 {
+					addProcess(key, result.Pid)
+				}
+			}
 			continue
 		}
 		if strings.Contains(v, "Waiting for assistant responses") {
@@ -379,12 +430,48 @@ func HandlePerformanceTest(c *gin.Context) {
 
 	recordObj().set(c.ClientIP(), form.Path, params)
 
-	resultInfo = splitString(resultInfo, "Performance Test Report ==========")
+	if result.Pid > 0 {
+		removeProcess(key)
+	}
 
-	response.Success(c, resultInfo)
+	lineContent, reportStr := splitString(resultInfo, "Performance Test Report ==========")
+	command := "sponge " + strings.Join(args, " ")
+	insertStr := fmt.Sprintf(`
+
+[Overview]
+  • %-19s%s
+  • %-19s%s`, "Command:", command,
+		"End Time:", time.Now().Format(time.DateTime))
+	reportStr = strings.ReplaceAll(reportStr, lineContent, lineContent+insertStr)
+
+	response.Success(c, reportStr)
 }
 
-func splitString(str string, sep string) string {
+// HandleStopPerformanceTest handle stop performance test
+func HandleStopPerformanceTest(c *gin.Context) {
+	form := &GenerateCodeForm{}
+	err := c.ShouldBindJSON(form)
+	if err != nil {
+		responseErr(c, err, errcode.InvalidParams)
+		return
+	}
+
+	args := strings.Split(form.Arg, " ")
+	key := getCommand(args)
+	pid, _ := getPid(key)
+	if pid > 0 {
+		err = process.Kill(pid)
+		if err != nil {
+			responseErr(c, err, errcode.InternalServerError)
+			return
+		}
+		removeProcess(key)
+	}
+
+	response.Success(c)
+}
+
+func splitString(str string, sep string) (lineContent string, out string) {
 	lines := strings.Split(str, "\n")
 	startIndex := 0
 	isFound := false
@@ -393,14 +480,15 @@ func splitString(str string, sep string) string {
 		if strings.Contains(line, sep) {
 			isFound = true
 			startIndex = i
+			lineContent = line
 			break
 		}
 	}
 
 	if isFound {
-		return strings.Join(lines[startIndex:], "\n")
+		return lineContent, strings.Join(lines[startIndex:], "\n")
 	}
-	return str
+	return "", str
 }
 
 // GetRecord generate run command record
