@@ -49,31 +49,31 @@ import "validate/validate.proto";
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
 service {{.TName}} {
-  // create a new {{.TName}}
+  // Create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {}
 
-  // delete a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // Delete a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc DeleteBy{{.CrudInfo.ColumnNameCamel}}(Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {}
 
-  // update a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // Update a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc UpdateBy{{.CrudInfo.ColumnNameCamel}}(Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {}
 
-  // get {{.TName}} details by {{.CrudInfo.ColumnNameCamelFCL}}
+  // Get a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc GetBy{{.CrudInfo.ColumnNameCamel}}(Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {}
 
-  // get a list of {{.TName}} by custom conditions
+  // Get a paginated list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {}
 
-  // delete {{.TName}} by batch {{.CrudInfo.ColumnNameCamelFCL}}
+  // Batch delete {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc DeleteBy{{.CrudInfo.ColumnNamePluralCamel}}(Delete{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Request) returns (Delete{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Reply) {}
 
-  // get {{.TName}} details by custom condition
+  // Get a {{.TName}} by custom condition
   rpc GetByCondition(Get{{.TableName}}ByConditionRequest) returns (Get{{.TableName}}ByConditionReply) {}
 
-  // get a list of {{.TName}} by batch {{.CrudInfo.ColumnNameCamelFCL}}
+  // Batch get {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc ListBy{{.CrudInfo.ColumnNamePluralCamel}}(List{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Request) returns (List{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Reply) {}
 
-  // get a list of {{.TName}} by last {{.CrudInfo.ColumnNameCamelFCL}}
+  // Get a paginated list of {{.TName}} by last {{.CrudInfo.ColumnNameCamelFCL}}
   rpc ListByLast{{.CrudInfo.ColumnNameCamel}}(List{{.TableName}}ByLast{{.CrudInfo.ColumnNameCamel}}Request) returns (List{{.TableName}}ByLast{{.CrudInfo.ColumnNameCamel}}Reply) {}
 }
 
@@ -172,19 +172,19 @@ import "validate/validate.proto";
 option go_package = "github.com/go-dev-frame/sponge/api/serverNameExample/v1;v1";
 
 service {{.TName}} {
-  // create a new {{.TName}}
+  // Create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {}
 
-  // delete a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // Delete a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc DeleteBy{{.CrudInfo.ColumnNameCamel}}(Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {}
 
-  // update a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // Update a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc UpdateBy{{.CrudInfo.ColumnNameCamel}}(Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {}
 
-  // get {{.TName}} details by {{.CrudInfo.ColumnNameCamelFCL}}
+  // Get a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc GetBy{{.CrudInfo.ColumnNameCamel}}(Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {}
 
-  // get a list of {{.TName}} by custom conditions
+  // Get a paginated list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {}
 }
 
@@ -290,7 +290,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 service {{.TName}} {
-  // create a new {{.TName}}
+  // Create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}"
@@ -298,14 +298,14 @@ service {{.TName}} {
     };
   }
 
-  // delete a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // Delete a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc DeleteBy{{.CrudInfo.ColumnNameCamel}}(Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       delete: "/api/v1/{{.TName}}/left_curly_bracket{{.CrudInfo.ColumnNameCamelFCL}}right_curly_bracket"
     };
   }
 
-  // update a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // Update a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc UpdateBy{{.CrudInfo.ColumnNameCamel}}(Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       put: "/api/v1/{{.TName}}/left_curly_bracket{{.CrudInfo.ColumnNameCamelFCL}}right_curly_bracket"
@@ -313,14 +313,14 @@ service {{.TName}} {
     };
   }
 
-  // get {{.TName}} details by {{.CrudInfo.ColumnNameCamelFCL}}
+  // Get a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc GetBy{{.CrudInfo.ColumnNameCamel}}(Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/left_curly_bracket{{.CrudInfo.ColumnNameCamelFCL}}right_curly_bracket"
     };
   }
 
-  // get a list of {{.TName}} by custom conditions
+  // Get a paginated list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/list"
@@ -328,7 +328,7 @@ service {{.TName}} {
     };
   }
 
-  // delete {{.TName}} by batch {{.CrudInfo.ColumnNameCamelFCL}}
+  // Batch delete {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc DeleteBy{{.CrudInfo.ColumnNamePluralCamel}}(Delete{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Request) returns (Delete{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/delete/ids"
@@ -336,7 +336,7 @@ service {{.TName}} {
     };
   }
 
-  // get a {{.TName}} by custom conditions
+  // Get a {{.TName}} by custom conditions
   rpc GetByCondition(Get{{.TableName}}ByConditionRequest) returns (Get{{.TableName}}ByConditionReply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/condition"
@@ -344,7 +344,7 @@ service {{.TName}} {
     };
   }
 
-  // get a list of {{.TName}} by batch {{.CrudInfo.ColumnNameCamelFCL}}
+  // Batch get {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc ListBy{{.CrudInfo.ColumnNamePluralCamel}}(List{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Request) returns (List{{.TableName}}By{{.CrudInfo.ColumnNamePluralCamel}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/list/ids"
@@ -352,7 +352,7 @@ service {{.TName}} {
     };
   }
 
-  // get a list of {{.TName}} by last {{.CrudInfo.ColumnNameCamelFCL}}
+  // Get a paginated list of {{.TName}} by last {{.CrudInfo.ColumnNameCamelFCL}}
   rpc ListByLast{{.CrudInfo.ColumnNameCamel}}(List{{.TableName}}ByLast{{.CrudInfo.ColumnNameCamel}}Request) returns (List{{.TableName}}ByLast{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/list"
@@ -512,7 +512,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 };
 
 service {{.TName}} {
-  // create a new {{.TName}}
+  // Create a new {{.TName}}
   rpc Create(Create{{.TableName}}Request) returns (Create{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}"
@@ -520,14 +520,14 @@ service {{.TName}} {
     };
   }
 
-  // delete a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // Delete a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc DeleteBy{{.CrudInfo.ColumnNameCamel}}(Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Delete{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       delete: "/api/v1/{{.TName}}/left_curly_bracket{{.CrudInfo.ColumnNameCamelFCL}}right_curly_bracket"
     };
   }
 
-  // update a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
+  // Update a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc UpdateBy{{.CrudInfo.ColumnNameCamel}}(Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       put: "/api/v1/{{.TName}}/left_curly_bracket{{.CrudInfo.ColumnNameCamelFCL}}right_curly_bracket"
@@ -535,14 +535,14 @@ service {{.TName}} {
     };
   }
 
-  // get {{.TName}} details by {{.CrudInfo.ColumnNameCamelFCL}}
+  // Get a {{.TName}} by {{.CrudInfo.ColumnNameCamelFCL}}
   rpc GetBy{{.CrudInfo.ColumnNameCamel}}(Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request) returns (Get{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Reply) {
     option (google.api.http) = {
       get: "/api/v1/{{.TName}}/left_curly_bracket{{.CrudInfo.ColumnNameCamelFCL}}right_curly_bracket"
     };
   }
 
-  // get a list of {{.TName}} by custom conditions
+  // Get a paginated list of {{.TName}} by custom conditions
   rpc List(List{{.TableName}}Request) returns (List{{.TableName}}Reply) {
     option (google.api.http) = {
       post: "/api/v1/{{.TName}}/list"

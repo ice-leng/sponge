@@ -186,15 +186,27 @@ func (s *grpcServer) unaryServerOptions() grpc.ServerOption {
 
 	// limit interceptor
 	if config.Get().App.EnableLimit {
-		unaryServerInterceptors = append(unaryServerInterceptors, interceptor.UnaryServerRateLimit())
+		unaryServerInterceptors = append(unaryServerInterceptors, interceptor.UnaryServerRateLimit(
+		//interceptor.WithWindow(time.Second*5), // default 10s
+		//interceptor.WithBucket(200),           // default 100
+		//interceptor.WithCPUThreshold(900),     // default 800
+		))
 	}
 
 	// circuit breaker interceptor
 	if config.Get().App.EnableCircuitBreaker {
 		unaryServerInterceptors = append(unaryServerInterceptors, interceptor.UnaryServerCircuitBreaker(
-			// set rpc code for circuit breaker, default already includes codes.Internal and codes.Unavailable
-			interceptor.WithValidCode(ecode.StatusInternalServerError.Code()),
-			interceptor.WithValidCode(ecode.StatusServiceUnavailable.Code()),
+			//interceptor.WithBreakerOption(
+			//circuitbreaker.WithSuccess(75),           // default 60
+			//circuitbreaker.WithRequest(100),          // default 100
+			//circuitbreaker.WithBucket(10),            // default 10
+			//circuitbreaker.WithWindow(time.Second*3), // default 3s
+			//),
+			//interceptor.WithUnaryServerDegradeHandler(handler), // Add degradation processing
+			interceptor.WithValidCode( // Add timeout error codes can also trigger circuit breaking
+				ecode.StatusInternalServerError.Code(),
+				ecode.StatusServiceUnavailable.Code(),
+			),
 		))
 	}
 

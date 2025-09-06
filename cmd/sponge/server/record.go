@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -43,6 +44,20 @@ type parameters struct {
 	GoDir             string `json:"goDir"`
 	GoFile            string `json:"goFile"`
 	IsSpecifiedGoFile bool   `json:"isSpecifiedGoFile"`
+
+	Protocol      string   `json:"protocol"`
+	URL           string   `json:"url"`
+	Method        string   `json:"method"`
+	Body          string   `json:"body"`
+	Headers       []string `json:"headers"`
+	Worker        int      `json:"worker"`
+	TestType      string   `json:"testType"`
+	TotalRequests uint64   `json:"totalRequests"`
+	Duration      string   `json:"duration"`
+	PushType      string   `json:"pushType"`
+	PushURL       string   `json:"pushUrl"`
+	PrometheusURL string   `json:"prometheusUrl"`
+	JobName       string   `json:"jobName"`
 
 	SuitedMonoRepo bool `json:"suitedMonoRepo"`
 }
@@ -186,6 +201,41 @@ func parseCommandArgs(args []string) *parameters {
 			case "--file":
 				params.GoFile = val
 				params.IsSpecifiedGoFile = true
+
+			case "--url":
+				params.URL = val
+			case "--method":
+				params.Method = val
+			case "--body":
+				params.Body = val
+			case "--header":
+				if val != "" {
+					params.Headers = append(params.Headers, val)
+				}
+			case "--worker":
+				vl, _ := strconv.Atoi(val)
+				if vl > 0 {
+					params.Worker = vl
+				}
+			case "--total":
+				vl, _ := strconv.ParseUint(val, 10, 64)
+				if vl > 0 {
+					params.TotalRequests = vl
+				}
+			case "--duration":
+				val = strings.TrimSuffix(val, "s")
+				vl, _ := strconv.Atoi(val)
+				if vl > 0 {
+					params.Duration = val
+				}
+			case "--push-url":
+				if val != "" {
+					params.PushURL = val
+				}
+			case "--prometheus-job-name":
+				if val != "" {
+					params.JobName = val
+				}
 			}
 		}
 	}

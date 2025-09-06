@@ -8,7 +8,19 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
+
+	"github.com/go-dev-frame/sponge/pkg/servicerd/registry"
 )
+
+func getDiscovery() registry.Discovery {
+	//endpoint = "discovery:///" + grpcClientCfg.Name // format: discovery:///serverName
+	//cli, err := consulcli.Init(cfg.Consul.Addr, consulcli.WithWaitTime(time.Second*5))
+	//if err != nil {
+	//	panic(fmt.Sprintf("consulcli.Init error: %v, addr: %s", err, cfg.Consul.Addr))
+	//}
+	//return consul.New(cli)
+	return nil
+}
 
 type builder struct{}
 
@@ -34,7 +46,8 @@ var streamInterceptors = []grpc.StreamClientInterceptor{
 
 func TestNewClient(t *testing.T) {
 	conn, err := NewClient("127.0.0.1:50082",
-		WithServiceDiscover(new(builder)),
+		WithServiceDiscover(getDiscovery(), false),
+		WithServiceDiscoverBuilder(new(builder)),
 		WithLoadBalance(),
 		WithSecure(insecure.NewCredentials()),
 		WithUnaryInterceptor(unaryInterceptors...),

@@ -180,7 +180,7 @@ func (g *serviceGenerator) generateCode() (string, error) {
 			"userExample.go",
 		},
 		"internal/service": {
-			"userExample.go", "userExample_client_test.go",
+			"userExample.go", /*"userExample_client_test.go",*/
 		},
 	}
 
@@ -251,7 +251,7 @@ func (g *serviceGenerator) generateCode() (string, error) {
 					"userExample.go.mgo",
 				},
 				"internal/service": {
-					"userExample.go.mgo", "userExample_client_test.go.mgo",
+					"userExample.go.mgo", /*"userExample_client_test.go.mgo",*/
 				},
 			}
 			g.fields = append(g.fields, deleteFieldsMark(r, serviceLogicFile+mgoSuffix, startMark, endMark)...)
@@ -383,12 +383,12 @@ func serviceExtendedAPI(r replacer.Replacer, codeName string) (map[string][]stri
 			"systemCode_rpc.go", "userExample_rpc.go.exp",
 		},
 		"internal/service": {
-			"service.go", "service_test.go", "userExample.go.exp", "userExample_client_test.go.exp",
+			"service.go", "service_test.go", "userExample.go.exp", /*"userExample_client_test.go.exp",*/
 		},
 	}
 	if codeName == codeNameService {
 		replaceFiles["internal/ecode"] = []string{"userExample_rpc.go.exp"}
-		replaceFiles["internal/service"] = []string{"userExample.go.exp", "userExample_client_test.go.exp"}
+		replaceFiles["internal/service"] = []string{"userExample.go.exp" /*"userExample_client_test.go.exp"*/}
 	}
 
 	var fields []replacer.Field
@@ -432,12 +432,12 @@ func serviceMongoDBExtendedAPI(r replacer.Replacer, codeName string) (map[string
 			"systemCode_rpc.go", "userExample_rpc.go.exp",
 		},
 		"internal/service": {
-			"service.go", "service_test.go", "userExample.go.mgo.exp", "userExample_client_test.go.mgo.exp",
+			"service.go", "service_test.go", "userExample.go.mgo.exp", /*"userExample_client_test.go.mgo.exp",*/
 		},
 	}
 	if codeName == codeNameService {
 		replaceFiles["internal/ecode"] = []string{"userExample_rpc.go.exp"}
-		replaceFiles["internal/service"] = []string{"userExample.go.mgo.exp", "userExample_client_test.go.mgo.exp"}
+		replaceFiles["internal/service"] = []string{"userExample.go.mgo.exp" /*"userExample_client_test.go.mgo.exp"*/}
 	}
 
 	var fields []replacer.Field

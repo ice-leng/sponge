@@ -27,6 +27,8 @@ sleep 0.2
 go build -o ${binaryFile} cmd/${serverName}/main.go
 checkResult $?
 
+trap 'exit 0' SIGINT
+
 # running server
 if test -f "$configFile"; then
     ./${binaryFile} -c $configFile

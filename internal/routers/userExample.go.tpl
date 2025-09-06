@@ -15,6 +15,8 @@ func init() {
 func {{.TableNameCamelFCL}}Router(group *gin.RouterGroup, h handler.{{.TableNameCamel}}Handler) {
 	g := group.Group("/{{.TableNameCamelFCL}}")
 
+	// JWT authentication reference: https://go-sponge.com/component/transport/gin.html#jwt-authorization-middleware
+
 	// All the following routes use jwt authentication, you also can use middleware.Auth(middleware.WithExtraVerify(fn))
 	//g.Use(middleware.Auth())
 

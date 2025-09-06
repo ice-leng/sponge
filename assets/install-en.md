@@ -83,7 +83,7 @@ go env GOBIN  # Verify configuration success, non-empty output indicates success
 #### Installation Steps
 
 1. Install protoc:
-    - Download link: [protoc v25.2](https://github.com/protocolbuffers/protobuf/releases/tag/v25.2)
+    - Download link: [protoc v31.1](https://github.com/protocolbuffers/protobuf/releases/tag/v31.1)
     - Place the `protoc` executable file into the `GOBIN` directory
 
 2. Install sponge:

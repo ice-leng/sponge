@@ -202,7 +202,7 @@ func (g *httpPbGenerator) addFields(r replacer.Replacer) []replacer.Field {
 	fields = append(fields, deleteAllFieldsMark(r, appConfigFile, wellStartMark, wellEndMark)...)
 	//fields = append(fields, deleteFieldsMark(r, deploymentConfigFile, wellStartMark, wellEndMark)...)
 	fields = append(fields, replaceFileContentMark(r, readmeFile,
-		setReadmeTitle(g.moduleName, g.serverName, codeNameHTTPPb, g.suitedMonoRepo))...)
+		getReadmeContent(g.moduleName, g.serverName, codeNameHTTPPb, "", g.suitedMonoRepo))...)
 	fields = append(fields, []replacer.Field{
 		{ // replace the configuration of the *.yml file
 			Old: appConfigFileMark,

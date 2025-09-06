@@ -8,13 +8,19 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/resolver"
+
+	"github.com/go-dev-frame/sponge/pkg/servicerd/discovery"
+	"github.com/go-dev-frame/sponge/pkg/servicerd/registry"
 )
 
 // Option client option func
 type Option func(*options)
 
 type options struct {
-	builders           []resolver.Builder
+	builders   []resolver.Builder
+	iDiscovery registry.Discovery
+	isInsecure bool
+
 	isLoadBalance      bool
 	credentials        credentials.TransportCredentials
 	unaryInterceptors  []grpc.UnaryClientInterceptor
@@ -33,9 +39,17 @@ func (o *options) apply(opts ...Option) {
 }
 
 // WithServiceDiscover set service discover
-func WithServiceDiscover(builders ...resolver.Builder) Option {
+func WithServiceDiscover(d registry.Discovery, isInsecure bool) Option {
 	return func(o *options) {
-		o.builders = builders
+		o.iDiscovery = d
+		o.isInsecure = isInsecure
+	}
+}
+
+// WithServiceDiscoverBuilder set service discover builder
+func WithServiceDiscoverBuilder(builder ...resolver.Builder) Option {
+	return func(o *options) {
+		o.builders = builder
 	}
 }
 
@@ -83,7 +97,15 @@ func NewClient(endpoint string, opts ...Option) (*grpc.ClientConn, error) {
 
 	// service discovery
 	if len(o.builders) > 0 {
-		dialOptions = append(dialOptions, grpc.WithResolvers(o.builders...))
+		dialOptions = append(dialOptions, grpc.WithResolvers(o.builders...)) // higher priority
+	} else {
+		if o.iDiscovery != nil {
+			dialOptions = append(dialOptions, grpc.WithResolvers(
+				discovery.NewBuilder(
+					o.iDiscovery,
+					discovery.WithInsecure(o.isInsecure),
+				)))
+		}
 	}
 
 	// load balance option

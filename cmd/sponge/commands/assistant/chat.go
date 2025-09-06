@@ -102,7 +102,7 @@ func chat(asst *assistantParams) error {
 		}
 		if input == "r" || input == "R" {
 			client.RefreshContext()
-			fmt.Println(color.HiBlackString("Finished refreshing context.") + "\n\n")
+			fmt.Println(color.HiBlackString("Start a new conversation.") + "\n\n")
 			continue
 		}
 

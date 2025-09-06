@@ -6,7 +6,7 @@ Error codes usually include system-level error codes and business-level error co
 
 | First digit                                                                                                                    | Middle three digits                  | Last two digits         |
 |:-------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------|:------------------------|
-| `1` is http system-level error<br>`2` is http business-level error<br>`3` is grpc system-level error<br>`4` is grpc system-level error | Table or module number, range 1~1000 | Custom number, range 1~100 |
+| `1` is http system-level error<br>`2` is http business-level error<br>`3` is grpc system-level error<br>`4` is grpc system-level error | Table or module number, range 1~999 | Custom number, range 1~99 |
 
 <br>
 

@@ -18,7 +18,7 @@ Common gin middleware libraries, including:
 
 ### Logging middleware
 
-You can set the maximum length for printing, add a request id field, ignore print path, customize [zap](go.uber.org/zap) log.
+You can set the maximum length for printing, add a request id field, ignore print path, customize [zap](https://github.com/uber-go/zap) log.
 
 ```go
 import (
@@ -126,6 +126,12 @@ func NewRouter() *gin.Engine {
     r.Use(middleware.CircuitBreaker(
         //middleware.WithValidCode(http.StatusRequestTimeout), // add error code 408 for circuit breaker
         //middleware.WithDegradeHandler(handler), // add custom degrade handler
+        //middleware.WithBreakerOption(
+            //circuitbreaker.WithSuccess(75),           // default 60
+            //circuitbreaker.WithRequest(200),          // default 100
+            //circuitbreaker.WithBucket(20),            // default 10
+            //circuitbreaker.WithWindow(time.Second*5), // default 3s
+        //),
     ))
 
     // ......

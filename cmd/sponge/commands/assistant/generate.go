@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 	"unicode"
 
@@ -41,14 +42,16 @@ func GenerateCommand() *cobra.Command {
 		Use:   "generate",
 		Short: "Generate code using AI assistant",
 		Long:  "Generate code using AI assistant. Automatically locate the positions in Go files that require code implementation, and let the AI assistant generate the corresponding business logic based on the context.",
-		Example: color.HiBlackString(`  # Generate code using deepseek, default model is deepseek-chat, you can specify deepseek-reasoner by --model.
+		Example: color.HiBlackString(`  # Generate code using deepseek, default model is deepseek-chat, you can specify deepseek-reasoner through --model parameter.
   sponge assistant generate --type=deepseek --api-key=your-api-key --dir=your-project-dir
   
-  # Generate code using gemini, default model is gemini-2.5-pro-exp-03-25
+  # Generate code using gemini, default model is gemini-2.5-flash, you can specify other models through --model parameter
   sponge assistant generate --type=gemini --api-key=your-api-key --dir=your-project-dir
 
-  # Generate code using chatgpt, default model is gpt-4o
-  sponge assistant generate --type=chatgpt --api-key=your-api-key --dir=your-project-dir`),
+  # Generate code using chatgpt, default model is gpt-4o, you can specify other models through --model parameter
+  sponge assistant generate --type=chatgpt --api-key=your-api-key --dir=your-project-dir
+
+  # If you want to specify the go files, you need to set the parameter --file=xxx.go`),
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -80,10 +83,16 @@ func GenerateCommand() *cobra.Command {
 			}
 
 			assistantType = strings.ToLower(assistantType)
+			if model == "" {
+				model = defaultModelMap[assistantType]
+				if model == "" {
+					return fmt.Errorf("invalid assistant type: %s", assistantType)
+				}
+			}
 			asst := &assistantParams{
 				Type:          assistantType,
 				apiKey:        apiKey,
-				model:         defaultModelMap[assistantType],
+				model:         model,
 				enableContext: true,
 				roleDesc:      roleDesc,
 				maxToken:      maxToken,
@@ -119,7 +128,7 @@ func GenerateCommand() *cobra.Command {
 	cmd.Flags().Float32VarP(&temperature, "temperature", "e", 0, "temperature of the model")
 	cmd.Flags().BoolVarP(&enableContext, "enable-context", "c", false, "whether the assistant supports context")
 	cmd.Flags().BoolVarP(&onlyPrintPrompt, "only-print-prompt", "p", false, "skip AI assistant request, only print prompt")
-	cmd.Flags().IntVarP(&maxAssistantNum, "max-assistant-num", "n", 20, "maximum number of assistant running simultaneously")
+	cmd.Flags().IntVarP(&maxAssistantNum, "max-assistant-num", "n", 10, "maximum number of assistant running simultaneously")
 	cmd.Flags().StringVarP(&dir, "dir", "d", "", "Go project directory")
 	cmd.Flags().StringSliceVarP(&files, "file", "f", nil, "specified Go files")
 
@@ -139,6 +148,10 @@ type assistantGenerator struct {
 }
 
 func (g *assistantGenerator) generateCode() error {
+	if err := initPromptTemplate(); err != nil {
+		return err
+	}
+
 	fileCount := len(g.fileCodeMap)
 
 	// initialize worker pool
@@ -156,7 +169,10 @@ func (g *assistantGenerator) generateCode() error {
 	// submit tasks to worker pool
 	for file, info := range g.fileCodeMap {
 		jobID++
-		dependentFile, prompt := getPrompt(file, info)
+		dependentFile, prompt, err := getPrompt(file, info)
+		if err != nil {
+			return err
+		}
 		client, err := g.asst.newClient()
 		if err != nil {
 			return err
@@ -190,7 +206,7 @@ func (g *assistantGenerator) generateCode() error {
 		outputFiles  []string
 		successCount int
 		failedCount  int
-		p            = newPrintLog(time.Millisecond * 200)
+		p            = newPrintLog(time.Millisecond * 250)
 	)
 
 	// handle results from worker pool
@@ -239,13 +255,25 @@ func (g *assistantGenerator) generateCode() error {
 
 	total := successCount + failedCount
 	if total > 0 {
-		fmt.Printf("\nJobs Summary:\n    → Total Jobs: %d\n    → Successful Jobs: %d\n    → Failed Jobs: %d\n\n", total, successCount, failedCount)
+		successCountStr := strconv.Itoa(successCount)
+		if total == successCount {
+			successCountStr += color.HiGreenString("  ✓")
+		}
+		failedCountStr := "0"
+		if failedCount > 0 {
+			failedCountStr = strconv.Itoa(failedCount) + color.HiRedString("  ✗")
+		}
+
+		fmt.Printf("\nJobs Summary:\n    %-17s%d\n    %-17s%s\n    %-17s%s\n\n",
+			"Total Jobs:", total,
+			"Successful Jobs:", successCountStr,
+			"Failed Jobs:", failedCountStr)
 	}
 
 	if len(outputFiles) > 0 {
-		fmt.Println("Successful Jobs output files:")
+		fmt.Println("Files Output by Successful Jobs:")
 		for _, file := range outputFiles {
-			fmt.Printf("    %s %s\n", successSymbol, color.HiGreenString(cutFilePath(file)))
+			fmt.Printf("    • %s\n", color.HiGreenString(cutFilePath(file)))
 		}
 	}
 
@@ -398,34 +426,75 @@ func extractFuncCodeBlock(file string) *codeInfo {
 }
 
 func isAllHaveExampleCode(info *codeInfo) bool {
-	return bytes.Count(info.code, []byte("// fill in the business logic code here")) == len(info.funcInfos)
+	if bytes.Count(info.code, []byte("// fill in the business logic code here")) > 0 {
+		return true
+	}
+	if bytes.Count(info.code, []byte("// 依赖dao")) > 0 {
+		return true
+	}
+	return false
 }
 
-func getDefaultPrompt(info *codeInfo) string {
-	format := ""
-	if info.isUseChinesePrompt() {
-		format = defaultPromptFormatCN
-	} else {
-		format = defaultPromptFormatEN
+type promptParams struct {
+	TargetFilePath    string
+	FunctionNamesList string
+	TargetFileCode    string
+
+	TargetDirName          string
+	DaoFilePath            string
+	DaoStructName          string
+	ExistingDaoMethodsList string
+	DaoInterfaceName       string
+	DaoFileCode            string
+}
+
+func newDefaultPromptParams(file string, info *codeInfo) *promptParams {
+	funcNamesList := ""
+	for _, funcInfo := range info.funcInfos {
+		funcNamesList += fmt.Sprintf("* `%s`\n", funcInfo.Name)
 	}
-	return fmt.Sprintf(format, info.joinFuncNames()) +
-		fmt.Sprintf("\n```go\n%s\n```", string(info.code))
+
+	return &promptParams{
+		TargetFilePath:    file,
+		FunctionNamesList: funcNamesList,
+		TargetFileCode:    string(info.code),
+	}
+}
+
+func getDefaultPrompt(file string, info *codeInfo) (string, error) {
+	var defaultTmpl *template.Template
+	if info.isUseChinesePrompt() {
+		defaultTmpl = defaultPromptCNTmpl
+	} else {
+		defaultTmpl = defaultPromptENTmpl
+	}
+
+	params := newDefaultPromptParams(file, info)
+	builder := strings.Builder{}
+	err := defaultTmpl.Execute(&builder, params)
+	if err != nil {
+		return "", err
+	}
+	prompt := builder.String()
+
+	return strings.ReplaceAll(prompt, "<BQ>", "`"), nil
 }
 
 // nolint
-func getPrompt(file string, info *codeInfo) (dependentFileFullPath string, prompt string) {
-	//var prompt string
+func getPrompt(file string, info *codeInfo) (dependentFileFullPath string, prompt string, err error) {
 	dirName := getLastDirName(file)
 	isChinese := info.isUseChinesePrompt()
 
 	switch dirName {
-	case "handler", "service", "biz":
+	case "handler", "service", "biz", "logic":
 		internalDirName := strings.TrimSuffix(gofile.GetDir(file), dirName) // end with filepath.Separator
 		if getLastDirName(internalDirName) != "internal" {
-			return "", getDefaultPrompt(info)
+			prompt, err = getDefaultPrompt(cutFilePath(file), info)
+			return "", prompt, err
 		} else {
-			if !isAllHaveExampleCode(info) {
-				return "", getDefaultPrompt(info)
+			if !isAllHaveExampleCode(info) { // check is need to depend on dao
+				prompt, err = getDefaultPrompt(cutFilePath(file), info)
+				return "", prompt, err
 			}
 			internalDirName = "internal" + string(filepath.Separator)
 		}
@@ -436,34 +505,40 @@ func getPrompt(file string, info *codeInfo) (dependentFileFullPath string, promp
 		dbFile := internalDirName + "database" + string(filepath.Separator) + "init.go"
 		objName := strings.TrimSuffix(fileName, ".go")
 		isMongo := isMongoOrmType(dbFile)
-		daoCode := getDaoCode(isMongo, objName, isChinese)
-		funcNames := info.joinFuncNames()
+		di := newDaoInfo(getDaoFilePath(file), isMongo, objName, isChinese)
 
-		format := ""
-		if isChinese {
-			format = promptFormatCN
+		params := newDefaultPromptParams(srcFile, info)
+		params.TargetDirName = dirName
+		params.DaoFilePath = daoFile
+		params.DaoStructName = di.structName
+		params.ExistingDaoMethodsList = di.methodNames
+		params.DaoInterfaceName = di.interfaceName
+		params.DaoFileCode = di.code
+
+		var defaultTmpl *template.Template
+		if info.isUseChinesePrompt() {
+			defaultTmpl = promptCNTmpl
 		} else {
-			format = promptFormatEN
+			defaultTmpl = promptENTmpl
 		}
-		prompt = fmt.Sprintf(format,
-			funcNames,
-			srcFile, funcNames,
-			srcFile, daoFile,
-			srcFile, daoFile,
-			srcFile, daoFile,
-			srcFile, fmt.Sprintf("\n```go\n%s\n```", string(info.code)),
-			daoFile, fmt.Sprintf("\n```go\n%s\n```", daoCode),
-		)
+		builder := strings.Builder{}
+		err = defaultTmpl.Execute(&builder, params)
+		if err != nil {
+			return "", "", err
+		}
+		prompt = builder.String()
+		prompt = strings.ReplaceAll(prompt, "<BQ>", "`")
+
 		modelCode := getModelCode(file, dirName, fileName, isChinese)
 		if modelCode != "" {
 			prompt += modelCode
 		}
 		dependentFileFullPath = strings.TrimSuffix(gofile.GetDir(file), dirName) + "dao" + string(filepath.Separator) + fileName
 	default:
-		prompt = getDefaultPrompt(info)
+		prompt, err = getDefaultPrompt(cutFilePath(file), info)
 	}
 
-	return dependentFileFullPath, prompt
+	return dependentFileFullPath, prompt, err
 }
 
 func (c *codeInfo) isUseChinesePrompt() bool {
@@ -483,18 +558,6 @@ func (c *codeInfo) getFuncNames() []string {
 		funcNames = append(funcNames, funcInfo.Name)
 	}
 	return funcNames
-}
-
-func (c *codeInfo) joinFuncNames() string {
-	delimiter := "、"
-	if !c.isUseChinesePrompt() {
-		delimiter = ", "
-	}
-	var funcNames []string
-	for _, funcInfo := range c.funcInfos {
-		funcNames = append(funcNames, funcInfo.Name)
-	}
-	return strings.Join(funcNames, delimiter)
 }
 
 func containsChinese(s string) bool {
