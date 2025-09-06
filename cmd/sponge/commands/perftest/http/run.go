@@ -251,8 +251,8 @@ type Result struct {
 type HTTPReqParams struct {
 	URL     string
 	Method  string
-	Headers []string
-	Body    string
+	Headers map[string]string
+	Body    []byte
 
 	version string
 }
@@ -263,20 +263,14 @@ func buildRequest(params *HTTPReqParams) (*http.Request, error) {
 
 	reqMethod := strings.ToUpper(params.Method)
 	if reqMethod == "POST" || reqMethod == "PUT" || reqMethod == "PATCH" || reqMethod == "DELETE" {
-		body := bytes.NewReader([]byte(params.Body))
+		body := bytes.NewReader(params.Body)
 		req, err = http.NewRequest(reqMethod, params.URL, body)
-		if err == nil {
-			req.Header.Set("Content-Type", "application/json")
-		}
 	} else {
 		req, err = http.NewRequest(reqMethod, params.URL, nil)
 	}
 
-	for _, h := range params.Headers {
-		kvs := strings.SplitN(h, ":", 2)
-		if len(kvs) == 2 {
-			req.Header.Set(strings.TrimSpace(kvs[0]), strings.TrimSpace(kvs[1]))
-		}
+	for k, v := range params.Headers {
+		req.Header.Set(k, v)
 	}
 
 	return req, err

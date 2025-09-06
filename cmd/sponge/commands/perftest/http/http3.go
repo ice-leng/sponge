@@ -60,7 +60,7 @@ func PerfTestHTTP3CMD() *cobra.Command {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			bodyData, err := common.CheckBodyParam(body, bodyFile)
+			bodyBytes, headerMap, err := common.ParseHTTPParams(method, headers, body, bodyFile)
 			if err != nil {
 				return err
 			}
@@ -68,8 +68,8 @@ func PerfTestHTTP3CMD() *cobra.Command {
 			params := &HTTPReqParams{
 				URL:     targetURL,
 				Method:  method,
-				Headers: headers,
-				Body:    bodyData,
+				Headers: headerMap,
+				Body:    bodyBytes,
 				version: "HTTP/3",
 			}
 

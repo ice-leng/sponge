@@ -190,7 +190,7 @@ func (c *Column) checkExp() (string, error) {
 			symbol = ""
 		}
 	} else {
-		return symbol, fmt.Errorf("unsported exp type '%s'", c.Exp)
+		return symbol, fmt.Errorf("unsupported exp type '%s'", c.Exp)
 	}
 
 	if c.Logic == "" {
@@ -200,7 +200,7 @@ func (c *Column) checkExp() (string, error) {
 		if _, ok := logicMap[logic]; ok { //nolint
 			c.Logic = logic
 		} else {
-			return symbol, fmt.Errorf("unsported logic type '%s'", c.Logic)
+			return symbol, fmt.Errorf("unsupported logic type '%s'", c.Logic)
 		}
 	}
 

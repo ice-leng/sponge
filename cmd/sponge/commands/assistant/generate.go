@@ -161,8 +161,11 @@ func (g *assistantGenerator) generateCode() error {
 	}
 	workerPool.Start()
 
-	fmt.Printf("\n[INFO] Detected %s files for code generation. Processing concurrently with %s AI assistants (%s).\n\n",
-		color.HiCyanString(strconv.Itoa(fileCount)), color.HiCyanString(strconv.Itoa(g.maxAssistantNum)), g.asst.model)
+	fmt.Printf("\n%s [INFO] Detected %s files for code generation. Processing concurrently with %s AI assistants (%s).\n\n",
+		time.Now().Format(time.DateTime),
+		color.HiCyanString(strconv.Itoa(fileCount)),
+		color.HiCyanString(strconv.Itoa(g.maxAssistantNum)),
+		g.asst.model)
 
 	jobID := 0
 
@@ -235,7 +238,8 @@ func (g *assistantGenerator) generateCode() error {
 				newFiles = append(newFiles, cutFilePath(newFile))
 				outputFiles = append(outputFiles, newFile)
 			}
-			l := fmt.Sprintf("\n[SUCCESS] Job %s - File: [%s] | Functions: [%s] | Output: [%s] | Time: %s\n",
+			l := fmt.Sprintf("\n%s [SUCCESS] Job %s - File: [%s] | Functions: [%s] | Output: [%s] | Time: %s\n",
+				time.Now().Format(time.DateTime),
 				color.HiCyanString(strconv.Itoa(reply.JobID)),
 				color.HiCyanString(cutFilePath(reply.SrcFile)),
 				color.HiCyanString(strings.Join(reply.Functions, ", ")),
@@ -271,7 +275,7 @@ func (g *assistantGenerator) generateCode() error {
 	}
 
 	if len(outputFiles) > 0 {
-		fmt.Println("Files Output by Successful Jobs:")
+		fmt.Println("Output Files:")
 		for _, file := range outputFiles {
 			fmt.Printf("    • %s\n", color.HiGreenString(cutFilePath(file)))
 		}
@@ -316,7 +320,8 @@ func (t *assistantTask) Execute(ctx context.Context) (interface{}, error) {
 		return taskReply, nil
 	}
 
-	fmt.Printf("[START] Job %s - File: [%s] | Functions: [%s]\n\n",
+	fmt.Printf("%s [START] Job %s - File: [%s] | Functions: [%s]\n\n",
+		time.Now().Format(time.DateTime),
 		color.HiCyanString(strconv.Itoa(t.jobID)),
 		color.HiCyanString(cutFilePath(t.file)),
 		color.HiCyanString(strings.Join(t.funcNames, ", ")),

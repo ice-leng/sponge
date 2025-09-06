@@ -17,7 +17,14 @@ func TestRun(t *testing.T) {
 	for cmd, args := range cmds {
 		ctx, _ := context.WithTimeout(context.Background(), time.Second)
 		result := Run(ctx, cmd, args...)
+		counter := 0
 		for v := range result.StdOut { // Real-time output of logs and error messages
+			counter++
+			if counter == 1 {
+				pid := ParsePid(v)
+				t.Logf("pid: %d", pid)
+				continue
+			}
 			t.Logf(v)
 		}
 		if result.Err != nil {
