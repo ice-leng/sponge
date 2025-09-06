@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/fatih/color"
@@ -129,27 +131,27 @@ func (c *statsCollector) toStatistics(totalTime time.Duration, totalRequests uin
 		p95 = percentile(0.95)
 	}
 
-	var errors []string
+	errors := []string{}
 	for errStr := range c.errSet {
 		errors = append(errors, errStr)
 	}
 
 	body := params.Body
 	if len(body) > 300 {
-		body = body[:300] + "..."
+		body = append(body[:293], []byte(" ......")...)
 	}
 
 	return &Statistics{
 		URL:    params.URL,
 		Method: params.Method,
-		Body:   body,
+		Body:   string(body),
 
 		TotalRequests: totalRequests,
 		Errors:        errors,
 		SuccessCount:  c.successCount,
 		ErrorCount:    c.errorCount,
-		TotalTime:     totalTime.Seconds(),
-		QPS:           float64(c.successCount) / totalTime.Seconds(),
+		TotalDuration: math.Round(totalTime.Seconds()*100) / 100,
+		QPS:           math.Round(float64(c.successCount)/totalTime.Seconds()*10) / 10,
 
 		AvgLatency: convertToMilliseconds(avg),
 		P25Latency: convertToMilliseconds(p25),
@@ -158,10 +160,27 @@ func (c *statsCollector) toStatistics(totalTime time.Duration, totalRequests uin
 		MinLatency: convertToMilliseconds(minLatency),
 		MaxLatency: convertToMilliseconds(maxLatency),
 
-		TotalSent:     float64(c.totalReqBytes),
-		TotalReceived: float64(c.totalRespBytes),
+		TotalSent:     c.totalReqBytes,
+		TotalReceived: c.totalRespBytes,
 		StatusCodes:   c.statusCodeSet,
 	}
+}
+
+// convert float64 to string with specified precision, automatically process the last 0
+func float64ToString(f float64, precision int) string {
+	if precision == 0 {
+		return strconv.FormatInt(int64(f), 10)
+	}
+	if precision >= 1 && precision <= 6 {
+		factor := math.Pow10(precision)
+		rounded := math.Round(f*factor) / factor
+		return strconv.FormatFloat(rounded, 'f', precision, 64)
+	}
+	return strconv.FormatFloat(f, 'f', -1, 64)
+}
+
+func float64ToStringNoRound(f float64) string {
+	return strconv.FormatFloat(f, 'f', -1, 64)
 }
 
 func (c *statsCollector) printReport(totalDuration time.Duration, totalRequests uint64, params *HTTPReqParams) (*Statistics, error) {
@@ -171,7 +190,7 @@ func (c *statsCollector) printReport(totalDuration time.Duration, totalRequests 
 		fmt.Printf("  • %-19s%d\n", "Total Requests:", totalRequests)
 		fmt.Printf("  • %-19s%d%s\n", "Successful:", 0, color.RedString(" (0%)"))
 		fmt.Printf("  • %-19s%d%s\n", "Failed:", c.errorCount, color.RedString(" ✗"))
-		fmt.Printf("  • %-19s%.2fs\n\n", "Total Duration:", totalDuration.Seconds())
+		fmt.Printf("  • %-19s%s s\n\n", "Total Duration:", float64ToString(totalDuration.Seconds(), 2))
 
 		if len(c.statusCodeSet) > 0 {
 			printStatusCodeSet(c.statusCodeSet)
@@ -196,27 +215,28 @@ func (c *statsCollector) printReport(totalDuration time.Duration, totalRequests 
 			if st.SuccessCount == 0 {
 				successStr += color.RedString(" (0%)")
 			} else {
-				successStr += color.YellowString(" (%d%%)", int(float64(st.SuccessCount)/float64(st.TotalRequests)*100))
+				percentage := float64ToString(float64(st.SuccessCount)/float64(st.TotalRequests)*100, 1)
+				successStr += color.YellowString(" (%s%%)", percentage)
 			}
 			failureStr += color.RedString(" ✗")
 		}
 	}
 	fmt.Println(successStr)
 	fmt.Println(failureStr)
-	fmt.Printf("  • %-19s%.2fs\n", "Total Duration:", st.TotalTime)
-	fmt.Printf("  • %-19s%.2f req/sec\n\n", "Throughput (QPS):", st.QPS)
+	fmt.Printf("  • %-19s%s s\n", "Total Duration:", float64ToStringNoRound(st.TotalDuration))
+	fmt.Printf("  • %-19s%s req/sec\n\n", "Throughput (QPS):", float64ToStringNoRound(st.QPS))
 
 	_, _ = color.New(color.Bold).Println("[Latency]")
-	fmt.Printf("  • %-19s%.2f ms\n", "Average:", st.AvgLatency)
-	fmt.Printf("  • %-19s%.2f ms\n", "Minimum:", st.MinLatency)
-	fmt.Printf("  • %-19s%.2f ms\n", "Maximum:", st.MaxLatency)
-	fmt.Printf("  • %-19s%.2f ms\n", "P25:", st.P25Latency)
-	fmt.Printf("  • %-19s%.2f ms\n", "P50:", st.P50Latency)
-	fmt.Printf("  • %-19s%.2f ms\n\n", "P95:", st.P95Latency)
+	fmt.Printf("  • %-19s%s ms\n", "Average:", float64ToStringNoRound(st.AvgLatency))
+	fmt.Printf("  • %-19s%s ms\n", "Minimum:", float64ToStringNoRound(st.MinLatency))
+	fmt.Printf("  • %-19s%s ms\n", "Maximum:", float64ToStringNoRound(st.MaxLatency))
+	fmt.Printf("  • %-19s%s ms\n", "P25:", float64ToStringNoRound(st.P25Latency))
+	fmt.Printf("  • %-19s%s ms\n", "P50:", float64ToStringNoRound(st.P50Latency))
+	fmt.Printf("  • %-19s%s ms\n\n", "P95:", float64ToStringNoRound(st.P95Latency))
 
 	_, _ = color.New(color.Bold).Println("[Data Transfer]")
-	fmt.Printf("  • %-19s%.0f Bytes\n", "Sent:", st.TotalSent)
-	fmt.Printf("  • %-19s%.0f Bytes\n\n", "Received:", st.TotalReceived)
+	fmt.Printf("  • %-19s%d Bytes\n", "Sent:", st.TotalSent)
+	fmt.Printf("  • %-19s%d Bytes\n\n", "Received:", st.TotalReceived)
 
 	if len(c.statusCodeSet) > 0 {
 		printStatusCodeSet(st.StatusCodes)
@@ -262,7 +282,7 @@ type Statistics struct {
 	Body   string `json:"body"`   // request body (JSON)
 
 	TotalRequests uint64   `json:"total_requests"` // total requests
-	TotalTime     float64  `json:"total_time"`     // seconds
+	TotalDuration float64  `json:"total_duration"` //  total duration (seconds)
 	SuccessCount  uint64   `json:"success_count"`  // successful requests (status code 2xx)
 	ErrorCount    uint64   `json:"error_count"`    // failed requests (status code not 2xx)
 	Errors        []string `json:"errors"`         // error details
@@ -275,10 +295,12 @@ type Statistics struct {
 	MinLatency float64 `json:"min_latency"` // minimum latency (ms)
 	MaxLatency float64 `json:"max_latency"` // maximum latency (ms)
 
-	TotalSent     float64 `json:"total_sent"`     // total sent (bytes)
-	TotalReceived float64 `json:"total_received"` // total received (bytes)
+	TotalSent     int64 `json:"total_sent"`     // total sent (bytes)
+	TotalReceived int64 `json:"total_received"` // total received (bytes)
 
 	StatusCodes map[int]int64 `json:"status_codes"` // status code distribution (count)
+
+	CreatedAt time.Time `json:"created_at"` // created time
 }
 
 // Save saves the statistics data to a JSON file.
@@ -485,6 +507,7 @@ func (spc *statsPrometheusCollector) PushToPrometheusAsync(ctx context.Context, 
 func (spc *statsPrometheusCollector) PushToServer(ctx context.Context, pushURL string, elapsed time.Duration, httpReqParams *HTTPReqParams, id int64) error {
 	statistics := spc.statsCollector.toStatistics(elapsed, spc.statsCollector.successCount+spc.statsCollector.errorCount, httpReqParams)
 	statistics.PerfTestID = id
+	statistics.CreatedAt = time.Now()
 
 	_, err := postWithContext(ctx, pushURL, statistics)
 	return err
@@ -510,7 +533,11 @@ func postWithContext(ctx context.Context, url string, data *Statistics) (*http.R
 
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // Skip certificate validation
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err

@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -8,6 +9,99 @@ import (
 	"strings"
 	"time"
 )
+
+const (
+	BodyTypeJSON = "application/json"
+	BodyTypeForm = "application/x-www-form-urlencoded"
+	BodyTypeText = "text/plain"
+)
+
+// nolint
+func ParseHTTPParams(method string, headers []string, body string, bodyFile string) ([]byte, map[string]string, error) {
+	var bodyType string
+	var bodyBytes []byte
+	headerMap := make(map[string]string)
+	for _, h := range headers {
+		kvs := strings.SplitN(h, ":", 2)
+		if len(kvs) == 2 {
+			key := trimString(kvs[0])
+			value := trimString(kvs[1])
+			headerMap[key] = value
+		}
+	}
+
+	if strings.ToUpper(method) == "GET" {
+		return bodyBytes, headerMap, nil
+	}
+
+	if body != "" {
+		body = strings.Trim(body, "'")
+		bodyBytes = []byte(body)
+	} else {
+		if bodyFile != "" {
+			data, err := os.ReadFile(bodyFile)
+			if err != nil {
+				return nil, nil, err
+			}
+			bodyBytes = data
+		}
+	}
+	if len(bodyBytes) == 0 {
+		return bodyBytes, headerMap, nil
+	}
+
+	for k, v := range headerMap {
+		if strings.ToLower(k) == "content-type" && v != "" {
+			bodyType = strings.ToLower(v)
+		}
+	}
+
+	switch bodyType {
+	case BodyTypeJSON:
+		ok, err := isValidJSON(bodyBytes)
+		if err != nil {
+			return nil, nil, err
+		}
+		if !ok {
+			return nil, nil, fmt.Errorf("invalid JSON format")
+		}
+		return bodyBytes, headerMap, nil
+
+	case BodyTypeForm:
+		if bytes.Count(bodyBytes, []byte("=")) == 0 {
+			return nil, nil, fmt.Errorf("invalid body form data format")
+		}
+		return bodyBytes, headerMap, nil
+
+	case BodyTypeText:
+		return bodyBytes, headerMap, nil
+
+	default:
+		if bodyType != "" {
+			return bodyBytes, headerMap, nil
+		}
+
+		ok, err := isValidJSON(bodyBytes)
+		if err == nil && ok {
+			headerMap["Content-Type"] = BodyTypeJSON
+			return bodyBytes, headerMap, nil
+		}
+
+		equalNun := bytes.Count(bodyBytes, []byte("="))
+		andNun := bytes.Count(bodyBytes, []byte("&"))
+		if equalNun == andNun+1 {
+			headerMap["Content-Type"] = BodyTypeForm
+		} else {
+			headerMap["Content-Type"] = BodyTypeText
+		}
+
+		return bodyBytes, headerMap, nil
+	}
+}
+
+func trimString(s string) string {
+	return strings.Trim(s, " \t\r\n\"'")
+}
 
 // CheckBodyParam checks if the body parameter is provided in JSON or file format.
 func CheckBodyParam(bodyJSON string, bodyFile string) (string, error) {
