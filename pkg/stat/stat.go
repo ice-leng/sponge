@@ -2,6 +2,7 @@
 package stat
 
 import (
+	"context"
 	"math"
 	"runtime"
 	"time"
@@ -23,8 +24,9 @@ var (
 type Option func(*options)
 
 type options struct {
-	enableAlarm bool
-	zapFields   []zap.Field
+	enableAlarm   bool
+	zapFields     []zap.Field
+	customHandler func(ctx context.Context, sd *StatData) error
 }
 
 func (o *options) apply(opts ...Option) {
@@ -72,6 +74,13 @@ func WithAlarm(opts ...AlarmOption) Option {
 	}
 }
 
+// WithCustomHandler set custom handler and interval, will replace default print stat data handler
+func WithCustomHandler(handler func(ctx context.Context, sd *StatData) error) Option {
+	return func(o *options) {
+		o.customHandler = handler
+	}
+}
+
 // Init initialize statistical information
 func Init(opts ...Option) {
 	o := &options{}
@@ -86,15 +95,39 @@ func Init(opts ...Option) {
 		for {
 			select {
 			case <-printTick.C:
-				data := printUsageInfo(o.zapFields...)
+				data := getStatData()
 				if o.enableAlarm {
-					if sg.check(data) {
-						sendSystemSignForLinux()
-					}
+					handleAlarm(sg, data, o)
+				}
+				if o.customHandler == nil {
+					printUsageInfo(data, o.zapFields...)
+				} else {
+					handleCustom(data, o)
 				}
 			}
 		}
+
 	}()
+}
+
+func handleAlarm(sg *statGroup, data *StatData, o *options) {
+	if runtime.GOOS == "windows" { // Windows system does not support alarm
+		return
+	}
+	if o.enableAlarm {
+		if sg.check(data) {
+			sendSystemSignForLinux()
+		}
+	}
+}
+
+func handleCustom(data *StatData, o *options) {
+	ctx, _ := context.WithTimeout(context.Background(), printInfoInterval) //nolint
+	defer func() { _ = recover() }()
+	err := o.customHandler(ctx, data)
+	if err != nil {
+		zapLog.Warn("custom handler error", zap.Error(err))
+	}
 }
 
 // nolint
@@ -105,7 +138,7 @@ func sendSystemSignForLinux() {
 	}
 }
 
-func printUsageInfo(fields ...zap.Field) *statData {
+func getStatData() *StatData {
 	defer func() { _ = recover() }()
 
 	mSys := mem.GetSystemMemory()
@@ -118,14 +151,14 @@ func printUsageInfo(fields ...zap.Field) *statData {
 		cors += ci.Cores
 	}
 
-	sys := system{
+	sys := System{
 		CPUUsage: cSys.UsagePercent,
 		CPUCores: cors,
 		MemTotal: mSys.Total,
 		MemFree:  mSys.Free,
 		MemUsage: float64(int(math.Round(mSys.UsagePercent))), // rounding
 	}
-	proc := process{
+	proc := Process{
 		CPUUsage:   cProc.UsagePercent,
 		RSS:        cProc.RSS,
 		VMS:        cProc.VMS,
@@ -136,24 +169,28 @@ func printUsageInfo(fields ...zap.Field) *statData {
 		Goroutines: runtime.NumGoroutine(),
 	}
 
-	fields = append(fields, zap.Any("system", sys), zap.Any("process", proc))
-	zapLog.Info("statistics", fields...)
-
-	return &statData{
-		sys:  sys,
-		proc: proc,
+	return &StatData{
+		Sys:  sys,
+		Proc: proc,
 	}
 }
 
-type system struct {
+func printUsageInfo(statData *StatData, fields ...zap.Field) {
+	fields = append(fields, zap.Any("system", statData.Sys), zap.Any("process", statData.Proc))
+	zapLog.Info("statistics", fields...)
+}
+
+// System information
+type System struct {
 	CPUUsage float64 `json:"cpu_usage"` // system cpu usage, unit(%)
+	MemUsage float64 `json:"mem_usage"` // system memory usage, unit(%)
 	CPUCores int32   `json:"cpu_cores"` // cpu cores, multiple cpu accumulation
 	MemTotal uint64  `json:"mem_total"` // system total physical memory, unit(M)
 	MemFree  uint64  `json:"mem_free"`  // system free physical memory, unit(M)
-	MemUsage float64 `json:"mem_usage"` // system memory usage, unit(%)
 }
 
-type process struct {
+// Process information
+type Process struct {
 	CPUUsage   float64 `json:"cpu_usage"`   // process cpu usage, unit(%)
 	RSS        uint64  `json:"rss"`         // use of physical memory, unit(M)
 	VMS        uint64  `json:"vms"`         // use of virtual memory, unit(M)
@@ -164,7 +201,8 @@ type process struct {
 	Goroutines int     `json:"goroutines"`  // number of goroutines
 }
 
-type statData struct {
-	sys  system
-	proc process
+// StatData statistical data
+type StatData struct {
+	Sys  System
+	Proc Process
 }

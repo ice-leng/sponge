@@ -10,22 +10,20 @@ import (
 // Model embedded structs, add `bson: ",inline"` when defining table structs
 type Model struct {
 	ID        primitive.ObjectID `bson:"_id" json:"id"`
-	CreatedAt time.Time          `bson:"created_at" json:"createdAt"`
-	UpdatedAt time.Time          `bson:"updated_at" json:"updatedAt"`
+	CreatedAt *time.Time         `bson:"created_at" json:"createdAt"`
+	UpdatedAt *time.Time         `bson:"updated_at" json:"updatedAt"`
 	DeletedAt *time.Time         `bson:"deleted_at,omitempty" json:"deletedAt,omitempty"`
 }
 
 // SetModelValue set model fields
 func (p *Model) SetModelValue() {
-	now := time.Now()
 	if !p.ID.IsZero() {
 		p.ID = primitive.NewObjectID()
 	}
 
-	if p.CreatedAt.IsZero() {
-		p.CreatedAt = now
-		p.UpdatedAt = now
-	}
+	now := time.Now()
+	p.CreatedAt = &now
+	p.UpdatedAt = &now
 }
 
 // ExcludeDeleted exclude soft deleted records

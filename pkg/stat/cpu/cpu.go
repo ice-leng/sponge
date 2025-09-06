@@ -4,10 +4,11 @@ package cpu
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strconv"
 
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 // System cpu information
@@ -39,7 +40,7 @@ func GetSystemCPU() *System {
 		fmt.Printf("cpu.Percent error, %v\n", err)
 	}
 	if len(vs) == 1 {
-		sysUsagePercent = vs[0] * 10
+		sysUsagePercent = vs[0]
 	}
 
 	var cpuInfos []CPUInfo
@@ -78,7 +79,12 @@ func GetProcess() *Process {
 		fmt.Printf("p.CPUPercent error, %v\n", err)
 		return proc
 	}
-	proc.UsagePercent = floatRound(percent, 1)
+	numCPU := runtime.NumCPU()
+	if numCPU > 1 {
+		proc.UsagePercent = floatRound(percent/float64(numCPU), 1)
+	} else {
+		proc.UsagePercent = floatRound(percent, 1)
+	}
 
 	mInfo, _ := p.MemoryInfo()
 	proc.RSS = mInfo.RSS >> 20

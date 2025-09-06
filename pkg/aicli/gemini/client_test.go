@@ -28,7 +28,7 @@ func TestClient_Send(t *testing.T) {
 
 func TestClient_SendStream(t *testing.T) {
 	client, err := NewClient(apiKey,
-		WithModel(Model20FlashThinking),
+		WithModel(Model25Pro),
 		WithEnableContext(),
 		WithInitialContextMessages(&ContextMessage{Role: "model", Content: "Hello, I am a gopher."}),
 	)

@@ -208,6 +208,11 @@ func GetErrorCode(err error) int {
 	return e.Code()
 }
 
+// Is check if error is equal to target error
+func Is(err error, e *Error) bool {
+	return GetErrorCode(err) == e.Code()
+}
+
 // ListHTTPErrCodes list http error codes
 func ListHTTPErrCodes() []ErrInfo {
 	return getErrorInfo(httpErrCodes)

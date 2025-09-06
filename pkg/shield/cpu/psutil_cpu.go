@@ -4,7 +4,7 @@ package cpu
 import (
 	"time"
 
-	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v4/cpu"
 )
 
 type psutilCPU struct {
@@ -24,7 +24,9 @@ func (ps *psutilCPU) Usage() (uint64, error) {
 	var u uint64
 	percents, err := cpu.Percent(ps.interval, false)
 	if err == nil {
-		u = uint64(percents[0] * 10)
+		if len(percents) > 0 {
+			u = uint64(percents[0] * 10) // convert to 10/1000 of a percent
+		}
 	}
 	return u, err
 }

@@ -44,6 +44,17 @@ func TestStrToIntE(t *testing.T) {
 	assert.Equal(t, 1, val)
 }
 
+func TestStrToInt64(t *testing.T) {
+	val := StrToInt("1")
+	assert.Equal(t, 1, val)
+}
+
+func TestStrToInt64E(t *testing.T) {
+	val, err := StrToIntE("1")
+	assert.NoError(t, err)
+	assert.Equal(t, 1, val)
+}
+
 func TestStrToUint32(t *testing.T) {
 	val := StrToUint32("1")
 	assert.Equal(t, uint32(1), val)

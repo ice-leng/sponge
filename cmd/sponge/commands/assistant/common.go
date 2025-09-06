@@ -15,6 +15,7 @@ import (
 	"github.com/go-dev-frame/sponge/pkg/aicli/chatgpt"
 	"github.com/go-dev-frame/sponge/pkg/aicli/deepseek"
 	"github.com/go-dev-frame/sponge/pkg/aicli/gemini"
+	"github.com/go-dev-frame/sponge/pkg/goast"
 	"github.com/go-dev-frame/sponge/pkg/gobash"
 	"github.com/go-dev-frame/sponge/pkg/gofile"
 	"github.com/go-dev-frame/sponge/pkg/utils"
@@ -28,8 +29,7 @@ const (
 	gopherRoleDescCN = aicli.GopherRoleDescCN
 	gopherRoleDescEN = aicli.GopherRoleDescEN
 
-	successSymbol = "✔ "
-	failureSymbol = "❌ "
+	successSymbol = "✓"
 )
 
 var assistantTypeMap = map[string]string{
@@ -216,41 +216,152 @@ var ErrnoAssistantMarker = fmt.Errorf("\n%s%s\n\n",
 Example:`, fmt.Sprintf(`
 
     %s
-    func MyFuncName() {
+    func FunctionName() {
         %s
     }`, color.HiCyanString("// Describe the specific functionality of the function"), color.HiCyanString(`panic("implement me")`)))
 
-func getDaoCode(isMongo bool, objName string, isChinese bool) string {
-	var daoCode string
-	if isMongo {
-		daoCode = mongoDao
-	} else {
-		daoCode = gormDao
+// get dao file path
+func getDaoFilePath(path string) string {
+	path = filepath.ToSlash(path)
+	parts := strings.Split(path, "/")
+
+	for i := len(parts) - 2; i >= 0; i-- {
+		if parts[i] == "handler" || parts[i] == "service" || parts[i] == "biz" || parts[i] == "logic" {
+			parts[i] = "dao"
+			break
+		}
 	}
-	daoCode = strings.Replace(daoCode, "UserExample", capitalize(objName), -1)
-	daoCode = strings.Replace(daoCode, "userExample", objName, -1)
+
+	return strings.Join(parts, "/")
+}
+
+type daoCodeInfo struct {
+	structName    string
+	interfaceName string
+	methodNames   string
+	code          string
+}
+
+func parseDaoCode(filePath string) (*daoCodeInfo, error) {
+	astInfos, err := goast.ParseFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var daoCode []string
+	var methodNames []string
+	var structNames []string
+
+	for _, astInfo := range astInfos {
+		if astInfo.IsFuncType() {
+			if len(astInfo.Names) == 2 {
+				methodNames = append(methodNames, astInfo.Names[0])
+				if len(structNames) == 0 {
+					structNames = append(structNames, astInfo.Names[1])
+				} else {
+					if structNames[len(structNames)-1] != astInfo.Names[1] {
+						structNames = append(structNames, astInfo.Names[1])
+					}
+				}
+			}
+			if !(len(astInfo.Names) == 1 && strings.HasPrefix(astInfo.Names[0], "New")) {
+				continue
+			}
+		}
+
+		if strings.Contains(astInfo.Body, "var total int64") {
+			continue
+		}
+
+		if astInfo.Comment != "" {
+			daoCode = append(daoCode, astInfo.Comment+"\n"+astInfo.Body)
+		} else {
+			daoCode = append(daoCode, astInfo.Body)
+		}
+	}
+
+	if len(daoCode) == 0 {
+		return nil, fmt.Errorf("no dao code found in %s", filePath)
+	}
+
+	var interfaceNames []string
+	for _, structName := range structNames {
+		interfaceNames = append(interfaceNames, capitalize(structName))
+	}
+
+	return &daoCodeInfo{
+		code:          strings.Join(daoCode, "\n\n"),
+		structName:    strings.Join(structNames, ", "),
+		methodNames:   `"` + strings.Join(methodNames, `", "`) + `"`,
+		interfaceName: strings.Join(interfaceNames, ", "),
+	}, nil
+}
+
+type daoInfo struct {
+	code          string
+	structName    string
+	methodNames   string
+	interfaceName string
+}
+
+func newDaoInfo(daoFile string, isMongo bool, objName string, isChinese bool) *daoInfo {
+	var (
+		isUseDefaultDao  = true
+		daoCode          string
+		daoStructName    = objName + "Dao"
+		daoInterfaceName = capitalize(objName) + "Dao"
+		daoMethodNames   = getDaoDefaultMethodNames(isMongo, isChinese)
+	)
+
+	if gofile.IsExists(daoFile) {
+		dci, err := parseDaoCode(daoFile)
+		if err == nil {
+			isUseDefaultDao = false
+			daoCode = dci.code
+			daoStructName = dci.structName
+			daoInterfaceName = dci.interfaceName
+			daoMethodNames = dci.methodNames
+		}
+	}
+	if isUseDefaultDao {
+		if isMongo {
+			daoCode = mongoDao
+		} else {
+			daoCode = gormDao
+		}
+		daoCode = strings.Replace(daoCode, "UserExample", capitalize(objName), -1)
+		daoCode = strings.Replace(daoCode, "userExample", objName, -1)
+	}
 
 	decs := ""
 	if isChinese {
-		decs = fmt.Sprintf("// 在这里实现业务逻辑代码, 方法函数的接收者是 %sDao， "+
-			"已知 %sDao 结构体实现了 %sDao 接口，其中 %s 方法函数已经实现了，不需要在代码上额外定义和实现这些方法函数。"+
-			"如果实现业务逻辑代码过程中需要用到这些方法函数，可以直接调用。",
-			objName, objName, capitalize(objName), getFuncNames(isMongo, isChinese))
+		decs = fmt.Sprintf(`
+
+// 已折叠隐藏 %s 方法函数的代码块。
+// 由于 "%s" 结构体已实现了 "%s" 接口中定义的所有方法，因此无需再额外创建或实现这些方法。
+// 如需使用相关功能，直接调用对应方法即可。`,
+			daoMethodNames, daoStructName, daoInterfaceName)
 	} else {
-		decs = fmt.Sprintf("// Implement the business logic code here. The method function receiver is %sDao."+
-			" It is known that the %sDao struct implements the %sDao interface. The %s method functions"+
-			" have already been implemented and do not need to be defined and implemented in code. If you need to use"+
-			" these method functions while implementing the business logic, you can call them directly.",
-			objName, objName, capitalize(objName), getFuncNames(isMongo, isChinese))
+		decs = fmt.Sprintf(`
+
+// The code block for the method %s has been collapsed and hidden.
+// Since the struct "%s" already implements all methods defined in the "%s" interface, there is no need to create or implement these methods again.
+// If needed, you can directly call the corresponding methods.`,
+			daoMethodNames, daoStructName, daoInterfaceName)
 	}
 
-	return daoCode + decs + "\n\n"
+	return &daoInfo{
+		code:          daoCode + decs + "\n\n",
+		structName:    daoStructName,
+		methodNames:   daoMethodNames,
+		interfaceName: daoInterfaceName,
+	}
 }
 
-func getFuncNames(isMongo bool, isChinese bool) string {
-	baseFuncNames := "Create, UpdateByID, GetByID"
+func getDaoDefaultMethodNames(isMongo bool, isChinese bool) string {
+	baseFuncNames := `"Create", "DeleteByID", "UpdateByID", "GetByID"`
 	if !isMongo {
-		baseFuncNames += ", CreateByTx, DeleteByTx, UpdateByTx"
+		baseFuncNames += `, "CreateByTx", "DeleteByTx", "UpdateByTx"`
 	}
 	if isChinese {
 		baseFuncNames = strings.ReplaceAll(baseFuncNames, ", ", "、")
@@ -284,91 +395,6 @@ func capitalize(s string) string {
 	runes[0] = unicode.ToUpper(runes[0])
 	return string(runes)
 }
-
-// nolint
-var (
-	defaultPromptFormatEN = `
-Please implement the business logic for the functions %s based on the descriptions provided in the comments within the following Go code. Specific implementation requirements are as follows:
-
-1. **Function Implementation**: Ensure that the code functionality aligns with the descriptions in the function comments. Add comments to key steps during the implementation of the code logic to facilitate understanding and maintenance.
-2. **Dependency Management**: If you need to import other packages or third-party libraries, ensure these packages already exist and are usable.
-3. **Code Quality**: Adhere to Go language's coding style, naming conventions, and commenting standards. Ensure the code is clear, readable, and well-commented.
-4. **Compilability**: Ensure that the implemented code can be compiled successfully.
-5. **Returned Code**: Please provide the complete Go language code, ensuring that the code is in pure Go format, just use markdown tag go language code block, no additional text description code block.
-`
-	defaultPromptFormatCN = `
-请根据以下Go语言代码中的函数注释描述，实现函数 %s 的业务逻辑。具体实现要求如下： 
-
-1. **功能实现**：确保代码功能与函数注释描述一致。在实现代码逻辑时，对关键步骤添加注释，以便于理解和维护。
-2. **依赖管理**：如果需要import其他包或第三方库，请确保这些包已存在并可用。
-3. **代码质量**：遵循Go语言的代码风格、命名规范和注释规范，确保代码清晰易读，注释完整。
-4. **可编译性**：确保实现的代码能够顺利编译通过。
-5. **返回代码**：请提供完整的Go语言代码，确保代码为纯Go语言格式，只需使用Markdown标记Go语言代码块，无需额外文字描述说明代码块。
-`
-
-	promptFormatEN = `
-Below are the codes for the Go files. Please implement the business logic for the function %s according to the following requirements:
-
-1. **Function Description**:
-   - The function comments in the %s file describe the functionality of %s, and the function body contains example reference code.
-   - The specific business logic is not implemented in %s but rather in %s.
-   - The function in %s needs to call the business logic function implemented in %s.
-   - Add comments to key steps during the implementation of the code logic to facilitate understanding and maintenance.
-
-2. **Dependency Management**:
-   - Given that the import package in the code already exists, it can be used directly.
-   - If you need to import additional packages, make sure they already exist and are available.
-
-3. **Code Quality**:
-   - Adhere to Go language's coding style, naming conventions, and commenting standards.
-   - Ensure the code is clear, readable, and well-commented.
-
-4. **Compilability**:
-   - Ensure that the implemented code can be compiled successfully.
-
-5. **Returned Code**:
-   - Please provide the complete Go language code, ensuring that the code is in pure Go format, just use markdown tag go language code block, no additional text description code block. The code for the two files should be separated by /**code-delimiter**/, with the code for the first %s file preceding the code for the second %s file, to facilitate easy splitting of the code based on the /**code-delimiter**/ marker.
-
-
-The original file %s code is as follows:
-%s
-
-
-The original file %s code is as follows:
-%s
-`
-	promptFormatCN = `
-下面是 Go 文件的代码。请根据以下要求实现函数 %s 的业务逻辑：
-
-1. **功能描述**：
-   - %s 文件中的函数注释描述了 %s 的功能，函数体里包含了示例参考代码。
-   - 具体的业务逻辑不在 %s 中实现，而是在 %s 中实现。
-   - %s 中的函数需要调用 %s 中实现的业务逻辑函数。
-   - 在实现代码逻辑时，对关键步骤添加注释，以便于理解和维护。
-
-2. **依赖管理**：
-   - 已知代码中 import 的包已存在，可直接使用。
-   - 如果需要 import 其他包，请确保这些包已存在并可用。
-
-3. **代码质量**：
-   - 遵循Go语言的代码风格、命名规范和注释规范。
-   - 确保代码清晰易读，注释完整。
-
-4. **可编译性**：
-   - 确保实现的代码能够顺利编译通过。
-
-5. **返回代码**：
-   - 请提供完整的Go语言代码，确保代码为纯Go语言格式，只需使用Markdown标记Go语言代码块，无需额外文字描述说明代码块。两个文件的代码应以 /**code-delimiter**/ 分隔，其中第一个 %s 文件的代码在前，第二个 %s 文件的代码在后，以便后续通过 /**code-delimiter**/ 标记轻松分割代码。
-
-
-原始文件 %s 代码如下：
-%s
-
-
-原始文件 %s 代码如下：
-%s
-`
-)
 
 // extractGoCode extracts the Go code blocks from the given markdown string.
 func extractGoCode(markdown string) []string {
@@ -466,7 +492,7 @@ func newPrintLog(t ...time.Duration) *utils.WaitPrinter {
 	if len(t) > 0 {
 		time.Sleep(t[0])
 	}
-	p := utils.NewWaitPrinter(time.Millisecond * 200)
+	p := utils.NewWaitPrinter(time.Millisecond * 250)
 	p.LoopPrint("Waiting for assistant responses ")
 	return p
 }
@@ -488,7 +514,7 @@ func deleteGenFiles(files []string, assistantType string) {
 	if len(doneFiles) > 0 {
 		fmt.Printf("Clean up code files generated by [%s] assistant:\n", assistantType)
 		for _, file := range doneFiles {
-			fmt.Printf("    %s %s\n", successSymbol, color.HiGreenString(cutFilePath(file)))
+			fmt.Printf("    %s\n", color.HiGreenString(cutFilePath(file)))
 		}
 		fmt.Println()
 	}

@@ -124,7 +124,7 @@ func Test_userExampleDao_GetByID(t *testing.T) {
 		AddRow(testData.ID)
 
 	d.SQLMock.ExpectQuery("SELECT .*").
-		WithArgs(testData.ID).
+		WithArgs(testData.ID, 1).
 		WillReturnRows(rows)
 
 	_, err := d.IDao.(UserExampleDao).GetByID(d.Ctx, testData.ID)
@@ -137,7 +137,7 @@ func Test_userExampleDao_GetByID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// notfound error
+	// error test
 	d.SQLMock.ExpectQuery("SELECT .*").
 		WithArgs(2).
 		WillReturnRows(rows)

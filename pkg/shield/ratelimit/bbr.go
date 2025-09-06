@@ -4,6 +4,7 @@ package ratelimit
 import (
 	"math"
 	"runtime"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -12,10 +13,10 @@ import (
 )
 
 var (
-	gCPU  int64
-	decay = 0.95
-
-	_ Limiter = &BBR{}
+	gCPU    int64
+	decay   = 0.95
+	cpuOnce sync.Once
+	_       Limiter = &BBR{}
 )
 
 type (
@@ -24,10 +25,6 @@ type (
 	// Option function for bbr limiter
 	Option func(*options)
 )
-
-func init() {
-	go cpuproc()
-}
 
 // cpu = cpuᵗ⁻¹ * decay + cpuᵗ * (1 - decay)
 func cpuproc() {
@@ -135,6 +132,10 @@ type BBR struct {
 
 // NewLimiter returns a bbr limiter
 func NewLimiter(opts ...Option) *BBR {
+	cpuOnce.Do(func() {
+		go cpuproc()
+	})
+
 	opt := options{
 		Window:       time.Second * 10,
 		Bucket:       100,
@@ -294,10 +295,12 @@ func (l *BBR) Allow() (DoneFunc, error) {
 		return nil, ErrLimitExceed
 	}
 	atomic.AddInt64(&l.inFlight, 1)
-	start := time.Now().UnixNano()
-	ms := float64(time.Millisecond)
+	start := time.Now()
 	return func(DoneInfo) {
-		rt := int64(math.Ceil(float64(time.Now().UnixNano()-start)) / ms) //nolint
+		rt := time.Since(start).Milliseconds()
+		if rt <= 0 {
+			rt = 1
+		}
 		l.rtStat.Add(rt)
 		atomic.AddInt64(&l.inFlight, -1)
 		l.passStat.Add(1)

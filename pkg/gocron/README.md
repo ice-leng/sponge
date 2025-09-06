@@ -6,6 +6,10 @@ Scheduled task library encapsulated on [cron v3](github.com/robfig/cron).
 
 ### Example of use
 
+#### Local Scheduled Tasks
+
+Local scheduled tasks are suitable for single-machine environments, typically used to perform periodic or delayed background jobs, such as data cleanup, log archiving, and local cache refreshing. Example usage:
+
 ```go
 package main
 
@@ -59,3 +63,11 @@ func main() {
 	fmt.Println("running task list:", gocron.GetRunningTasks())
 }
 ```
+
+<br>
+
+#### Distributed Scheduled Tasks
+
+Distributed scheduled tasks are designed for cluster environments, ensuring coordinated task execution across multiple nodes to avoid duplicate scheduling while improving reliability and scalability. Example usage:
+
+[https://github.com/go-dev-frame/sponge/tree/main/pkg/sasynq#periodic-tasks](https://github.com/go-dev-frame/sponge/tree/main/pkg/sasynq#periodic-tasks)

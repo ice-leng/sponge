@@ -18,6 +18,17 @@ func StrToIntE(str string) (int, error) {
 	return strconv.Atoi(str)
 }
 
+// StrToInt64 string to int64
+func StrToInt64(str string) int64 {
+	v, _ := strconv.ParseInt(str, 10, 64)
+	return v
+}
+
+// StrToInt64E string to int64 with error
+func StrToInt64E(str string) (int64, error) {
+	return strconv.ParseInt(str, 10, 64)
+}
+
 // StrToUint32 string to uint32
 func StrToUint32(str string) uint32 {
 	v, _ := strconv.ParseUint(str, 10, 64)

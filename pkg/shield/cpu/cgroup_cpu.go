@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	pscpu "github.com/shirou/gopsutil/v3/cpu"
+	pscpu "github.com/shirou/gopsutil/v4/cpu"
 )
 
 type cgroupCPU struct {

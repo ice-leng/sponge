@@ -145,12 +145,13 @@ func (c *Column) checkExp() (string, error) {
 			if !ok1 {
 				return symbol, fmt.Errorf("invalid value type '%s'", c.Value)
 			}
-			l := len(val)
-			if l > 2 {
-				val2 := val[1 : l-1]
-				val2 = strings.ReplaceAll(val2, "%", "\\%")
-				val2 = strings.ReplaceAll(val2, "_", "\\_")
-				val = string(val[0]) + val2 + string(val[l-1])
+			// Use rune-safe slicing to preserve multi-byte characters
+			r := []rune(val)
+			if len(r) > 2 {
+				middle := string(r[1 : len(r)-1])
+				middle = strings.ReplaceAll(middle, "%", "\\%")
+				middle = strings.ReplaceAll(middle, "_", "\\_")
+				val = string(r[0]) + middle + string(r[len(r)-1])
 			}
 			if strings.HasPrefix(val, "%") ||
 				strings.HasPrefix(val, "_") ||

@@ -22,8 +22,8 @@ func Test_statGroup_check(t *testing.T) {
 ]`
 
 	type stData struct {
-		System  system  `json:"system"`
-		Process process `json:"process"`
+		System  System  `json:"system"`
+		Process Process `json:"process"`
 	}
 
 	sd := []stData{}
@@ -36,9 +36,9 @@ func Test_statGroup_check(t *testing.T) {
 	sg := newStatGroup()
 	triggerInterval = 1
 	for _, data := range sd {
-		isAlarm := sg.check(&statData{
-			sys:  data.System,
-			proc: data.Process,
+		isAlarm := sg.check(&StatData{
+			Sys:  data.System,
+			Proc: data.Process,
 		})
 		t.Log(isAlarm)
 		time.Sleep(250 * time.Millisecond)
