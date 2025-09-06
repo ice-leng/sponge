@@ -15,6 +15,8 @@ func init() {
 func userExampleRouter(group *gin.RouterGroup, h handler.UserExampleHandler) {
 	g := group.Group("/userExample")
 
+	// JWT authentication reference: https://go-sponge.com/component/transport/gin.html#jwt-authorization-middleware
+
 	// All the following routes use jwt authentication, you also can use middleware.Auth(middleware.WithExtraVerify(fn))
 	//g.Use(auth.Auth(auth.WithExtraVerify(middlewares.VerifyToken)))
 

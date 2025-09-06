@@ -215,7 +215,7 @@ func TestUserDao_GetByID(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"id", "name"}).AddRow(testData.ID, testData.Name)
 
 	d.SQLMock.ExpectQuery("SELECT .*").
-		WithArgs(testData.ID).
+		WithArgs(testData.ID, 1).
 		WillReturnRows(rows)
 
 	_, err := d.IDao.(*userDao).GetByID(d.Ctx, testData.ID)

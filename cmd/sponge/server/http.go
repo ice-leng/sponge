@@ -58,6 +58,7 @@ func NewRouter(spongeAddr string, isLog bool) *gin.Engine {
 	apiV1.POST("/generate", GenerateCode)
 	apiV1.POST("/getTemplateInfo", GetTemplateInfo)
 	apiV1.POST("/assistant", HandleAssistant)
+	apiV1.POST("/performanceTest", HandlePerformanceTest)
 	apiV1.POST("/uploadFiles", UploadFiles)
 	apiV1.POST("/listTables", ListTables)
 	apiV1.GET("/listDrivers", ListDbDrivers)

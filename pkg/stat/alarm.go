@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	cpuThreshold            = 0.8
-	memoryThreshold         = 0.8
+	cpuThreshold            = 0.8 // 80% CPU usage
+	memoryThreshold         = 0.8 // 80% memory usage
 	triggerInterval float64 = 900 // unit(s)
 )
 
@@ -43,15 +43,15 @@ func WithMemoryThreshold(threshold float64) AlarmOption {
 }
 
 type statGroup struct {
-	data    [3]*statData
+	data    [3]*StatData
 	alarmAt time.Time
 }
 
 func newStatGroup() *statGroup {
-	return &statGroup{data: [3]*statData{}}
+	return &statGroup{data: [3]*StatData{}}
 }
 
-func (g *statGroup) check(sd *statData) bool {
+func (g *statGroup) check(sd *StatData) bool {
 	if g.data[0] == nil {
 		g.data[0] = sd
 		return false
@@ -79,12 +79,12 @@ func (g *statGroup) check(sd *statData) bool {
 }
 
 func (g *statGroup) checkCPU(threshold float64) bool {
-	if g.data[0].sys.CPUCores == 0 {
+	if g.data[0].Sys.CPUCores == 0 {
 		return false
 	}
 
 	// average cpu usage exceeds cpuCores*threshold
-	average := (g.data[0].proc.CPUUsage + g.data[1].proc.CPUUsage + g.data[2].proc.CPUUsage) / 3 / float64(g.data[0].sys.CPUCores)
+	average := (g.data[0].Proc.CPUUsage + g.data[1].Proc.CPUUsage + g.data[2].Proc.CPUUsage) / 3
 	threshold = threshold * 100
 	if average >= threshold {
 		fmt.Printf("[cpu] processes cpu usage(%.f%%) exceeds %.f%%\n", average, threshold)
@@ -95,13 +95,13 @@ func (g *statGroup) checkCPU(threshold float64) bool {
 }
 
 func (g *statGroup) checkMemory(threshold float64) bool {
-	if g.data[0].sys.MemTotal == 0 {
+	if g.data[0].Sys.MemTotal == 0 {
 		return false
 	}
 
 	// processes occupying more than threshold of system memory
-	procAverage := (g.data[0].proc.RSS + g.data[1].proc.RSS + g.data[2].proc.RSS) / 3
-	procAverageUsage := float64(procAverage) / float64(g.data[0].sys.MemTotal)
+	procAverage := (g.data[0].Proc.RSS + g.data[1].Proc.RSS + g.data[2].Proc.RSS) / 3
+	procAverageUsage := float64(procAverage) / float64(g.data[0].Sys.MemTotal)
 	if procAverageUsage >= threshold {
 		fmt.Printf("[memory] processes memory usage(%.f%%) exceeds %.f%%\n", procAverageUsage*100, threshold*100)
 		return true

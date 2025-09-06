@@ -236,7 +236,7 @@ func (g *httpAndGRPCPbGenerator) addFields(r replacer.Replacer) []replacer.Field
 	}
 
 	fields = append(fields, replaceFileContentMark(r, readmeFile,
-		setReadmeTitle(g.moduleName, g.serverName, codeNameGRPCHTTPPb, g.suitedMonoRepo))...)
+		getReadmeContent(g.moduleName, g.serverName, adaptGRPCHTTPType(g.isAddDBInitCode), g.dbDriver, g.suitedMonoRepo))...)
 	fields = append(fields, []replacer.Field{
 		{ // replace the configuration of the *.yml file
 			Old: appConfigFileMark,
@@ -369,9 +369,20 @@ func (g *httpAndGRPCPbGenerator) addFields(r replacer.Replacer) []replacer.Field
 	fields = append(fields, getGRPCServiceFields()...)
 
 	if g.suitedMonoRepo {
-		fs := serverCodeFields(codeNameGRPCHTTPPb, g.moduleName, g.serverName)
+		serverType := codeNameGRPCHTTPPb
+		if g.isAddDBInitCode {
+			serverType = codeNameGRPC // force to use grpc type when using mono-repo
+		}
+		fs := serverCodeFields(serverType, g.moduleName, g.serverName)
 		fields = append(fields, fs...)
 	}
 
 	return fields
+}
+
+func adaptGRPCHTTPType(isAddDBInitCode bool) string {
+	if isAddDBInitCode {
+		return codeNameGRPCHTTP
+	}
+	return codeNameGRPCHTTPPb
 }

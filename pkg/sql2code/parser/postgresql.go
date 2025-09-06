@@ -34,7 +34,8 @@ func ConvertToSQLByPgFields(tableName string, fields PGFields) (string, map[stri
 		if !field.Notnull {
 			notnullStr = "null"
 		}
-		fieldStr += fmt.Sprintf("    `%s` %s %s comment '%s',\n", field.Name, sqlType, notnullStr, field.Comment)
+		comment := strings.ReplaceAll(field.Comment, "'", "\\'")
+		fieldStr += fmt.Sprintf("    `%s` %s %s comment '%s',\n", field.Name, sqlType, notnullStr, comment)
 	}
 
 	primaryField := fields.getPrimaryField()

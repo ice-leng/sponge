@@ -105,7 +105,6 @@ function autoDetectTypesProto() {
     if grep -q "$target" "$file"; then
       allProtoFiles=$allProtoFiles" $target"
       sponge patch gen-types-pb --out=. > /dev/null 2>&1
-      # Note: If the project uses mono-repo type, please manually move "api/types" directory to "../api/types"
       return 0
     fi
   done
@@ -132,7 +131,7 @@ function generateByAllProto(){
     echo "Error: not found proto file in path $protoBasePath"
     exit 1
   fi
-  echo -e "generate *pb.go by proto files: ${colorGray}$allProtoFiles${markEnd}"
+  echo -e "generate *.pb.go from .proto files: ${colorGray}$allProtoFiles${markEnd}"
   echo ""
 
   # generate files *_pb.go
@@ -188,7 +187,7 @@ function generateBySpecifiedProto(){
   if [ "$specifiedProtoFiles"x = x ];then
     return
   fi
-  echo -e "generate template code by proto files: ${colorMagenta}$specifiedProtoFiles${markEnd}"
+  echo -e "generate glue code from .proto files: ${colorMagenta}$specifiedProtoFiles${markEnd}"
   echo ""
   # todo generate api template code command here
   # delete the templates code start
@@ -201,7 +200,7 @@ function generateBySpecifiedProto(){
   checkResult $?
 
   # handle apis.swagger.json
-  sponge web swagger --enable-standardize-response --enable-to-openapi3 --enable-integer-to-string --file=docs/apis.swagger.json > /dev/null
+  sponge web swagger --enable-standardize-response --enable-to-openapi3 --file=docs/apis.swagger.json > /dev/null
 
   # A total of four files are generated: the registration route file *_router.pb.go (saved in the same directory as the protobuf file),
   # the injection route file *_router.go (saved in internal/routers by default), the logic code template file *.go (saved in internal/service by default),

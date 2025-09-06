@@ -231,7 +231,7 @@ func (g *rpcGenerator) generateCode() (string, error) {
 			"grpc.go", "grpc_option.go",
 		},
 		"internal/service": {
-			"service.go", "service_test.go", "userExample.go", "userExample_client_test.go",
+			"service.go", "service_test.go", "userExample.go", /*"userExample_client_test.go",*/
 		},
 	}
 	err := SetSelectFiles(g.dbDriver, selectFiles)
@@ -294,7 +294,7 @@ func (g *rpcGenerator) generateCode() (string, error) {
 					"userExample.go.mgo",
 				},
 				"internal/service": {
-					"service.go", "service_test.go", "userExample.go.mgo", "userExample_client_test.go.mgo",
+					"service.go", "service_test.go", "userExample.go.mgo", /*"userExample_client_test.go.mgo",*/
 				},
 			}
 			g.fields = append(g.fields, deleteFieldsMark(r, serviceLogicFile+mgoSuffix, startMark, endMark)...)
@@ -358,7 +358,7 @@ func (g *rpcGenerator) addFields(r replacer.Replacer) []replacer.Field {
 	fields = append(fields, deleteAllFieldsMark(r, appConfigFile, wellStartMark, wellEndMark)...)
 	//fields = append(fields, deleteFieldsMark(r, deploymentConfigFile, wellStartMark, wellEndMark)...)
 	fields = append(fields, replaceFileContentMark(r, readmeFile,
-		setReadmeTitle(g.moduleName, g.serverName, codeNameGRPC, g.suitedMonoRepo))...)
+		getReadmeContent(g.moduleName, g.serverName, codeNameGRPC, g.dbDriver, g.suitedMonoRepo))...)
 	fields = append(fields, []replacer.Field{
 		{ // replace the configuration of the *.yml file
 			Old: appConfigFileMark,

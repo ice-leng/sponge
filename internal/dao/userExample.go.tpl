@@ -182,7 +182,7 @@ func (d *{{.TableNameCamelFCL}}Dao) GetBy{{.ColumnNameCamel}}(ctx context.Contex
 }
 
 // GetByColumns get a paginated list of {{.TableNamePluralCamelFCL}} by custom conditions.
-// For more details, please refer to https://go-sponge.com/component/custom-page-query.html
+// For more details, please refer to https://go-sponge.com/component/data/custom-page-query.html
 func (d *{{.TableNameCamelFCL}}Dao) GetByColumns(ctx context.Context, params *query.Params) ([]*model.{{.TableNameCamel}}, int64, error) {
 	if params.Sort == "" {
 		params.Sort = "-{{.ColumnName}}"

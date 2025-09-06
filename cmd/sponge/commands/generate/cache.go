@@ -175,6 +175,10 @@ func (g *stringCacheGenerator) addFields(r replacer.Replacer) []replacer.Field {
 			New: g.moduleName + "/internal/model",
 		},
 		{
+			Old: "github.com/go-dev-frame/sponge/internal/database",
+			New: g.moduleName + "/internal/database",
+		},
+		{
 			Old:             "cacheNameExample",
 			New:             g.cacheName,
 			IsCaseSensitive: true,

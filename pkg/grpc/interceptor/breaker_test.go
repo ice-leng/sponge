@@ -3,6 +3,7 @@ package interceptor
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -18,6 +19,12 @@ func TestUnaryClientCircuitBreaker(t *testing.T) {
 		WithGroup(group.NewGroup(func() interface{} {
 			return circuitbreaker.NewBreaker()
 		})),
+		WithBreakerOption(
+			circuitbreaker.WithSuccess(75),           // default 60
+			circuitbreaker.WithRequest(200),          // default 100
+			circuitbreaker.WithBucket(20),            // default 10
+			circuitbreaker.WithWindow(time.Second*5), // default 3s
+		),
 		WithValidCode(codes.PermissionDenied),
 	)
 

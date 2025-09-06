@@ -878,32 +878,15 @@ func cutPath(srcFilePath string) string {
 	return strings.ReplaceAll(srcFilePath, "\\", "/")
 }
 
-func wrapPoint(s string) string {
-	return "`" + s + "`"
-}
+func getReadmeContent(moduleName, serverName, serverType, dbDriver string, suitedMonoRepo bool) string {
+	r := newReadmeTemp(moduleName, serverName, serverType, dbDriver, suitedMonoRepo)
 
-func setReadmeTitle(moduleName string, serverName string, serverType string, suitedMonoRepo bool) string {
-	var repoType string
-	if suitedMonoRepo {
-		repoType = "mono-repo"
-	} else {
-		if serverType == codeNameHTTP {
-			repoType = "monolith"
-		} else {
-			repoType = "multi-repo"
-		}
+	content, err := r.genReadmeContent()
+	if err != nil {
+		fmt.Println(err)
 	}
 
-	return wellPrefix + serverName + fmt.Sprintf(`
-
-| Feature             | Value          |
-| :----------------: | :-----------: |
-| Server name      |  %s   |
-| Server type        |  %s   |
-| Go module name |  %s  |
-| Repository type   |  %s  |
-
-`, wrapPoint(serverName), wrapPoint(serverType), wrapPoint(moduleName), wrapPoint(repoType))
+	return content
 }
 
 // GetGoModFields get go mod fields

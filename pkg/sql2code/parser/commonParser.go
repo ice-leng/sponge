@@ -406,7 +406,7 @@ func getHandlerGoType(field *tmplField) string {
 			switch field.rewriterField.goType {
 			case jsonTypeName:
 				goType = "string"
-			case boolTypeName:
+			case boolTypeName, boolTypeTinyName:
 				goType = "*bool"
 			case decimalTypeName:
 				goType = "string"

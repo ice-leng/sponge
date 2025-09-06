@@ -43,11 +43,22 @@ func (o *circuitBreakerOptions) apply(opts ...CircuitBreakerOption) {
 }
 
 // WithGroup with circuit breaker group.
-// NOTE: implements generics circuitbreaker.CircuitBreaker
+// Deprecated: use WithBreakerOption instead
 func WithGroup(g *group.Group) CircuitBreakerOption {
 	return func(o *circuitBreakerOptions) {
 		if g != nil {
 			o.group = g
+		}
+	}
+}
+
+// WithBreakerOption set the circuit breaker options.
+func WithBreakerOption(opts ...circuitbreaker.Option) CircuitBreakerOption {
+	return func(o *circuitBreakerOptions) {
+		if len(opts) > 0 {
+			o.group = group.NewGroup(func() interface{} {
+				return circuitbreaker.NewBreaker(opts...)
+			})
 		}
 	}
 }

@@ -61,6 +61,8 @@ func userExampleServiceRouter(
 func userExampleMiddlewares(c *middlewareConfig) {
 	_ = c
 
+	// JWT authentication reference: https://go-sponge.com/component/transport/gin.html#jwt-authorization-middleware
+
 	// set up group route middleware, group path is left prefix rules,
 	// if the left prefix is hit, the middleware will take effect, e.g. group route /api/v1, route /api/v1/userExample/:id  will take effect
 	// c.setGroupPath("/api/v1/userExample", middleware.Auth())

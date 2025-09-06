@@ -107,6 +107,9 @@ func TestParseError(t *testing.T) {
 
 	e := ParseError(nil)
 	t.Log(e)
+
+	ok := Is(InvalidParams.Err(), InvalidParams)
+	t.Log(ok)
 }
 
 func TestGetErrorCode(t *testing.T) {

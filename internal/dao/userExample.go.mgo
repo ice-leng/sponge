@@ -63,10 +63,10 @@ func (d *userExampleDao) Create(ctx context.Context, record *model.UserExample) 
 	if record.ID.IsZero() {
 		record.ID = primitive.NewObjectID()
 	}
-	if record.CreatedAt.IsZero() {
-		record.CreatedAt = time.Now()
-		record.UpdatedAt = time.Now()
-	}
+	now := time.Now()
+	record.CreatedAt = &now
+	record.UpdatedAt = &now
+
 	_, err := d.collection.InsertOne(ctx, record)
 
 	_ = d.deleteCache(ctx, record.ID.Hex())
@@ -211,7 +211,7 @@ func (d *userExampleDao) GetByID(ctx context.Context, id string) (*model.UserExa
 }
 
 // GetByColumns get a paginated list of userExamples by custom conditions.
-// For more details, please refer to https://go-sponge.com/component/custom-page-query.html
+// For more details, please refer to https://go-sponge.com/component/data/custom-page-query.html
 func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params) ([]*model.UserExample, int64, error) {
 	filter, err := params.ConvertToMongoFilter(query.WithWhitelistNames(model.UserExampleColumnNames))
 	if err != nil {

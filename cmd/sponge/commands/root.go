@@ -45,6 +45,7 @@ Docs: %s`,
 		GenGraphCommand(),
 		TemplateCommand(),
 		AssistantCommand(),
+		PerftestCommand(),
 	)
 
 	return cmd

@@ -89,7 +89,7 @@ go env GOBIN  # 验证是否配置成功，如果输出不为空，说明设置�
 #### 安装步骤
 
 1. 安装 protoc：
-    - 下载地址：[protoc v25.2](https://github.com/protocolbuffers/protobuf/releases/tag/v25.2)
+    - 下载地址：[protoc v31.1](https://github.com/protocolbuffers/protobuf/releases/tag/v31.1)
     - 将 `protoc` 可执行文件放入 `GOBIN` 目录
 
 2. 安装 sponge：
