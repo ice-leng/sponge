@@ -187,7 +187,7 @@ func (h *Hub) run() {
 				case cli.Send <- ue.Event:
 				//h.zapLogger.Info("[sse] pushed event to client", zap.String("uid", ue.UID), zap.String("event_id", ue.Event.ID))
 				default:
-					trySendWithTimeout(h, cli, ue, 3*time.Second)
+					trySendWithTimeout(h, cli, ue, 5*time.Second)
 				}
 			}
 
@@ -248,7 +248,7 @@ func pushOne(h *Hub, ue *UserEvent) {
 	default:
 		// use async task pool to submit push task with timeout retry
 		h.asyncTaskPool.Submit(func() {
-			tryPushWithTimeout(h, ue, 3*time.Second)
+			tryPushWithTimeout(h, ue, 5*time.Second)
 		})
 	}
 }
@@ -371,8 +371,37 @@ func (h *Hub) OnlineClientsNum() int {
 	return h.clients.Len()
 }
 
-// Close event center and stop all worker
-func (h *Hub) Close() {
+// Close event center and stop all worker,
+// By default, send a shutdown event to the client. If you want the client
+// to automatically reconnect, please set the tryToReconnect parameter to false.
+func (h *Hub) Close(tryToReconnect ...bool) {
+	if h.OnlineClientsNum() > 0 {
+		h.zapLogger.Info("[sse] closing clients", zap.Int("client_num", h.OnlineClientsNum()))
+
+		noTryToReconnect := false
+		if len(tryToReconnect) == 0 || tryToReconnect[0] {
+			_ = h.Push(nil, CloseEvent())
+			noTryToReconnect = true
+		}
+
+		if noTryToReconnect {
+			for i := 0; i < 50; i++ {
+				time.Sleep(100 * time.Millisecond)
+				h.clients.Range(func(uidKey, cliVal interface{}) bool {
+					cli := cliVal.(*UserClient)
+					if cli.isSendClosedEvent && h.clients.Has(cli.UID) {
+						h.clients.Delete(cli.UID)
+						close(cli.Send)
+					}
+					return true
+				})
+				if h.OnlineClientsNum() == 0 {
+					break
+				}
+			}
+		}
+	}
+
 	h.cancel()
 	h.asyncTaskPool.Wait()
 	h.asyncTaskPool.Stop()
@@ -418,5 +447,5 @@ func (s *PushStats) Snapshot() (total, success, failed, timeout int64) { //nolin
 
 func newStringID() string {
 	ns := time.Now().UnixMicro() * 1000
-	return strconv.FormatInt(ns+rand.Int63n(1000), 10)
+	return strconv.FormatInt(ns+rand.Int63n(1000), 16)
 }

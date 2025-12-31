@@ -5,9 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net"
 	"os"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/go-dev-frame/sponge/pkg/utils"
 )
 
 const (
@@ -15,6 +19,15 @@ const (
 	BodyTypeForm = "application/x-www-form-urlencoded"
 	BodyTypeText = "text/plain"
 )
+
+var CommandPrefix = "sponge perftest"
+
+// SetCommandPrefix sets the command prefix for the perftest command.
+func SetCommandPrefix(name string) {
+	if name == "" || name == "perftest" {
+		CommandPrefix = "perftest"
+	}
+}
 
 // nolint
 func ParseHTTPParams(method string, headers []string, body string, bodyFile string) ([]byte, map[string]string, error) {
@@ -146,4 +159,24 @@ func isValidJSON(data []byte) (bool, error) {
 func NewID() int64 {
 	ns := time.Now().UnixMilli() * 1000000
 	return ns + rand.Int63n(1000000)
+}
+
+// NewStringID Generate a string ID, the hexadecimal form of NewID(), total 16 bytes.
+func NewStringID() string {
+	return strconv.FormatInt(NewID(), 16)
+}
+
+// CheckPortInUse checks if the given port is in use, if not, it returns a new available port.
+func CheckPortInUse(port string) string {
+	addr := fmt.Sprintf(":%s", port)
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		portInt, err2 := utils.GetAvailablePort()
+		if err2 != nil {
+			return ""
+		}
+		return strconv.Itoa(portInt)
+	}
+	_ = ln.Close()
+	return port
 }
