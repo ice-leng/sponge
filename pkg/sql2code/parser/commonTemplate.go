@@ -14,7 +14,7 @@ var (
 // Create{{.TableName}}Request request params
 type Create{{.TableName}}Request struct {
 {{- range .Fields}}
-	{{.Name}}  {{.GoType}} ` + "`" + `json:"{{.JSONName}}" binding:""` + "`" + `{{if .Comment}} // {{.Comment}}{{end}}
+	{{.Name}}  {{.GoType}} ` + "`" + `json:"{{.JSONName}}" binding:"" label:"{{.Comment}}"` + "`" + `{{if .Comment}} // {{.Comment}}{{end}}
 {{- end}}
 }
 `
@@ -24,7 +24,7 @@ type Create{{.TableName}}Request struct {
 // Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request request params
 type Update{{.TableName}}By{{.CrudInfo.ColumnNameCamel}}Request struct {
 {{- range .Fields}}
-	{{.Name}}  {{.GoType}} ` + "`" + `json:"{{.JSONName}}" binding:""` + "`" + `{{if .Comment}} // {{.Comment}}{{end}}
+	{{.Name}}  {{.GoType}} ` + "`" + `json:"{{.JSONName}}" binding:"" label:"{{.Comment}}"` + "`" + `{{if .Comment}} // {{.Comment}}{{end}}
 {{- end}}
 }
 `

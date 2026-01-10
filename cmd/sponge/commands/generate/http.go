@@ -3,11 +3,12 @@ package generate
 import (
 	"errors"
 	"fmt"
-	"github.com/go-dev-frame/sponge/cmd/sponge/global"
 	"math/rand"
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/go-dev-frame/sponge/cmd/sponge/global"
 
 	"github.com/fatih/color"
 	"github.com/huandu/xstrings"
@@ -227,7 +228,10 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"systemCode_http.go", "userExample_http.go",
 		},
 		"internal/handler": {
-			"userExample.go", "userExample_test.go",
+			"userExample.go", "userExample_test.go", "base.go",
+		},
+		"internal/logic": {
+			"userExample.go",
 		},
 		"internal/model": {
 			"userExample.go",
@@ -347,6 +351,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"internal/ecode/systemCode_http.go",
 			"internal/routers/routers.go",
 			"internal/types/swagger_types.go",
+			"internal/handler/base.go",
 		}...)
 	}
 
