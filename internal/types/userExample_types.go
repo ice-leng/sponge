@@ -55,9 +55,11 @@ type UserExampleObjDetail struct {
 
 // CreateUserExampleReply only for api docs
 type CreateUserExampleReply struct {
-	Code int      `json:"code"` // return code
-	Msg  string   `json:"msg"`  // return information description
-	Data struct{} `json:"data"` // return data
+	Code int    `json:"code"` // return code
+	Msg  string `json:"msg"`  // return information description
+	Data struct {
+		ID uint64 `json:"id"` // id
+	} `json:"data"` // return data
 }
 
 // DeleteUserExampleByIDReply only for api docs

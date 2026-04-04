@@ -52,7 +52,7 @@ func (h *userExampleHandler) Create(c *gin.Context) {
 	}
 
 	ctx := middleware.WrapCtx(c)
-	_, err = h.logic.Create(ctx, form)
+	id, err := h.logic.Create(ctx, form)
 	if err != nil {
 		if ec, ok := h.isErrcode(err); ok {
 			response.Error(c, ec)
@@ -63,7 +63,7 @@ func (h *userExampleHandler) Create(c *gin.Context) {
 		return
 	}
 
-	response.Success(c)
+	response.Success(c, gin.H{"id": id})
 }
 
 // DeleteByID delete a userExample by id
