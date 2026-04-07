@@ -202,7 +202,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 	}
 	subFiles := []string{
 		"sponge/.gitignore", "sponge/.golangci.yml", "sponge/go.mod", "sponge/go.sum",
-		"sponge/Jenkinsfile", "sponge/Makefile-for-http", "sponge/README.md",
+		"sponge/Jenkinsfile", "sponge/Makefile-for-http", "sponge/README.md", "sponge/AGENTS.md",
 	}
 	if g.suitedMonoRepo {
 		subFiles = removeElements(subFiles, "sponge/go.mod", "sponge/go.sum")
@@ -348,6 +348,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"Makefile-for-http",
 			"go.mod",
 			"go.sum",
+			"AGENTS.md",
 			"internal/ecode/systemCode_http.go",
 			"internal/routers/routers.go",
 			"internal/types/swagger_types.go",
