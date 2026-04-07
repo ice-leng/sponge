@@ -9,8 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/go-dev-frame/sponge/pkg/app"
+	"github.com/go-dev-frame/sponge/pkg/httpsrv"
 	"github.com/go-dev-frame/sponge/pkg/servicerd/registry"
 
+	"github.com/go-dev-frame/sponge/internal/config"
 	"github.com/go-dev-frame/sponge/internal/routers"
 )
 
@@ -18,7 +20,7 @@ var _ app.IServer = (*httpServer)(nil)
 
 type httpServer struct {
 	addr   string
-	server *http.Server
+	server *httpsrv.Server
 
 	instance  *registry.ServiceInstance
 	iRegistry registry.Registry
@@ -33,8 +35,8 @@ func (s *httpServer) Start() error {
 		}
 	}
 
-	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		return fmt.Errorf("listen server error: %v", err)
+	if err := s.server.Run(); err != nil {
+		return fmt.Errorf("run %s service error: %v", s.server.Scheme(), err)
 	}
 	return nil
 }
@@ -56,7 +58,29 @@ func (s *httpServer) Stop() error {
 
 // String comment
 func (s *httpServer) String() string {
-	return "http service address " + s.addr
+	return s.server.Scheme() + " service address is " + s.addr
+}
+
+func newServer(server *http.Server, tls config.TLS) *httpsrv.Server {
+	var c *httpsrv.Server
+	switch httpsrv.Mode(tls.EnableMode) {
+	case httpsrv.ModeTLSSelfSigned:
+		c = httpsrv.New(server, httpsrv.NewTLSSelfSignedConfig())
+	case httpsrv.ModeTLSEncrypt:
+		c = httpsrv.New(server,
+			httpsrv.NewTLSEAutoEncryptConfig(
+				tls.Domain,
+				tls.Email,
+				// enable http redirect to https, port 80 to 443, default is false
+				//httpsrv.WithTLSEncryptEnableRedirect(),
+			),
+		)
+	case httpsrv.ModeTLSExternal:
+		c = httpsrv.New(server, httpsrv.NewTLSExternalConfig(tls.CertFile, tls.KeyFile))
+	default:
+		c = httpsrv.New(server) // default is http, no tls
+	}
+	return c
 }
 
 // NewHTTPServer creates a new http server
@@ -76,12 +100,13 @@ func NewHTTPServer(addr string, opts ...HTTPOption) app.IServer {
 		Handler: router,
 		//ReadTimeout:    time.Second*30,
 		//WriteTimeout:   time.Second*60,
+		IdleTimeout:    time.Second * 60,
 		MaxHeaderBytes: 1 << 20,
 	}
 
 	return &httpServer{
 		addr:      addr,
-		server:    server,
+		server:    newServer(server, o.tls),
 		iRegistry: o.iRegistry,
 		instance:  o.instance,
 	}
@@ -106,12 +131,13 @@ func NewHTTPServer_pbExample(addr string, opts ...HTTPOption) app.IServer { //no
 		Handler: router,
 		//ReadTimeout:    time.Second*30,
 		//WriteTimeout:   time.Second*60,
+		IdleTimeout:    time.Second * 60,
 		MaxHeaderBytes: 1 << 20,
 	}
 
 	return &httpServer{
 		addr:      addr,
-		server:    server,
+		server:    newServer(server, o.tls),
 		iRegistry: o.iRegistry,
 		instance:  o.instance,
 	}
