@@ -20,6 +20,7 @@
 - 包名小写且简短，导出标识符使用驼峰命名。
 - 遵守分层边界，`handler` 不可直接访问 `model`，须通过 `dao`。
 - 行长度保持在 200 字符以内（满足 `lll` 规则）。
+- 保持与现有 Sponge 模板风格一致，优先顺着现有骨架扩展，不随意切换到另一套架构或编码手法。
 
 ## 测试规范
 - 测试文件与代码同目录，命名为 `*_test.go`。
@@ -41,7 +42,56 @@
 - 新增功能涉及配置时，更新 `configs/` 并补充配置说明。
 - 控制行长度（不超过 200 字符）。
 - 优先复用既有中间件、路由与服务启动逻辑。
-- 代码风格遵循_ Go 规范与 `gofmt`/`goimports`。
+- 代码风格遵循 Go 规范与 `gofmt`/`goimports`。
 - 新文件放入正确分层目录，包名小写，导出符号驼峰命名。
 - 避免直接修改生成文件；如必须修改，先说明原因。
-- 有不清楚或不确定逻辑的地方，一定要问我，不要自己猜。
+- `handler` 仅负责参数绑定、路径参数解析、调用 `logic`、统一响应，不写业务逻辑。
+- `handler` 统一使用 `response.Success`、`response.Error`、`response.Output` 返回结果。
+- `handler` 向下传递 `context.Context`，通过 `middleware.WrapCtx(c)` 包装，不直接把 `*gin.Context` 传入 `logic` 或 `dao`。
+- `logic` 负责业务编排、DTO 与 `model` 转换，以及将底层错误转换为 `ecode`/业务错误。
+- DTO 与 `model` 转换优先复用 `copier.Copy`，无法覆盖的字段再显式补充。
+- `dao` 负责数据库、缓存、singleflight、防穿透等数据访问细节，上层不要下沉实现细节。
+- 路由注册遵循 `internal/routers` 中 `init() + append(...)` 的组织方式，避免集中硬编码在单一入口文件。
+- 测试优先贴近现有 Sponge `gotest` / `sqlmock` 风格，保持与仓库现有测试组织一致。
+- 业务语义、字段含义、状态值、接口行为、兼容策略、脏数据处理等任何不清楚或不确定的逻辑，必须先问我确认，不要自己猜，不要擅自定义规则。
+
+## 生成代码使用说明
+- 方式一：你输入 `生成代码，t_order`
+- 执行顺序：
+    1. 直接执行：
+       `sponge web http --module-name=admin --server-name=admin --project-name=admin --repo-addr= --db-driver=mysql --db-dsn=<dsn主串>;prefix=<x> --db-table=<表名> --embed=true --suited-mono-repo=false --extended-api=false --out=$(pwd)`
+    2. 命令执行后，通过本机 `mysql` CLI 获取该表结构。
+    3. 根据表字段、索引、约束继续定义并实现业务逻辑。
+
+- 方式二：你输入 `帮我生成代码 <CREATE TABLE ...>`
+- 执行顺序：
+    1. 先通过本机 `mysql` CLI 执行你提供的 `CREATE TABLE` 语句创建表。
+    2. 再按方式一执行 `sponge web http` 生成代码。
+    3. 生成后同样基于真实表结构继续业务逻辑。
+
+- 两种方式都要求：
+    - 必须使用本机 `mysql` CLI。
+    - 不依赖 MySQL MCP。
+    - 不通过任何 `sh` 脚本中转。
+
+## 生成代码后强制规则（binding + 业务确认）
+- 在执行 `sponge web http` 并通过本机 `mysql` CLI 获取真实表结构后，必须立刻基于表结构同步更新 `internal/types/*_types.go` 的 `binding` 标签，不允许保留空 `binding:""`。
+- `binding` 生成与 `go-playground/validator` 对齐，至少包含以下映射：
+    - `NOT NULL` 且无默认值字段：创建请求使用 `required`。
+    - `varchar(n)`/`char(n)`：使用 `max=n`；如业务要求固定长度可用 `len=n`。
+    - `tinyint`/`int` 等枚举语义字段（如状态、来源、支付类型）：使用 `oneof=...`（枚举值来自表注释或业务规则）。
+    - 金额/小数字段：若请求结构体用字符串承接，使用 `numeric`；若业务要求必须大于等于 0，增加对应数值校验（如自定义校验或在 logic 强校验）。
+    - 可选更新字段（Update 接口）：使用 `omitempty,...` 组合，避免误判必填。
+- 唯一索引（如 `order_no`）不能仅依赖 `binding`；必须在 `logic/dao` 做唯一性校验或冲突错误转换。
+- 所有根据表结构可确定的硬约束（类型、可空、默认值、唯一索引）必须同时体现在：
+    1. `types` 的 `binding` 标签；
+    2. `logic` 的参数与业务校验；
+    3. `dao` 的更新白名单/更新策略。
+
+- 强制思考与确认：生成骨架后、写业务逻辑前，必须先向用户确认“业务语义规则”，至少确认以下 5 项，未确认前不得臆断实现：
+    1. 状态字段及允许流转（状态机）；
+    2. 金额/数量计算公式；
+    3. 创建后不可修改字段；
+    4. 触发动作条件（取消、退款、完成等）；
+    5. 唯一性/幂等规则。
+- 若用户未提供完整业务规则，只允许先完成“硬约束同步（binding + 基础参数校验）”，并明确标注待确认项；禁止自行杜撰业务规则。
