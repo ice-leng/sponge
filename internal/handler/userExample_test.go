@@ -17,6 +17,7 @@ import (
 	"github.com/go-dev-frame/sponge/internal/cache"
 	"github.com/go-dev-frame/sponge/internal/dao"
 	"github.com/go-dev-frame/sponge/internal/database"
+	"github.com/go-dev-frame/sponge/internal/logic"
 	"github.com/go-dev-frame/sponge/internal/model"
 	"github.com/go-dev-frame/sponge/internal/types"
 )
@@ -41,7 +42,8 @@ func newUserExampleHandler() *gotest.Handler {
 
 	// init mock handler
 	h := gotest.NewHandler(d, testData)
-	h.IHandler = &userExampleHandler{iDao: d.IDao.(dao.UserExampleDao)}
+	h.IHandler = &userExampleHandler{logic: logic.NewUserExampleLogicByDAO(d.IDao.(dao.UserExampleDao))}
+
 	iHandler := h.IHandler.(UserExampleHandler)
 
 	testFns := []gotest.RouterInfo{
