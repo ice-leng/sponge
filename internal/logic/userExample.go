@@ -29,12 +29,17 @@ type userExampleService struct {
 
 // NewUserExampleLogic creating the handler interface
 func NewUserExampleLogic() UserExampleLogic {
-	return &userExampleService{
-		iDao: dao.NewUserExampleDao(
+	return NewUserExampleLogicByDAO(
+		dao.NewUserExampleDao(
 			database.GetDB(), // todo show db driver name here
 			cache.NewUserExampleCache(database.GetCacheType()),
 		),
-	}
+	)
+}
+
+// NewUserExampleLogicByDAO creating the handler interface with injected dao, used for unit tests.
+func NewUserExampleLogicByDAO(iDao dao.UserExampleDao) UserExampleLogic {
+	return &userExampleService{iDao: iDao}
 }
 
 func (h userExampleService) Create(ctx context.Context, request *types.CreateUserExampleRequest) (uint64, error) {
