@@ -34,6 +34,10 @@
 - 本地配置位于 `configs/*.yml`，不要提交敏感信息。
 - 部署方式参见 `deployments/`（binary、Docker、K8S）。
 
+## 项目内快捷命令（仅当前仓库）
+- 这些快捷命令只在本项目会话中生效，不影响其他项目。
+- `gen <表名>`：等价于 `生成代码，<表名>`，完整执行下方“生成代码使用说明”的全部步骤与失败即停规则。
+
 ## 编辑器规则（Go + Sponge）
 - 遵循 Sponge 项目惯例，`handler` 保持轻薄，业务逻辑放到 `internal/logic`。
 - 访问数据库模型必须通过 `internal/dao`，禁止直接操作 `internal/model`。
@@ -56,42 +60,59 @@
 - 业务语义、字段含义、状态值、接口行为、兼容策略、脏数据处理等任何不清楚或不确定的逻辑，必须先问我确认，不要自己猜，不要擅自定义规则。
 
 ## 生成代码使用说明
-- 方式一：你输入 `生成代码，t_order`
+- 方式一：你输入 `生成代码，<表名>`
+- 根据 configs/admin.yml 内容找到database.mysql.dsn ,截取?之前内容，得到 `<dsn主串>`。
 - 执行顺序：
-    1. 直接执行：
-       `sponge web http --module-name=admin --server-name=admin --project-name=admin --repo-addr= --db-driver=mysql --db-dsn=<dsn主串>;prefix=<x> --db-table=<表名> --embed=true --suited-mono-repo=false --extended-api=false --out=$(pwd)`
-    2. 命令执行后，通过本机 `mysql` CLI 获取该表结构。
-    3. 根据表字段、索引、约束继续定义并实现业务逻辑。
+  1. 命令执行后，通过本机 `mysql` CLI 获取该表结构。确认表是否存在
+    - 固定执行以下检查语句：
+      - `SHOW TABLES LIKE '<表名>';`
+      - `SHOW CREATE TABLE <表名>;`
+      - `SHOW INDEX FROM <表名>;`（用于识别唯一索引并同步到 `logic/dao` 约束）
+    - 失败即停：任一语句执行失败或表不存在时，立即停止流程，不执行 `sponge web http`。
+  2. 直接执行：
+     `sponge web http --module-name=admin --server-name=admin --project-name=admin --repo-addr= --db-driver=mysql --db-dsn=<dsn主串>;prefix=<x> --db-table=<表名> --embed=true --suited-mono-repo=false --extended-api=false --out=$(pwd)`
+    - --db-dsn 的值 <dsn主串>然后拼接;prefix=x, x是我给你的表名称的第一个_的值包括_ 比如 t_goods, 那么x就是t_。
+    - --db-table <表名>。
 
 - 方式二：你输入 `帮我生成代码 <CREATE TABLE ...>`
 - 执行顺序：
-    1. 先通过本机 `mysql` CLI 执行你提供的 `CREATE TABLE` 语句创建表。
-    2. 再按方式一执行 `sponge web http` 生成代码。
-    3. 生成后同样基于真实表结构继续业务逻辑。
+  1. 先通过本机 `mysql` CLI 执行你提供的 `CREATE TABLE` 语句创建表。
+  2. 再按方式一执行 `sponge web http` 生成代码。
 
-- 两种方式都要求：
-    - 必须使用本机 `mysql` CLI。
-    - 不依赖 MySQL MCP。
-    - 不通过任何 `sh` 脚本中转。
+- 根据表字段、索引、约束继续定义并实现业务逻辑。
+
 
 ## 生成代码后强制规则（binding + 业务确认）
 - 在执行 `sponge web http` 并通过本机 `mysql` CLI 获取真实表结构后，必须立刻基于表结构同步更新 `internal/types/*_types.go` 的 `binding` 标签，不允许保留空 `binding:""`。
+- 列表搜索条件强制规则：
+  1. 基于真实表结构生成列表查询条件时，`created_at`、`updated_at`、`deleted_at` 三个字段固定不加入通用搜索条件。
+  2. 除上述 3 个字段外，其余字段都必须在 `ListXXXRequest` 与对应 `logic.List` 中提供可用搜索条件（至少一种）。
+  3. 默认映射规则：
+    - `varchar`/`char`/`text`：模糊搜索（`like`）；
+    - `tinyint`/`int`/`bigint`：精确搜索（`=`）；
+    - `decimal`：精确搜索（`=`），如有业务需求可扩展 `Min/Max` 区间；
+    - `datetime`/`date`/`timestamp`：区间搜索（`start/end`）；
+    - `json`：默认不做通用搜索，除非业务明确要求。
+  4. 若用户明确指定某字段的搜索策略（如“不可搜索/必须精确/必须模糊”），以用户规则优先覆盖默认映射。
+- 生成后最小验收（进入业务确认前必须完成）：
+  1. 扫描并确认 `internal/types/*_types.go` 不存在 `binding:""` 空标签；
+  2. 运行 `make test`（至少一次）并确认无失败用例。
 - `binding` 生成与 `go-playground/validator` 对齐，至少包含以下映射：
-    - `NOT NULL` 且无默认值字段：创建请求使用 `required`。
-    - `varchar(n)`/`char(n)`：使用 `max=n`；如业务要求固定长度可用 `len=n`。
-    - `tinyint`/`int` 等枚举语义字段（如状态、来源、支付类型）：使用 `oneof=...`（枚举值来自表注释或业务规则）。
-    - 金额/小数字段：若请求结构体用字符串承接，使用 `numeric`；若业务要求必须大于等于 0，增加对应数值校验（如自定义校验或在 logic 强校验）。
-    - 可选更新字段（Update 接口）：使用 `omitempty,...` 组合，避免误判必填。
+  - `NOT NULL` 且无默认值字段：创建请求使用 `required`。
+  - `varchar(n)`/`char(n)`：使用 `max=n`；如业务要求固定长度可用 `len=n`。
+  - `tinyint`/`int` 等枚举语义字段（如状态、来源、支付类型）：使用 `oneof=...`（枚举值来自表注释或业务规则）。
+  - 金额/小数字段：若请求结构体用字符串承接，使用 `numeric`；若业务要求必须大于等于 0，增加对应数值校验（如自定义校验或在 logic 强校验）。
+  - 可选更新字段（Update 接口）：使用 `omitempty,...` 组合，避免误判必填。
 - 唯一索引（如 `order_no`）不能仅依赖 `binding`；必须在 `logic/dao` 做唯一性校验或冲突错误转换。
 - 所有根据表结构可确定的硬约束（类型、可空、默认值、唯一索引）必须同时体现在：
-    1. `types` 的 `binding` 标签；
-    2. `logic` 的参数与业务校验；
-    3. `dao` 的更新白名单/更新策略。
+  1. `types` 的 `binding` 标签；
+  2. `logic` 的参数与业务校验；
+  3. `dao` 的更新白名单/更新策略。
 
 - 强制思考与确认：生成骨架后、写业务逻辑前，必须先向用户确认“业务语义规则”，至少确认以下 5 项，未确认前不得臆断实现：
-    1. 状态字段及允许流转（状态机）；
-    2. 金额/数量计算公式；
-    3. 创建后不可修改字段；
-    4. 触发动作条件（取消、退款、完成等）；
-    5. 唯一性/幂等规则。
+  1. 状态字段及允许流转（状态机）；
+  2. 金额/数量计算公式；
+  3. 创建后不可修改字段；
+  4. 触发动作条件（取消、退款、完成等）；
+  5. 唯一性/幂等规则。
 - 若用户未提供完整业务规则，只允许先完成“硬约束同步（binding + 基础参数校验）”，并明确标注待确认项；禁止自行杜撰业务规则。
