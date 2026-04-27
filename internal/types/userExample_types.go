@@ -76,11 +76,9 @@ type UpdateUserExampleByIDReply struct {
 
 // GetUserExampleByIDReply only for api docs
 type GetUserExampleByIDReply struct {
-	Code int    `json:"code"` // return code
-	Msg  string `json:"msg"`  // return information description
-	Data struct {
-		UserExample UserExampleObjDetail `json:"userExample"`
-	} `json:"data"` // return data
+	Code int                  `json:"code"` // return code
+	Msg  string               `json:"msg"`  // return information description
+	Data UserExampleObjDetail `json:"data"` // return data
 }
 
 // ListUserExamplesRequest request params
@@ -98,6 +96,7 @@ type ListUserExamplesReply struct {
 	Code int    `json:"code"` // return code
 	Msg  string `json:"msg"`  // return information description
 	Data struct {
-		UserExamples []UserExampleObjDetail `json:"userExamples"`
+		List  []UserExampleObjDetail `json:"list"`
+		Total int64                  `json:"total"`
 	} `json:"data"` // return data
 }

@@ -14,7 +14,6 @@ import (
 	"github.com/go-dev-frame/sponge/internal/cache"
 	"github.com/go-dev-frame/sponge/internal/database"
 	"github.com/go-dev-frame/sponge/internal/model"
-	"github.com/go-dev-frame/sponge/internal/types"
 )
 
 var _ UserExampleDao = (*userExampleDao)(nil)
@@ -27,7 +26,6 @@ type UserExampleDao interface {
 	UpdateByID(ctx context.Context, table *model.UserExample) error
 	GetByID(ctx context.Context, id uint64) (*model.UserExample, error)
 	GetByColumns(ctx context.Context, params *query.Params) ([]*model.UserExample, int64, error)
-	GetByParams(ctx context.Context, params *types.ListUserExamplesRequest) ([]*model.UserExample, int64, error)
 
 	CreateByTx(ctx context.Context, tx *gorm.DB, table *model.UserExample) (uint64, error)
 	DeleteByTx(ctx context.Context, tx *gorm.DB, id uint64) error
@@ -219,37 +217,6 @@ func (d *userExampleDao) GetByColumns(ctx context.Context, params *query.Params)
 		return nil, 0, err
 	}
 
-	return records, total, err
-}
-
-func (d *userExampleDao) GetByParams(ctx context.Context, request *types.ListUserExamplesRequest) ([]*model.UserExample, int64, error) {
-	page := query.NewPage(request.Page-1, request.PageSize, request.Sort)
-
-	db := d.db.WithContext(ctx).Model(&model.UserExample{}).Order(page.Sort())
-	if request.StartTime != "" && request.EndTime != "" {
-		db = db.Where("created_at BETWEEN ? AND ?", request.StartTime, request.EndTime+" 23:59:59")
-	}
-
-	var total int64 = 0
-	if request.Sort != "ignore count" { // determine if count is required
-		err := db.Count(&total).Error
-		if err != nil {
-			return nil, 0, err
-		}
-		if total == 0 {
-			return nil, total, nil
-		}
-	}
-
-	if request.PageSize > 0 {
-		db = db.Limit(page.Limit()).Offset(page.Page() * page.Limit())
-	}
-
-	records := []*model.UserExample{}
-	err := db.Find(&records).Error
-	if err != nil {
-		return nil, 0, err
-	}
 	return records, total, err
 }
 

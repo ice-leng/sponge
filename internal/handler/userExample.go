@@ -1,23 +1,13 @@
 package handler
 
 import (
-	"errors"
-	"strings"
-
 	"github.com/gin-gonic/gin"
-
-	"github.com/go-dev-frame/sponge/pkg/copier"
+	"github.com/go-dev-frame/sponge/internal/ecode"
+	"github.com/go-dev-frame/sponge/internal/logic"
+	"github.com/go-dev-frame/sponge/internal/types"
 	"github.com/go-dev-frame/sponge/pkg/gin/middleware"
 	"github.com/go-dev-frame/sponge/pkg/gin/response"
 	"github.com/go-dev-frame/sponge/pkg/logger"
-	"github.com/go-dev-frame/sponge/pkg/utils"
-
-	"github.com/go-dev-frame/sponge/internal/cache"
-	"github.com/go-dev-frame/sponge/internal/dao"
-	"github.com/go-dev-frame/sponge/internal/database"
-	"github.com/go-dev-frame/sponge/internal/ecode"
-	"github.com/go-dev-frame/sponge/internal/model"
-	"github.com/go-dev-frame/sponge/internal/types"
 )
 
 var _ UserExampleHandler = (*userExampleHandler)(nil)
@@ -32,16 +22,14 @@ type UserExampleHandler interface {
 }
 
 type userExampleHandler struct {
-	iDao dao.UserExampleDao
+	baseHandler
+	logic logic.UserExampleLogic
 }
 
 // NewUserExampleHandler creating the handler interface
 func NewUserExampleHandler() UserExampleHandler {
 	return &userExampleHandler{
-		iDao: dao.NewUserExampleDao(
-			database.GetDB(), // todo show db driver name here
-			cache.NewUserExampleCache(database.GetCacheType()),
-		),
+		logic: logic.NewUserExampleLogic(),
 	}
 }
 
@@ -59,28 +47,23 @@ func (h *userExampleHandler) Create(c *gin.Context) {
 	form := &types.CreateUserExampleRequest{}
 	err := c.ShouldBindJSON(form)
 	if err != nil {
-		logger.Warn("ShouldBindJSON error: ", logger.Err(err), middleware.GCtxRequestIDField(c))
-		response.Error(c, ecode.InvalidParams)
+		response.Error(c, ecode.InvalidParams.RewriteMsg(h.getValidatorErrorMsg(err)))
 		return
 	}
-
-	userExample := &model.UserExample{}
-	err = copier.Copy(userExample, form)
-	if err != nil {
-		response.Error(c, ecode.ErrCreateUserExample)
-		return
-	}
-	// Note: if copier.Copy cannot assign a value to a field, add it here
 
 	ctx := middleware.WrapCtx(c)
-	err = h.iDao.Create(ctx, userExample)
+	id, err := h.logic.Create(ctx, form)
 	if err != nil {
+		if ec, ok := h.isErrcode(err); ok {
+			response.Error(c, ec)
+			return
+		}
 		logger.Error("Create error", logger.Err(err), logger.Any("form", form), middleware.GCtxRequestIDField(c))
 		response.Output(c, ecode.InternalServerError.ToHTTPCode())
 		return
 	}
 
-	response.Success(c, gin.H{"id": userExample.ID})
+	response.Success(c, gin.H{"id": id})
 }
 
 // DeleteByID delete a userExample by id
@@ -94,21 +77,20 @@ func (h *userExampleHandler) Create(c *gin.Context) {
 // @Router /api/v1/userExample/{id} [delete]
 // @Security BearerAuth
 func (h *userExampleHandler) DeleteByID(c *gin.Context) {
-	idStr := c.Param("id")
-	if idStr == "" {
+	_, id, isAbort := h.getIdFromPath(c)
+	if isAbort {
 		response.Error(c, ecode.InvalidParams)
 		return
 	}
 
-	var ids []uint64
-	for _, v := range strings.Split(idStr, ",") {
-		ids = append(ids, utils.StrToUint64(v))
-	}
-
 	ctx := middleware.WrapCtx(c)
-	err := h.iDao.DeleteByIDs(ctx, ids)
+	err := h.logic.DeleteByID(ctx, id)
 	if err != nil {
-		logger.Error("DeleteByID error", logger.Err(err), logger.Any("id", idStr), middleware.GCtxRequestIDField(c))
+		if ec, ok := h.isErrcode(err); ok {
+			response.Error(c, ec)
+			return
+		}
+		logger.Error("DeleteByID error", logger.Err(err), logger.Any("id", id), middleware.GCtxRequestIDField(c))
 		response.Output(c, ecode.InternalServerError.ToHTTPCode())
 		return
 	}
@@ -128,7 +110,7 @@ func (h *userExampleHandler) DeleteByID(c *gin.Context) {
 // @Router /api/v1/userExample/{id} [put]
 // @Security BearerAuth
 func (h *userExampleHandler) UpdateByID(c *gin.Context) {
-	_, id, isAbort := getUserExampleIDFromPath(c)
+	_, id, isAbort := h.getIdFromPath(c)
 	if isAbort {
 		response.Error(c, ecode.InvalidParams)
 		return
@@ -137,23 +119,18 @@ func (h *userExampleHandler) UpdateByID(c *gin.Context) {
 	form := &types.UpdateUserExampleByIDRequest{}
 	err := c.ShouldBindJSON(form)
 	if err != nil {
-		logger.Warn("ShouldBindJSON error: ", logger.Err(err), middleware.GCtxRequestIDField(c))
-		response.Error(c, ecode.InvalidParams)
+		response.Error(c, ecode.InvalidParams.RewriteMsg(h.getValidatorErrorMsg(err)))
 		return
 	}
 	form.ID = id
 
-	userExample := &model.UserExample{}
-	err = copier.Copy(userExample, form)
-	if err != nil {
-		response.Error(c, ecode.ErrUpdateByIDUserExample)
-		return
-	}
-	// Note: if copier.Copy cannot assign a value to a field, add it here
-
 	ctx := middleware.WrapCtx(c)
-	err = h.iDao.UpdateByID(ctx, userExample)
+	err = h.logic.UpdateByID(ctx, form)
 	if err != nil {
+		if ec, ok := h.isErrcode(err); ok {
+			response.Error(c, ec)
+			return
+		}
 		logger.Error("UpdateByID error", logger.Err(err), logger.Any("form", form), middleware.GCtxRequestIDField(c))
 		response.Output(c, ecode.InternalServerError.ToHTTPCode())
 		return
@@ -173,34 +150,25 @@ func (h *userExampleHandler) UpdateByID(c *gin.Context) {
 // @Router /api/v1/userExample/{id} [get]
 // @Security BearerAuth
 func (h *userExampleHandler) GetByID(c *gin.Context) {
-	_, id, isAbort := getUserExampleIDFromPath(c)
+	_, id, isAbort := h.getIdFromPath(c)
 	if isAbort {
 		response.Error(c, ecode.InvalidParams)
 		return
 	}
 
 	ctx := middleware.WrapCtx(c)
-	userExample, err := h.iDao.GetByID(ctx, id)
+	data, err := h.logic.GetByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, database.ErrRecordNotFound) {
-			logger.Warn("GetByID not found", logger.Err(err), logger.Any("id", id), middleware.GCtxRequestIDField(c))
-			response.Error(c, ecode.NotFound)
-		} else {
-			logger.Error("GetByID error", logger.Err(err), logger.Any("id", id), middleware.GCtxRequestIDField(c))
-			response.Output(c, ecode.InternalServerError.ToHTTPCode())
+		if ec, ok := h.isErrcode(err); ok {
+			response.Error(c, ec)
+			return
 		}
+		logger.Error("GetByID error", logger.Err(err), logger.Any("id", id), middleware.GCtxRequestIDField(c))
+		response.Output(c, ecode.InternalServerError.ToHTTPCode())
 		return
 	}
 
-	data := &types.UserExampleObjDetail{}
-	err = copier.Copy(data, userExample)
-	if err != nil {
-		response.Error(c, ecode.ErrGetByIDUserExample)
-		return
-	}
-	// Note: if copier.Copy cannot assign a value to a field, add it here
-
-	response.Success(c, gin.H{"userExample": data})
+	response.Success(c, data)
 }
 
 // List get a paginated list of userExamples by custom conditions
@@ -217,22 +185,19 @@ func (h *userExampleHandler) List(c *gin.Context) {
 	request := &types.ListUserExamplesRequest{}
 	err := c.ShouldBindQuery(request)
 	if err != nil {
-		logger.Warn("ShouldBindJSON error: ", logger.Err(err), middleware.GCtxRequestIDField(c))
-		response.Error(c, ecode.InvalidParams)
+		response.Error(c, ecode.InvalidParams.RewriteMsg(h.getValidatorErrorMsg(err)))
 		return
 	}
 
 	ctx := middleware.WrapCtx(c)
-	userExamples, total, err := h.iDao.GetByParams(ctx, request)
+	data, total, err := h.logic.List(ctx, request)
 	if err != nil {
-		logger.Error("GetByParams error", logger.Err(err), logger.Any("request", request), middleware.GCtxRequestIDField(c))
+		if ec, ok := h.isErrcode(err); ok {
+			response.Error(c, ec)
+			return
+		}
+		logger.Error("List error", logger.Err(err), logger.Any("request", request), middleware.GCtxRequestIDField(c))
 		response.Output(c, ecode.InternalServerError.ToHTTPCode())
-		return
-	}
-
-	data, err := convertUserExamples(userExamples)
-	if err != nil {
-		response.Error(c, ecode.ErrListUserExample)
 		return
 	}
 
@@ -240,39 +205,4 @@ func (h *userExampleHandler) List(c *gin.Context) {
 		"list":  data,
 		"total": total,
 	})
-}
-
-func getUserExampleIDFromPath(c *gin.Context) (string, uint64, bool) {
-	idStr := c.Param("id")
-	id, err := utils.StrToUint64E(idStr)
-	if err != nil || id == 0 {
-		logger.Warn("StrToUint64E error: ", logger.String("idStr", idStr), middleware.GCtxRequestIDField(c))
-		return "", 0, true
-	}
-
-	return idStr, id, false
-}
-
-func convertUserExample(userExample *model.UserExample) (*types.UserExampleObjDetail, error) {
-	data := &types.UserExampleObjDetail{}
-	err := copier.Copy(data, userExample)
-	if err != nil {
-		return nil, err
-	}
-	// Note: if copier.Copy cannot assign a value to a field, add it here
-
-	return data, nil
-}
-
-func convertUserExamples(fromValues []*model.UserExample) ([]*types.UserExampleObjDetail, error) {
-	toValues := []*types.UserExampleObjDetail{}
-	for _, v := range fromValues {
-		data, err := convertUserExample(v)
-		if err != nil {
-			return nil, err
-		}
-		toValues = append(toValues, data)
-	}
-
-	return toValues, nil
 }

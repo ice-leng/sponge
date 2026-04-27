@@ -27,7 +27,8 @@ import (
 )
 
 const (
-	defaultGoModVersion = "go 1.23.0"
+	defaultGoModVersion      = "go 1.23.0"
+	defaultImageGoModVersion = "golang:1.23-alpine"
 
 	// TplNameSponge name of the template
 	TplNameSponge = "sponge"
@@ -861,6 +862,16 @@ func getLocalGoVersion() string {
 	return versionList[0].goVersion
 }
 
+func extractImageGoVersion() string {
+	goVersion := getLocalGoVersion()
+	re := regexp.MustCompile(`go\s+(\d+\.\d+)\.\d+`)
+	matches := re.FindStringSubmatch(goVersion)
+	if len(matches) > 1 {
+		return fmt.Sprintf("golang:%s-alpine", matches[1])
+	}
+	return defaultImageGoModVersion
+}
+
 func dbDriverErr(driver string) error {
 	return errors.New("unsupported db driver: " + driver)
 }
@@ -899,6 +910,10 @@ func GetGoModFields(moduleName string) []replacer.Field {
 		{
 			Old: defaultGoModVersion,
 			New: getLocalGoVersion(),
+		},
+		{
+			Old: defaultImageGoModVersion,
+			New: extractImageGoVersion(),
 		},
 		{
 			Old: spongeTemplateVersionMark,

@@ -3,11 +3,12 @@ package generate
 import (
 	"errors"
 	"fmt"
-	"github.com/go-dev-frame/sponge/cmd/sponge/global"
 	"math/rand"
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/go-dev-frame/sponge/cmd/sponge/global"
 
 	"github.com/fatih/color"
 	"github.com/huandu/xstrings"
@@ -202,7 +203,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 	}
 	subFiles := []string{
 		"sponge/.gitignore", "sponge/.golangci.yml", "sponge/go.mod", "sponge/go.sum",
-		"sponge/Jenkinsfile", "sponge/Makefile-for-http", "sponge/README.md",
+		"sponge/Jenkinsfile", "sponge/Makefile-for-http", "sponge/README.md", "sponge/AGENTS.md",
 	}
 
 	webFiles := []string{
@@ -233,7 +234,10 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"systemCode_http.go", "userExample_http.go",
 		},
 		"internal/handler": {
-			"userExample.go", "userExample_test.go",
+			"userExample.go", "userExample_test.go", "base.go",
+		},
+		"internal/logic": {
+			"userExample.go",
 		},
 		"internal/model": {
 			"userExample.go",
@@ -351,9 +355,11 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"Makefile-for-http",
 			"go.mod",
 			"go.sum",
+			"AGENTS.md",
 			"internal/ecode/systemCode_http.go",
 			"internal/routers/routers.go",
 			"internal/types/swagger_types.go",
+			"internal/handler/base.go",
 		}...)
 	}
 
@@ -492,6 +498,10 @@ func (g *httpGenerator) addFields(r replacer.Replacer) []replacer.Field {
 		{
 			Old: defaultGoModVersion,
 			New: getLocalGoVersion(),
+		},
+		{
+			Old: defaultImageGoModVersion,
+			New: extractImageGoVersion(),
 		},
 		{
 			Old: "userExampleNO       = 1",

@@ -62,7 +62,7 @@ import (
 // Create{{.TableName}}Request request params
 type Create{{.TableName}}Request struct {
 {{- range .Fields}}
-	{{.Name}}  {{.GoType}} ` + "`" + `json:"{{.JSONName}}" binding:""` + "`" + `{{if .Comment}} // {{.Comment}}{{end}}
+	{{.Name}}  {{.GoType}} ` + "`" + `json:"{{.JSONName}}" binding:""{{if .Comment}} label:"{{.Comment}}"{{end}}` + "`" + `{{if .Comment}} // {{.Comment}}{{end}}
 {{- end}}
 }
 `
@@ -72,7 +72,7 @@ type Create{{.TableName}}Request struct {
 // Update{{.TableName}}ByIDRequest request params
 type Update{{.TableName}}ByIDRequest struct {
 {{- range .Fields}}
-	{{.Name}}  {{.GoType}} ` + "`" + `json:"{{.JSONName}}" binding:""` + "`" + `{{if .Comment}} // {{.Comment}}{{end}}
+	{{.Name}}  {{.GoType}} ` + "`" + `json:"{{.JSONName}}" binding:""{{if .Comment}} label:"{{.Comment}}"{{end}}` + "`" + `{{if .Comment}} // {{.Comment}}{{end}}
 {{- end}}
 }
 `

@@ -2,13 +2,13 @@ package sse
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"sync"
 	"time"
 
+	json "github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,7 +41,7 @@ func WithServeExtraHeaders(headers map[string]string) ServeOption {
 // Serve serves a client connection
 func (h *Hub) Serve(c *gin.Context, uid string, opts ...ServeOption) {
 	if uid == "" {
-		responseCode400(c,"uid is empty, not allow connection")
+		responseCode400(c, "uid is empty, not allow connection")
 		return
 	}
 
@@ -172,6 +172,8 @@ type UserClient struct {
 	Send    chan *Event
 	writer  http.ResponseWriter
 	flusher http.Flusher
+
+	isSendClosedEvent bool
 }
 
 func (c *UserClient) sendEvent(e *Event) error {
@@ -188,6 +190,10 @@ func (c *UserClient) sendEvent(e *Event) error {
 	}
 	buf.Write(data)
 	buf.WriteString("\n\n")
+
+	if e.Event == "close" {
+		c.isSendClosedEvent = true
+	}
 
 	return c.write(buf.Bytes())
 }
