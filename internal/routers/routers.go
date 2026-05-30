@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-dev-frame/sponge/internal/handler"
+	"github.com/go-dev-frame/sponge/pkg/gin/validator"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -36,7 +36,7 @@ func NewRouter() *gin.Engine {
 	r.Use(gin.Recovery())
 	r.Use(middleware.Cors())
 
-	handler.InitTrans()
+	validator.InitTrans()
 
 	if config.Get().HTTP.Timeout > 0 {
 		// if you need more fine-grained control over your routes, set the timeout in your routes, unsetting the timeout globally here.
