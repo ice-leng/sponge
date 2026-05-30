@@ -354,6 +354,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"internal/routers/routers.go",
 			"internal/types/swagger_types.go",
 			"pkg/gin/validator/validator_trans.go",
+			"pkg/gin/handlerfunc/helper.go",
 		}...)
 	}
 
