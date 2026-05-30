@@ -5,8 +5,10 @@ import (
 	"github.com/go-dev-frame/sponge/internal/ecode"
 	"github.com/go-dev-frame/sponge/internal/logic"
 	"github.com/go-dev-frame/sponge/internal/types"
+	"github.com/go-dev-frame/sponge/pkg/gin/handlerfunc"
 	"github.com/go-dev-frame/sponge/pkg/gin/middleware"
 	"github.com/go-dev-frame/sponge/pkg/gin/response"
+	"github.com/go-dev-frame/sponge/pkg/gin/validator"
 	"github.com/go-dev-frame/sponge/pkg/logger"
 )
 
@@ -22,7 +24,6 @@ type UserExampleHandler interface {
 }
 
 type userExampleHandler struct {
-	baseHandler
 	logic logic.UserExampleLogic
 }
 
@@ -47,14 +48,14 @@ func (h *userExampleHandler) Create(c *gin.Context) {
 	form := &types.CreateUserExampleRequest{}
 	err := c.ShouldBindJSON(form)
 	if err != nil {
-		response.Error(c, ecode.InvalidParams.RewriteMsg(h.getValidatorErrorMsg(err)))
+		response.Error(c, ecode.InvalidParams.RewriteMsg(validator.GetValidatorErrorMsg(err)))
 		return
 	}
 
 	ctx := middleware.WrapCtx(c)
 	id, err := h.logic.Create(ctx, form)
 	if err != nil {
-		if ec, ok := h.isErrcode(err); ok {
+		if ec, ok := handlerfunc.IsErrcode(err); ok {
 			response.Error(c, ec)
 			return
 		}
@@ -77,7 +78,7 @@ func (h *userExampleHandler) Create(c *gin.Context) {
 // @Router /api/v1/userExample/{id} [delete]
 // @Security BearerAuth
 func (h *userExampleHandler) DeleteByID(c *gin.Context) {
-	_, id, isAbort := h.getIdFromPath(c)
+	_, id, isAbort := handlerfunc.GetIdFromPath(c)
 	if isAbort {
 		response.Error(c, ecode.InvalidParams)
 		return
@@ -86,7 +87,7 @@ func (h *userExampleHandler) DeleteByID(c *gin.Context) {
 	ctx := middleware.WrapCtx(c)
 	err := h.logic.DeleteByID(ctx, id)
 	if err != nil {
-		if ec, ok := h.isErrcode(err); ok {
+		if ec, ok := handlerfunc.IsErrcode(err); ok {
 			response.Error(c, ec)
 			return
 		}
@@ -110,7 +111,7 @@ func (h *userExampleHandler) DeleteByID(c *gin.Context) {
 // @Router /api/v1/userExample/{id} [put]
 // @Security BearerAuth
 func (h *userExampleHandler) UpdateByID(c *gin.Context) {
-	_, id, isAbort := h.getIdFromPath(c)
+	_, id, isAbort := handlerfunc.GetIdFromPath(c)
 	if isAbort {
 		response.Error(c, ecode.InvalidParams)
 		return
@@ -119,7 +120,7 @@ func (h *userExampleHandler) UpdateByID(c *gin.Context) {
 	form := &types.UpdateUserExampleByIDRequest{}
 	err := c.ShouldBindJSON(form)
 	if err != nil {
-		response.Error(c, ecode.InvalidParams.RewriteMsg(h.getValidatorErrorMsg(err)))
+		response.Error(c, ecode.InvalidParams.RewriteMsg(validator.GetValidatorErrorMsg(err)))
 		return
 	}
 	form.ID = id
@@ -127,7 +128,7 @@ func (h *userExampleHandler) UpdateByID(c *gin.Context) {
 	ctx := middleware.WrapCtx(c)
 	err = h.logic.UpdateByID(ctx, form)
 	if err != nil {
-		if ec, ok := h.isErrcode(err); ok {
+		if ec, ok := handlerfunc.IsErrcode(err); ok {
 			response.Error(c, ec)
 			return
 		}
@@ -150,7 +151,7 @@ func (h *userExampleHandler) UpdateByID(c *gin.Context) {
 // @Router /api/v1/userExample/{id} [get]
 // @Security BearerAuth
 func (h *userExampleHandler) GetByID(c *gin.Context) {
-	_, id, isAbort := h.getIdFromPath(c)
+	_, id, isAbort := handlerfunc.GetIdFromPath(c)
 	if isAbort {
 		response.Error(c, ecode.InvalidParams)
 		return
@@ -159,7 +160,7 @@ func (h *userExampleHandler) GetByID(c *gin.Context) {
 	ctx := middleware.WrapCtx(c)
 	data, err := h.logic.GetByID(ctx, id)
 	if err != nil {
-		if ec, ok := h.isErrcode(err); ok {
+		if ec, ok := handlerfunc.IsErrcode(err); ok {
 			response.Error(c, ec)
 			return
 		}
@@ -185,14 +186,14 @@ func (h *userExampleHandler) List(c *gin.Context) {
 	form := &types.ListUserExamplesRequest{}
 	err := c.ShouldBindJSON(form)
 	if err != nil {
-		response.Error(c, ecode.InvalidParams.RewriteMsg(h.getValidatorErrorMsg(err)))
+		response.Error(c, ecode.InvalidParams.RewriteMsg(validator.GetValidatorErrorMsg(err)))
 		return
 	}
 
 	ctx := middleware.WrapCtx(c)
 	data, total, err := h.logic.List(ctx, form)
 	if err != nil {
-		if ec, ok := h.isErrcode(err); ok {
+		if ec, ok := handlerfunc.IsErrcode(err); ok {
 			response.Error(c, ec)
 			return
 		}

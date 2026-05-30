@@ -203,6 +203,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 	subFiles := []string{
 		"sponge/.gitignore", "sponge/.golangci.yml", "sponge/go.mod", "sponge/go.sum",
 		"sponge/Jenkinsfile", "sponge/Makefile-for-http", "sponge/README.md", "sponge/AGENTS.md",
+		"pkg/gin/validator/validator_trans.go", "pkg/gin/handlerfunc/helper.go",
 	}
 	if g.suitedMonoRepo {
 		subFiles = removeElements(subFiles, "sponge/go.mod", "sponge/go.sum")
@@ -228,7 +229,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"systemCode_http.go", "userExample_http.go",
 		},
 		"internal/handler": {
-			"userExample.go", "userExample_test.go", "base.go",
+			"userExample.go", "userExample_test.go",
 		},
 		"internal/logic": {
 			"userExample.go",
@@ -352,7 +353,6 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"internal/ecode/systemCode_http.go",
 			"internal/routers/routers.go",
 			"internal/types/swagger_types.go",
-			"internal/handler/base.go",
 		}...)
 	}
 
@@ -362,6 +362,22 @@ func (g *httpGenerator) generateCode() (string, error) {
 	_ = r.SetOutputDir(g.outPath, g.serverName+"_"+subTplName)
 	fields := g.addFields(r)
 	r.SetReplacementFields(fields)
+	r.SpecifyFileReplace("internal/handler/userExample.go", []replacer.Field{
+		{
+			Old: "github.com/go-dev-frame/sponge/pkg/gin/handlerfunc",
+			New: g.moduleName + "/pkg/gin/handlerfunc",
+		},
+		{
+			Old: "github.com/go-dev-frame/sponge/pkg/gin/validator",
+			New: g.moduleName + "/pkg/gin/validator",
+		},
+	})
+	r.SpecifyFileReplace("internal/routers/routers.go", []replacer.Field{
+		{
+			Old: "github.com/go-dev-frame/sponge/pkg/gin/validator",
+			New: g.moduleName + "/pkg/gin/validator",
+		},
+	})
 	if err := r.SaveFiles(); err != nil {
 		return "", err
 	}
