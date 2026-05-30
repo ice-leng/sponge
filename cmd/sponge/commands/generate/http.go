@@ -353,6 +353,7 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"internal/ecode/systemCode_http.go",
 			"internal/routers/routers.go",
 			"internal/types/swagger_types.go",
+			"pkg/gin/validator/validator_trans.go",
 		}...)
 	}
 

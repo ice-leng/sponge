@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/gin-gonic/gin/binding"
+	"github.com/go-dev-frame/sponge/pkg/gin/validator"
 	"github.com/go-playground/locales/zh"
 	ut "github.com/go-playground/universal-translator"
 	validatorV10 "github.com/go-playground/validator/v10"
@@ -17,7 +18,7 @@ var (
 
 // InitTrans initialize the translator
 func InitTrans() {
-	v := Init()
+	v := validator.Init()
 	zh := zh.New()
 	uni := ut.New(zh, zh)
 	trans, _ := uni.GetTranslator("zh")
