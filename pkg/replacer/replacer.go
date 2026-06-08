@@ -31,6 +31,7 @@ type Replacer interface {
 	GetFiles() []string
 	SaveTemplateFiles(m map[string]interface{}, parentDir ...string) error
 	SetWebFiles(filenames ...string)
+	SpecifyFileReplace(filename string, fields []Field)
 }
 
 // replacerInfo replacer information
@@ -44,6 +45,7 @@ type replacerInfo struct {
 	replacementFields []Field  // characters to be replaced when converting from a template file to a new file
 	outPath           string   // the directory where the file is saved after replacement
 	webFiles          []string
+	specifyFile       map[string][]Field // specify the file to be replaced
 }
 
 // New create replacer with local directory
@@ -59,6 +61,7 @@ func New(path string) (Replacer, error) {
 		isActual:          true,
 		files:             files,
 		replacementFields: []Field{},
+		specifyFile:       make(map[string][]Field),
 	}, nil
 }
 
@@ -75,6 +78,7 @@ func NewFS(path string, fs embed.FS) (Replacer, error) {
 		isActual:          false,
 		files:             files,
 		replacementFields: []Field{},
+		specifyFile:       make(map[string][]Field),
 	}, nil
 }
 
@@ -215,6 +219,14 @@ func (r *replacerInfo) ReadFile(filename string) ([]byte, error) {
 	return r.fs.ReadFile(foundFile[0])
 }
 
+func (r *replacerInfo) SpecifyFileReplace(filename string, fields []Field) {
+	for _, file := range r.files {
+		if isMatchFile(file, filename) {
+			r.specifyFile[file] = fields
+		}
+	}
+}
+
 // SaveFiles save file with setting
 func (r *replacerInfo) SaveFiles() error {
 	if r.outPath == "" {
@@ -260,6 +272,13 @@ func (r *replacerInfo) SaveFiles() error {
 
 			if newFilePath != dir+filename {
 				newFilePath = dir + filename
+			}
+		}
+
+		// specify replace text content
+		if fields, ok := r.specifyFile[file]; ok {
+			for _, field := range fields {
+				data = bytes.ReplaceAll(data, []byte(field.Old), []byte(field.New))
 			}
 		}
 

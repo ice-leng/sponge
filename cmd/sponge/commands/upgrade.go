@@ -3,11 +3,12 @@ package commands
 import (
 	"context"
 	"fmt"
-	"github.com/go-dev-frame/sponge/cmd/sponge/global"
 	"os"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/go-dev-frame/sponge/cmd/sponge/global"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -175,7 +176,7 @@ func copyToTempDir(targetVersion string) (string, error) {
 	_ = executeCommand("rm", "-rf", targetDir+"/cmd/protoc-gen-go-gin")
 	_ = executeCommand("rm", "-rf", targetDir+"/cmd/protoc-gen-go-rpc-tmpl")
 	_ = executeCommand("rm", "-rf", targetDir+"/cmd/protoc-gen-json-field")
-	_ = executeCommand("rm", "-rf", targetDir+"/pkg")
+	//_ = executeCommand("rm", "-rf", targetDir+"/pkg")
 	_ = executeCommand("rm", "-rf", targetDir+"/test")
 	_ = executeCommand("rm", "-rf", targetDir+"/assets")
 
