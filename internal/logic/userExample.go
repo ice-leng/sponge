@@ -23,7 +23,7 @@ type UserExampleLogic interface {
 	List(ctx context.Context, request *types.ListUserExamplesRequest) ([]*types.UserExampleObjDetail, int64, error)
 }
 
-type userExampleService struct {
+type userExampleLogic struct {
 	iDao dao.UserExampleDao
 }
 
@@ -39,10 +39,10 @@ func NewUserExampleLogic() UserExampleLogic {
 
 // NewUserExampleLogicByDAO creating the handler interface with injected dao, used for unit tests.
 func NewUserExampleLogicByDAO(iDao dao.UserExampleDao) UserExampleLogic {
-	return &userExampleService{iDao: iDao}
+	return &userExampleLogic{iDao: iDao}
 }
 
-func (h userExampleService) Create(ctx context.Context, request *types.CreateUserExampleRequest) (uint64, error) {
+func (h userExampleLogic) Create(ctx context.Context, request *types.CreateUserExampleRequest) (uint64, error) {
 	table := &model.UserExample{}
 	err := copier.Copy(table, request)
 	if err != nil {
@@ -53,11 +53,11 @@ func (h userExampleService) Create(ctx context.Context, request *types.CreateUse
 	return table.ID, err
 }
 
-func (h userExampleService) DeleteByID(ctx context.Context, id uint64) error {
+func (h userExampleLogic) DeleteByID(ctx context.Context, id uint64) error {
 	return h.iDao.DeleteByID(ctx, id)
 }
 
-func (h userExampleService) UpdateByID(ctx context.Context, request *types.UpdateUserExampleByIDRequest) error {
+func (h userExampleLogic) UpdateByID(ctx context.Context, request *types.UpdateUserExampleByIDRequest) error {
 	order := &model.UserExample{}
 	err := copier.Copy(order, request)
 	if err != nil {
@@ -68,7 +68,7 @@ func (h userExampleService) UpdateByID(ctx context.Context, request *types.Updat
 	return h.iDao.UpdateByID(ctx, order)
 }
 
-func (h userExampleService) GetByID(ctx context.Context, id uint64) (*types.UserExampleObjDetail, error) {
+func (h userExampleLogic) GetByID(ctx context.Context, id uint64) (*types.UserExampleObjDetail, error) {
 	result, err := h.iDao.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, database.ErrRecordNotFound) {
@@ -86,7 +86,7 @@ func (h userExampleService) GetByID(ctx context.Context, id uint64) (*types.User
 	return data, nil
 }
 
-func (h userExampleService) List(ctx context.Context, request *types.ListUserExamplesRequest) ([]*types.UserExampleObjDetail, int64, error) {
+func (h userExampleLogic) List(ctx context.Context, request *types.ListUserExamplesRequest) ([]*types.UserExampleObjDetail, int64, error) {
 	params := &query.Params{
 		Page:    request.Page - 1,
 		Limit:   request.PageSize,
