@@ -153,8 +153,8 @@ func Test_userExampleHandler_DeleteByID(t *testing.T) {
 	}
 
 	// zero id error test
-	//err = httpcli.Delete(result, h.GetRequestURL("DeleteByID", 0))
-	//assert.NoError(t, err)
+	err = httpcli.Delete(result, h.GetRequestURL("DeleteByID", 0))
+	assert.NoError(t, err)
 
 	// delete error test
 	err = httpcli.Delete(result, h.GetRequestURL("DeleteByID", 111))
@@ -244,8 +244,8 @@ func Test_userExampleHandler_List(t *testing.T) {
 	}
 
 	// nil params error test
-	//err = httpcli.Get(result, h.GetRequestURL("List"))
-	//assert.NoError(t, err)
+	err = httpcli.Get(result, h.GetRequestURL("List"))
+	assert.NoError(t, err)
 
 	params["sort"] = "unknown-column"
 	// get error test
