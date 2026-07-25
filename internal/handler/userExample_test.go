@@ -244,7 +244,7 @@ func Test_userExampleHandler_List(t *testing.T) {
 	}
 
 	// nil params error test
-	err = httpcli.Get(result, h.GetRequestURL("List"))
+	err = httpcli.Get(result, h.GetRequestURL("List"), httpcli.WithParams(params))
 	assert.NoError(t, err)
 
 	params["sort"] = "unknown-column"
