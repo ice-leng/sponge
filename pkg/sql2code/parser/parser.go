@@ -230,7 +230,7 @@ func (t tmplField) ConditionZero() string {
 			case jsonTypeName:
 				return `.String() != ""`
 			case decimalTypeName:
-				return `.IsZero() == false`
+				return ` != nil && table.` + t.Name + `.IsZero() == false`
 			}
 		}
 	}
