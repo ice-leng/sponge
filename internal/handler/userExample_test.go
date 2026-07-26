@@ -244,6 +244,7 @@ func Test_userExampleHandler_List(t *testing.T) {
 	}
 
 	// nil params error test
+	h.MockDao.SQLMock.ExpectQuery("SELECT .*").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(testData.ID))
 	err = httpcli.Get(result, h.GetRequestURL("List"), httpcli.WithParams(params))
 	assert.NoError(t, err)
 
