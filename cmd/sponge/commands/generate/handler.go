@@ -3,9 +3,10 @@ package generate
 import (
 	"errors"
 	"fmt"
-	"github.com/huandu/xstrings"
 	"math/rand"
 	"strings"
+
+	"github.com/huandu/xstrings"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -18,9 +19,10 @@ import (
 // HandlerCommand generate handler code
 func HandlerCommand() *cobra.Command {
 	var (
-		moduleName string // module name for go.mod
-		outPath    string // output directory
-		dbTables   string // table names
+		moduleName   string // module name for go.mod
+		outPath      string // output directory
+		dbTables     string // table names
+		applications string // application name
 
 		sqlArgs = sql2code.Args{
 			Package:  "model",
@@ -118,7 +120,8 @@ using help:
 	cmd.Flags().StringVarP(&serverName, "server-name", "s", "", "server name")
 	cmd.Flags().StringVarP(&sqlArgs.DBDriver, "db-driver", "k", "mysql", "database driver, support mysql, mongodb, postgresql, sqlite")
 	cmd.Flags().StringVarP(&sqlArgs.DBDsn, "db-dsn", "d", "", "database content address, e.g. user:password@(host:port)/database. Note: if db-driver=sqlite, db-dsn must be a local sqlite db file, e.g. --db-dsn=/tmp/sponge_sqlite.db") //nolint
-	cmd.Flags().StringVarP(&sqlArgs.TablePrefix, "db-table-prefix", "", "", "table prefix")                                                                                                                                               //nolint
+	cmd.Flags().StringVarP(&sqlArgs.TablePrefix, "db-table-prefix", "", "", "table prefix")
+	cmd.Flags().StringVarP(&applications, "application", "a", "admin,api", "application mux, e.g. admin,api") //nolint
 	_ = cmd.MarkFlagRequired("db-dsn")
 	cmd.Flags().StringVarP(&dbTables, "db-table", "t", "", "table name, multiple names separated by commas")
 	_ = cmd.MarkFlagRequired("db-table")
