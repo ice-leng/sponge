@@ -31,21 +31,25 @@ type Replacer interface {
 	GetFiles() []string
 	SaveTemplateFiles(m map[string]interface{}, parentDir ...string) error
 	SetWebFiles(filenames ...string)
+	SetApplications(applications ...string)
+	SetApplicationChangeDirs(dirs ...string)
 	SpecifyFileReplace(filename string, fields []Field)
 }
 
 // replacerInfo replacer information
 type replacerInfo struct {
-	path              string   // template directory or file
-	fs                embed.FS // Template directory corresponding to binary objects
-	isActual          bool     // true: use os to manipulate files, false: use fs to manipulate files
-	files             []string // list of template files
-	ignoreFiles       []string // ignore the list of replaced files, e.g. ignore.txt or myDir/ignore.txt
-	ignoreDirs        []string // ignore processed subdirectories
-	replacementFields []Field  // characters to be replaced when converting from a template file to a new file
-	outPath           string   // the directory where the file is saved after replacement
-	webFiles          []string
-	specifyFile       map[string][]Field // specify the file to be replaced
+	path                  string             // template directory or file
+	fs                    embed.FS           // Template directory corresponding to binary objects
+	isActual              bool               // true: use os to manipulate files, false: use fs to manipulate files
+	files                 []string           // list of template files
+	ignoreFiles           []string           // ignore the list of replaced files, e.g. ignore.txt or myDir/ignore.txt
+	ignoreDirs            []string           // ignore processed subdirectories
+	replacementFields     []Field            // characters to be replaced when converting from a template file to a new file
+	outPath               string             // the directory where the file is saved after replacement
+	webFiles              []string           // web files
+	specifyFile           map[string][]Field // specify the file to be replaced
+	applications          []string           // application name
+	applicationChangeDirs []string           // application change directories
 }
 
 // New create replacer with local directory
@@ -440,13 +444,16 @@ func (r *replacerInfo) getNewFilePath(file string) string {
 
 	fileName := strings.Replace(file, r.path, "", 1)
 	newFilePath := ""
-	if r.webInArray(fileName) {
+	if len(r.webFiles) > 0 && r.webInArray(fileName) {
 		index := strings.Index(fileName, "/web")
 		if index != -1 {
 			fileName = fileName[index:]
 		}
 		newFilePath = r.outPath + fileName
 	} else {
+		if len(r.applications) > 0 {
+
+		}
 		newFilePath = r.outPath + "/server" + fileName
 	}
 
@@ -491,6 +498,14 @@ func (r *replacerInfo) convertPathsDelimiter(filePaths ...string) []string {
 
 func (r *replacerInfo) SetWebFiles(filenames ...string) {
 	r.webFiles = append(r.webFiles, filenames...)
+}
+
+func (r *replacerInfo) SetApplications(applications ...string) {
+	r.applications = append(r.applications, applications...)
+}
+
+func (r *replacerInfo) SetApplicationChangeDirs(dirs ...string) {
+	r.applicationChangeDirs = append(r.applicationChangeDirs, dirs...)
 }
 
 func saveToNewFile(filePath string, data []byte) error {

@@ -95,6 +95,7 @@ func HandlerCommand() *cobra.Command {
 					isExtendedAPI:  sqlArgs.IsExtendedAPI,
 					serverName:     serverName,
 					suitedMonoRepo: suitedMonoRepo,
+					applications:   applications,
 				}
 				outPath, err = g.generateCode()
 				if err != nil {
@@ -147,6 +148,7 @@ type handlerGenerator struct {
 	fields        []replacer.Field
 	isCommonStyle bool
 	isGenerateWeb bool
+	applications  string
 }
 
 func (g *handlerGenerator) generateCode() (string, error) {
@@ -275,6 +277,17 @@ func (g *handlerGenerator) generateCode() (string, error) {
 		}
 		r.SetWebFiles(webFiles...)
 		subFiles = append(subFiles, webFiles...)
+	}
+	if g.applications != "" {
+		applications := strings.Split(g.applications, ",")
+		r.SetApplications(applications...)
+		applicationDirs := []string{
+			"internal/handler",
+			"internal/logic",
+			"internal/routers",
+			"internal/types",
+		}
+		r.SetApplicationChangeDirs(applicationDirs...)
 	}
 	r.SetSubDirsAndFiles(subDirs, subFiles...)
 	_ = r.SetOutputDir(g.outPath, subTplName)
