@@ -34,7 +34,8 @@ func HTTPCommand() *cobra.Command {
 			GormType: true,
 		}
 
-		suitedMonoRepo bool // whether the generated code is suitable for mono-repo
+		suitedMonoRepo bool   // whether the generated code is suitable for mono-repo
+		applications   string // application mux, e.g. admin,api
 	)
 
 	//nolint
@@ -102,6 +103,7 @@ func HTTPCommand() *cobra.Command {
 				isExtendedAPI:  sqlArgs.IsExtendedAPI,
 				isEmbed:        sqlArgs.IsEmbed,
 				suitedMonoRepo: suitedMonoRepo,
+				applications:   applications,
 			}
 			outPath, err = g.generateCode()
 			if err != nil {
@@ -169,6 +171,7 @@ using help:
 	cmd.Flags().IntVarP(&sqlArgs.JSONNamedType, "json-name-type", "j", 1, "json tags name type, 0:snake case, 1:camel case")
 	cmd.Flags().StringVarP(&repoAddr, "repo-addr", "r", "", "docker image repository address, excluding http and repository names")
 	cmd.Flags().StringVarP(&outPath, "out", "o", "", "output directory, default is ./serverName_http_<time>, if suited-mono-repo = true, output directory is serverName")
+	cmd.Flags().StringVarP(&applications, "application", "", "admin,api", "application mux, e.g. admin,api")
 
 	return cmd
 }
@@ -188,6 +191,7 @@ type httpGenerator struct {
 
 	fields        []replacer.Field
 	isCommonStyle bool
+	applications  string
 }
 
 func (g *httpGenerator) generateCode() (string, error) {
@@ -363,6 +367,18 @@ func (g *httpGenerator) generateCode() (string, error) {
 			"pkg/gin/validator/validator_trans.go",
 			"pkg/gin/handlerfunc/helper.go",
 		}...)
+	}
+
+	if g.applications != "" {
+		applications := strings.Split(g.applications, ",")
+		r.SetApplications(applications...)
+		applicationDirs := []string{
+			"internal/handler",
+			"internal/logic",
+			"internal/routers",
+			"internal/types",
+		}
+		r.SetApplicationChangeDirs(applicationDirs...)
 	}
 
 	r.SetWebFiles(webFiles...)

@@ -264,32 +264,55 @@ func (r *replacerInfo) SaveFiles() error {
 
 		// get new file path
 		newFilePath := r.getNewFilePath(file)
-		dir, filename := filepath.Split(newFilePath)
-		// replace file names and directory names
-		for _, field := range r.replacementFields {
-			if strings.Contains(dir, field.Old) {
-				dir = strings.ReplaceAll(dir, field.Old, field.New)
+		newFilePathData, newFileApplication := make(map[string][]byte), make(map[string]string)
+		if len(r.applications) > 0 && r.inArray(newFilePath, r.applicationChangeDirs) {
+			dir, filename := filepath.Split(newFilePath)
+			for _, application := range r.applications {
+				newFilePath = dir + application + "/" + filename
+				if gofile.IsWindows() {
+					newFilePath = strings.ReplaceAll(newFilePath, "/", "\\")
+				}
+				newFilePathData[newFilePath] = data
+				newFileApplication[newFilePath] = application
 			}
-			if strings.Contains(filename, field.Old) {
-				filename = strings.ReplaceAll(filename, field.Old, field.New)
-			}
-
-			if newFilePath != dir+filename {
-				newFilePath = dir + filename
-			}
+		} else {
+			newFilePathData[newFilePath] = data
 		}
 
-		// specify replace text content
-		if fields, ok := r.specifyFile[file]; ok {
-			for _, field := range fields {
-				data = bytes.ReplaceAll(data, []byte(field.Old), []byte(field.New))
-			}
-		}
+		for filePath, content := range newFilePathData {
+			applicationFilePath := filePath
+			dir, filename := filepath.Split(filePath)
+			// replace file names and directory names
+			for _, field := range r.replacementFields {
+				if strings.Contains(dir, field.Old) {
+					dir = strings.ReplaceAll(dir, field.Old, field.New)
+				}
+				if strings.Contains(filename, field.Old) {
+					filename = strings.ReplaceAll(filename, field.Old, field.New)
+				}
 
-		if gofile.IsExists(newFilePath) {
-			existFiles = append(existFiles, newFilePath)
+				if filePath != dir+filename {
+					filePath = dir + filename
+				}
+			}
+
+			// specify replace text content
+			if fields, ok := r.specifyFile[file]; ok {
+				for _, field := range fields {
+					content = bytes.ReplaceAll(content, []byte(field.Old), []byte(field.New))
+				}
+			}
+
+			if application, ok := newFileApplication[applicationFilePath]; ok && application != "" {
+				aa := "a"
+				fmt.Println(aa)
+			}
+
+			if gofile.IsExists(filePath) {
+				existFiles = append(existFiles, filePath)
+			}
+			writeData[filePath] = content
 		}
-		writeData[newFilePath] = data
 	}
 
 	if len(existFiles) > 0 {
@@ -425,8 +448,8 @@ func isForbiddenFile(file string, path string) bool {
 	return strings.Contains(file, path)
 }
 
-func (r *replacerInfo) webInArray(filename string) bool {
-	for _, webFile := range r.webFiles {
+func (r *replacerInfo) inArray(filename string, arr []string) bool {
+	for _, webFile := range arr {
 		if strings.Contains(filename, webFile) {
 			return true
 		}
@@ -444,16 +467,13 @@ func (r *replacerInfo) getNewFilePath(file string) string {
 
 	fileName := strings.Replace(file, r.path, "", 1)
 	newFilePath := ""
-	if len(r.webFiles) > 0 && r.webInArray(fileName) {
+	if len(r.webFiles) > 0 && r.inArray(fileName, r.webFiles) {
 		index := strings.Index(fileName, "/web")
 		if index != -1 {
 			fileName = fileName[index:]
 		}
 		newFilePath = r.outPath + fileName
 	} else {
-		if len(r.applications) > 0 {
-
-		}
 		newFilePath = r.outPath + "/server" + fileName
 	}
 

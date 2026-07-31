@@ -37,12 +37,12 @@ func NewUserExampleHandler() UserExampleHandler {
 // Create a new userExample
 // @Summary Create a new userExample
 // @Description Creates a new userExample entity using the provided data in the request body.
-// @Tags userExample
+// @Tags muxUserExample/userExample
 // @Accept json
 // @Produce json
 // @Param data body types.CreateUserExampleRequest true "userExample information"
 // @Success 200 {object} types.CreateUserExampleReply{}
-// @Router /api/v1/userExample [post]
+// @Router /muxUserExample/v1/userExample [post]
 // @Security BearerAuth
 func (h *userExampleHandler) Create(c *gin.Context) {
 	form := &types.CreateUserExampleRequest{}
@@ -70,12 +70,12 @@ func (h *userExampleHandler) Create(c *gin.Context) {
 // DeleteByID delete a userExample by id
 // @Summary Delete a userExample by id
 // @Description Deletes a existing userExample identified by the given id in the path.
-// @Tags userExample
+// @Tags muxUserExample/userExample
 // @Accept json
 // @Produce json
 // @Param id path string true "id"
 // @Success 200 {object} types.DeleteUserExampleByIDReply{}
-// @Router /api/v1/userExample/{id} [delete]
+// @Router /muxUserExample/v1/userExample/{id} [delete]
 // @Security BearerAuth
 func (h *userExampleHandler) DeleteByID(c *gin.Context) {
 	_, id, isAbort := handlerfunc.GetIdFromPath(c)
@@ -102,13 +102,13 @@ func (h *userExampleHandler) DeleteByID(c *gin.Context) {
 // UpdateByID update a userExample by id
 // @Summary Update a userExample by id
 // @Description Updates the specified userExample by given id in the path, support partial update.
-// @Tags userExample
+// @Tags muxUserExample/userExample
 // @Accept json
 // @Produce json
 // @Param id path string true "id"
 // @Param data body types.UpdateUserExampleByIDRequest true "userExample information"
 // @Success 200 {object} types.UpdateUserExampleByIDReply{}
-// @Router /api/v1/userExample/{id} [put]
+// @Router /muxUserExample/v1/userExample/{id} [put]
 // @Security BearerAuth
 func (h *userExampleHandler) UpdateByID(c *gin.Context) {
 	_, id, isAbort := handlerfunc.GetIdFromPath(c)
@@ -143,12 +143,12 @@ func (h *userExampleHandler) UpdateByID(c *gin.Context) {
 // GetByID get a userExample by id
 // @Summary Get a userExample by id
 // @Description Gets detailed information of a userExample specified by the given id in the path.
-// @Tags userExample
+// @Tags muxUserExample/userExample
 // @Param id path string true "id"
 // @Accept json
 // @Produce json
 // @Success 200 {object} types.GetUserExampleByIDReply{}
-// @Router /api/v1/userExample/{id} [get]
+// @Router /muxUserExample/v1/userExample/{id} [get]
 // @Security BearerAuth
 func (h *userExampleHandler) GetByID(c *gin.Context) {
 	_, id, isAbort := handlerfunc.GetIdFromPath(c)
@@ -175,12 +175,12 @@ func (h *userExampleHandler) GetByID(c *gin.Context) {
 // List get a paginated list of userExamples by custom conditions
 // @Summary Get a paginated list of userExamples by custom conditions
 // @Description Returns a paginated list of userExample based on query filters, including page number and size.
-// @Tags userExample
+// @Tags muxUserExample/userExample
 // @Accept json
 // @Produce json
 // @Param request query types.ListUserExamplesRequest true "query parameters"
 // @Success 200 {object} types.ListUserExamplesReply{}
-// @Router /api/v1/userExample [get]
+// @Router /muxUserExample/v1/userExample [get]
 // @Security BearerAuth
 func (h *userExampleHandler) List(c *gin.Context) {
 	request := &types.ListUserExamplesRequest{}
