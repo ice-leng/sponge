@@ -257,11 +257,6 @@ func (r *replacerInfo) SaveFiles() error {
 			return err
 		}
 
-		// replace text content
-		for _, field := range r.replacementFields {
-			data = bytes.ReplaceAll(data, []byte(field.Old), []byte(field.New))
-		}
-
 		// get new file path
 		newFilePath := r.getNewFilePath(file)
 		newFilePathData, newFileApplication := make(map[string][]byte), make(map[string]string)
@@ -280,8 +275,30 @@ func (r *replacerInfo) SaveFiles() error {
 		}
 
 		for filePath, content := range newFilePathData {
-			applicationFilePath := filePath
+			if application, ok := newFileApplication[filePath]; ok && application != "" {
+				applicationFields := []Field{
+					{Old: "application", New: application},
+					{Old: "package handler", New: fmt.Sprintf("package %s", application)},
+					{Old: "package logic", New: fmt.Sprintf("package %s", application)},
+					{Old: "package routers", New: "package " + application},
+					{Old: "package types", New: "package " + application},
+					{Old: "\"github.com/go-dev-frame/sponge/internal/logic\"", New: "logic \"github.com/go-dev-frame/sponge/internal/logic/" + application + "\""},
+					{Old: "\"github.com/go-dev-frame/sponge/internal/types\"", New: "types \"github.com/go-dev-frame/sponge/internal/types/" + application + "\""},
+					{Old: "\"github.com/go-dev-frame/sponge/internal/handler\"", New: "handler \"github.com/go-dev-frame/sponge/internal/handler/" + application + "\" \n    \"" + application + "/internal/routers\""},
+					{Old: "apiV1RouterFns", New: "routers." + strings.ToUpper(application[:1]) + application[1:] + "V1RouterFns"},
+				}
+				for _, applicationField := range applicationFields {
+					content = bytes.ReplaceAll(content, []byte(applicationField.Old), []byte(applicationField.New))
+				}
+			}
+
 			dir, filename := filepath.Split(filePath)
+
+			// replace text content
+			for _, field := range r.replacementFields {
+				content = bytes.ReplaceAll(content, []byte(field.Old), []byte(field.New))
+			}
+
 			// replace file names and directory names
 			for _, field := range r.replacementFields {
 				if strings.Contains(dir, field.Old) {
@@ -302,12 +319,6 @@ func (r *replacerInfo) SaveFiles() error {
 					content = bytes.ReplaceAll(content, []byte(field.Old), []byte(field.New))
 				}
 			}
-
-			if application, ok := newFileApplication[applicationFilePath]; ok && application != "" {
-				aa := "a"
-				fmt.Println(aa)
-			}
-
 			if gofile.IsExists(filePath) {
 				existFiles = append(existFiles, filePath)
 			}
