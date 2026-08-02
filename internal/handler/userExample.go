@@ -40,8 +40,8 @@ func NewUserExampleHandler() UserExampleHandler {
 // @Tags application/userExample
 // @Accept json
 // @Produce json
-// @Param data body types.CreateUserExampleRequest true "userExample information"
-// @Success 200 {object} types.CreateUserExampleReply{}
+// @Param data body CreateUserExampleRequest true "userExample information"
+// @Success 200 {object} CreateUserExampleReply{}
 // @Router /application/v1/userExample [post]
 // @Security BearerAuth
 func (h *userExampleHandler) Create(c *gin.Context) {
@@ -74,7 +74,7 @@ func (h *userExampleHandler) Create(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "id"
-// @Success 200 {object} types.DeleteUserExampleByIDReply{}
+// @Success 200 {object} DeleteUserExampleByIDReply{}
 // @Router /application/v1/userExample/{id} [delete]
 // @Security BearerAuth
 func (h *userExampleHandler) DeleteByID(c *gin.Context) {
@@ -106,8 +106,8 @@ func (h *userExampleHandler) DeleteByID(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "id"
-// @Param data body types.UpdateUserExampleByIDRequest true "userExample information"
-// @Success 200 {object} types.UpdateUserExampleByIDReply{}
+// @Param data body UpdateUserExampleByIDRequest true "userExample information"
+// @Success 200 {object} UpdateUserExampleByIDReply{}
 // @Router /application/v1/userExample/{id} [put]
 // @Security BearerAuth
 func (h *userExampleHandler) UpdateByID(c *gin.Context) {
@@ -147,7 +147,7 @@ func (h *userExampleHandler) UpdateByID(c *gin.Context) {
 // @Param id path string true "id"
 // @Accept json
 // @Produce json
-// @Success 200 {object} types.GetUserExampleByIDReply{}
+// @Success 200 {object} GetUserExampleByIDReply{}
 // @Router /application/v1/userExample/{id} [get]
 // @Security BearerAuth
 func (h *userExampleHandler) GetByID(c *gin.Context) {
@@ -178,8 +178,8 @@ func (h *userExampleHandler) GetByID(c *gin.Context) {
 // @Tags application/userExample
 // @Accept json
 // @Produce json
-// @Param request query types.ListUserExamplesRequest true "query parameters"
-// @Success 200 {object} types.ListUserExamplesReply{}
+// @Param request query ListUserExamplesRequest true "query parameters"
+// @Success 200 {object} ListUserExamplesReply{}
 // @Router /application/v1/userExample [get]
 // @Security BearerAuth
 func (h *userExampleHandler) List(c *gin.Context) {
