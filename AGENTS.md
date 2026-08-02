@@ -51,7 +51,7 @@
   - 任一失败或表不存在：禁止执行 `sponge web http`。
 
 2. 执行生成
-  - `sponge web http --module-name=admin --server-name=admin --project-name=admin --repo-addr= --db-driver=mysql --db-dsn=<dsn主串>;prefix=<x> --db-table=<表名> --embed=true --suited-mono-repo=false --extended-api=false --out=$(pwd)`
+  - `sponge web http --module-name=admin --server-name=admin --project-name=admin --repo-addr= --db-driver=mysql --db-dsn=<dsn主串>;prefix=<x> --db-table=<表名> --application=admin,api --embed=true --suited-mono-repo=false --extended-api=false --out=$(pwd)`
   - `prefix` 取表名前缀（如 `t_goods` -> `t_`）。
 
 3. 生成后硬约束同步（`types` + `logic` + `dao`）
